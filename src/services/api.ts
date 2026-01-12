@@ -1,0 +1,78 @@
+const API_BASE_URL = "http://localhost:3001/api";
+
+export interface Category {
+  id: string;
+  name: string;
+  color: string;
+  icon: string;
+}
+
+export interface Transaction {
+  id: string;
+  type: "income" | "expense";
+  amount: number;
+  category: Category;
+  description: string;
+  date: string;
+}
+
+class ApiService {
+  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  // Categories
+  async getCategories(): Promise<Category[]> {
+    return this.request<Category[]>("/categories");
+  }
+
+  // Transactions
+  async getTransactions(): Promise<Transaction[]> {
+    return this.request<Transaction[]>("/transactions");
+  }
+
+  async createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction> {
+    return this.request<Transaction>("/transactions", {
+      method: "POST",
+      body: JSON.stringify(transaction),
+    });
+  }
+
+  async deleteTransaction(id: string): Promise<void> {
+    return this.request<void>(`/transactions/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  // Planned Expenses
+  async getPlannedExpenses(): Promise<Transaction[]> {
+    return this.request<Transaction[]>("/planned-expenses");
+  }
+
+  async createPlannedExpense(expense: Omit<Transaction, "id">): Promise<Transaction> {
+    return this.request<Transaction>("/planned-expenses", {
+      method: "POST",
+      body: JSON.stringify(expense),
+    });
+  }
+
+  async deletePlannedExpense(id: string): Promise<void> {
+    return this.request<void>(`/planned-expenses/${id}`, {
+      method: "DELETE",
+    });
+  }
+}
+
+export const apiService = new ApiService();

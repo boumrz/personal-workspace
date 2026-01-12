@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   Form,
@@ -29,23 +29,29 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   const [transactionType, setTransactionType] = useState<"income" | "expense">(
     "expense"
   );
-  const [selectedCategory, setSelectedCategory] = useState<string>(
-    categories[0].id
-  );
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
 
   const availableCategories =
     transactionType === "income"
       ? categories.filter((c) => c.name === "Зарплата" || c.name === "Другое")
       : categories;
 
-  const handleSubmit = async () => {
+  useEffect(() => {
+    if (categories.length > 0 && !selectedCategory) {
+      setSelectedCategory(
+        availableCategories[0]?.id || categories[0]?.id || ""
+      );
+    }
+  }, [categories]);
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     try {
       const values = await form.validateFields();
       const category = categories.find((c) => c.id === selectedCategory);
       if (!category) return;
 
       const transaction = {
-        id: Date.now().toString(),
         type: transactionType,
         amount: values.amount,
         category,
@@ -54,9 +60,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       };
 
       if (type === "planned") {
-        addPlannedExpense(transaction);
+        await addPlannedExpense(transaction);
       } else {
-        addTransaction(transaction);
+        await addTransaction(transaction);
       }
 
       form.resetFields();
@@ -94,7 +100,15 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               value={transactionType}
               onChange={(e: any) => {
                 setTransactionType(e.target.value);
-                setSelectedCategory(categories[0].id);
+                const firstAvailable =
+                  e.target.value === "income"
+                    ? categories.find(
+                        (c) => c.name === "Зарплата" || c.name === "Другое"
+                      )
+                    : categories[0];
+                if (firstAvailable) {
+                  setSelectedCategory(firstAvailable.id);
+                }
               }}
             >
               <Radio value="income">Доход</Radio>

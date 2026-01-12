@@ -20,10 +20,10 @@ export interface FinanceContextType {
   transactions: Transaction[];
   plannedExpenses: Transaction[];
   categories: Category[];
-  addTransaction: (transaction: Transaction) => void;
-  addPlannedExpense: (expense: Transaction) => void;
-  deleteTransaction: (id: string) => void;
-  deletePlannedExpense: (id: string) => void;
+  addTransaction: (transaction: Omit<Transaction, "id">) => Promise<void>;
+  addPlannedExpense: (expense: Omit<Transaction, "id">) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
+  deletePlannedExpense: (id: string) => Promise<void>;
 }
 
 export const FinanceContext = createContext<FinanceContextType | undefined>(

@@ -4,3 +4,8 @@ dist/
 *.log
 .env
 .env.local
+
+# Server
+server/node_modules/
+server/.env
+server/*.log
