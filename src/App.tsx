@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { ConfigProvider } from "antd";
+import ruRU from "antd/locale/ru_RU";
+import dayjs from "dayjs";
+import "dayjs/locale/ru";
 import Dashboard from "./components/Dashboard";
 import {
   FinanceContext,
@@ -6,6 +10,8 @@ import {
   Category,
 } from "./context/FinanceContext";
 import * as styles from "./App.module.css";
+
+dayjs.locale("ru");
 
 const App: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -58,21 +64,23 @@ const App: React.FC = () => {
   };
 
   return (
-    <FinanceContext.Provider
-      value={{
-        transactions,
-        plannedExpenses,
-        categories,
-        addTransaction,
-        addPlannedExpense,
-        deleteTransaction,
-        deletePlannedExpense,
-      }}
-    >
-      <div className={styles.app}>
-        <Dashboard />
-      </div>
-    </FinanceContext.Provider>
+    <ConfigProvider locale={ruRU}>
+      <FinanceContext.Provider
+        value={{
+          transactions,
+          plannedExpenses,
+          categories,
+          addTransaction,
+          addPlannedExpense,
+          deleteTransaction,
+          deletePlannedExpense,
+        }}
+      >
+        <div className={styles.app}>
+          <Dashboard />
+        </div>
+      </FinanceContext.Provider>
+    </ConfigProvider>
   );
 };
 

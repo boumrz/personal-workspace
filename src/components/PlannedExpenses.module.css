@@ -7,29 +7,24 @@
 .plannedTotal {
   background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
   border-radius: 16px;
-  padding: 20px;
   text-align: center;
 }
 
-.plannedTotalLabel {
-  font-size: 14px;
-  color: #6b7280;
-  margin-bottom: 8px;
+.plannedTotal :global(.ant-card-body) {
+  padding: 20px !important;
 }
 
-.plannedTotalAmount {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1f2937;
+.listItem {
+  margin-bottom: 12px;
 }
 
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.listItem :global(.ant-list-item) {
+  padding: 0;
+  border: none;
 }
 
 .expense {
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -38,6 +33,14 @@
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border-left: 4px solid #f59e0b;
+}
+
+.expense :global(.ant-card-body) {
+  padding: 0 !important;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .expenseLeft {
@@ -65,13 +68,15 @@
 .expenseInfo {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .expenseDescription {
   font-size: 16px;
   font-weight: 500;
   color: #1f2937;
-  margin-bottom: 6px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -83,12 +88,6 @@
   gap: 8px;
   font-size: 13px;
   color: #6b7280;
-}
-
-.expenseCategory {
-  padding: 2px 8px;
-  background-color: #f3f4f6;
-  border-radius: 6px;
 }
 
 .expenseDate {
@@ -109,45 +108,32 @@
 }
 
 .deleteButton {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background-color: #f3f4f6;
-  border-radius: 8px;
-  color: #6b7280;
-  font-size: 24px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s;
   flex-shrink: 0;
 }
 
-.deleteButton:hover {
-  background-color: #e5e7eb;
-}
+@media (min-width: 768px) {
+  .expense {
+    padding: 20px;
+  }
 
-.deleteButton:active {
-  background-color: #d1d5db;
-}
+  .expense:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  }
 
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
-}
+  .categoryBadge {
+    width: 56px;
+    height: 56px;
+  }
 
-.emptyIcon {
-  font-size: 64px;
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
+  .categoryIcon {
+    font-size: 28px;
+  }
 
-.emptyText {
-  font-size: 16px;
-  color: #6b7280;
+  .expenseDescription {
+    font-size: 17px;
+  }
+
+  .expenseAmount {
+    font-size: 20px;
+  }
 }

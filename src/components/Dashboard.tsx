@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Card, Statistic, Tabs, FloatButton } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import TransactionList from "./TransactionList";
 import PlannedExpenses from "./PlannedExpenses";
@@ -7,7 +9,7 @@ import CategoryFilter from "./CategoryFilter";
 import * as styles from "./Dashboard.module.css";
 
 const Dashboard: React.FC = () => {
-  const { transactions, plannedExpenses, categories } = useFinance();
+  const { transactions, plannedExpenses } = useFinance();
   const [activeTab, setActiveTab] = useState<"actual" | "planned">("actual");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -26,81 +28,89 @@ const Dashboard: React.FC = () => {
     ? transactions.filter((t) => t.category.id === selectedCategory)
     : transactions;
 
+  const tabItems = [
+    {
+      key: "actual",
+      label: "Актуальные",
+      children: (
+        <TransactionList
+          transactions={filteredTransactions}
+          selectedCategory={selectedCategory}
+        />
+      ),
+    },
+    {
+      key: "planned",
+      label: "Планируемые",
+      children: <PlannedExpenses expenses={plannedExpenses} />,
+    },
+  ];
+
   return (
     <div className={styles.dashboard}>
       <header className={styles.header}>
         <h1 className={styles.title}>Финансовый помощник</h1>
-        <div className={styles.balanceCard}>
-          <div className={styles.balanceLabel}>Баланс</div>
-          <div
-            className={`${styles.balanceAmount} ${
-              balance >= 0 ? styles.positive : styles.negative
-            }`}
-          >
-            {balance.toLocaleString("ru-RU")} ₽
-          </div>
-        </div>
+        <Card className={styles.balanceCard} bordered={false}>
+          <Statistic
+            title="Баланс"
+            value={balance}
+            precision={0}
+            valueStyle={{
+              color: balance >= 0 ? "#fff" : "#fca5a5",
+              fontSize: "32px",
+              fontWeight: 700,
+            }}
+            suffix="₽"
+            formatter={(value) => value?.toLocaleString("ru-RU")}
+          />
+        </Card>
         <div className={styles.summary}>
-          <div className={styles.summaryItem}>
-            <div className={styles.summaryLabel}>Доходы</div>
-            <div className={styles.summaryAmountIncome}>
-              +{totalIncome.toLocaleString("ru-RU")} ₽
-            </div>
-          </div>
-          <div className={styles.summaryItem}>
-            <div className={styles.summaryLabel}>Расходы</div>
-            <div className={styles.summaryAmountExpense}>
-              -{totalExpenses.toLocaleString("ru-RU")} ₽
-            </div>
-          </div>
+          <Card className={styles.summaryItem} bordered={false}>
+            <Statistic
+              title="Доходы"
+              value={totalIncome}
+              precision={0}
+              valueStyle={{ color: "#86efac", fontSize: "18px", fontWeight: 600 }}
+              prefix="+"
+              suffix="₽"
+              formatter={(value) => value?.toLocaleString("ru-RU")}
+            />
+          </Card>
+          <Card className={styles.summaryItem} bordered={false}>
+            <Statistic
+              title="Расходы"
+              value={totalExpenses}
+              precision={0}
+              valueStyle={{ color: "#fca5a5", fontSize: "18px", fontWeight: 600 }}
+              prefix="-"
+              suffix="₽"
+              formatter={(value) => value?.toLocaleString("ru-RU")}
+            />
+          </Card>
         </div>
       </header>
 
-      <CategoryFilter
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-      />
-
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${
-            activeTab === "actual" ? styles.active : ""
-          }`}
-          onClick={() => setActiveTab("actual")}
-        >
-          Актуальные
-        </button>
-        <button
-          className={`${styles.tab} ${
-            activeTab === "planned" ? styles.active : ""
-          }`}
-          onClick={() => setActiveTab("planned")}
-        >
-          Планируемые
-        </button>
-      </div>
-
       <div className={styles.content}>
-        {activeTab === "actual" ? (
-          <TransactionList
-            transactions={filteredTransactions}
-            selectedCategory={selectedCategory}
-          />
-        ) : (
-          <PlannedExpenses expenses={plannedExpenses} />
-        )}
+        <CategoryFilter
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+        />
+        <Tabs
+          activeKey={activeTab}
+          onChange={(key) => setActiveTab(key as "actual" | "planned")}
+          items={tabItems}
+        />
       </div>
 
-      <button
-        className={styles.addButton}
+      <FloatButton
+        icon={<PlusOutlined />}
+        type="primary"
         onClick={() => setShowForm(true)}
-        aria-label="Добавить операцию"
-      >
-        +
-      </button>
+      />
 
       {showForm && (
         <TransactionForm
+          open={showForm}
           onClose={() => setShowForm(false)}
           type={activeTab === "planned" ? "planned" : "actual"}
         />

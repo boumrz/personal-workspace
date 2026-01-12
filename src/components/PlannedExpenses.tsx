@@ -1,4 +1,6 @@
 import React from "react";
+import { List, Card, Empty, Tag, Button, Statistic } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import { Transaction } from "../context/FinanceContext";
 import * as styles from "./PlannedExpenses.module.css";
@@ -12,10 +14,10 @@ const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
 
   if (expenses.length === 0) {
     return (
-      <div className={styles.empty}>
-        <div className={styles.emptyIcon}>📅</div>
-        <div className={styles.emptyText}>Нет планируемых трат</div>
-      </div>
+      <Empty
+        description="Нет планируемых трат"
+        image={Empty.PRESENTED_IMAGE_SIMPLE}
+      />
     );
   }
 
@@ -23,60 +25,66 @@ const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
 
   return (
     <div className={styles.planned}>
-      <div className={styles.plannedTotal}>
-        <div className={styles.plannedTotalLabel}>Запланировано всего</div>
-        <div className={styles.plannedTotalAmount}>
-          {totalPlanned.toLocaleString("ru-RU")} ₽
-        </div>
-      </div>
-      <div className={styles.list}>
-        {expenses.map((expense) => {
+      <Card className={styles.plannedTotal} bordered={false}>
+        <Statistic
+          title="Запланировано всего"
+          value={totalPlanned}
+          precision={0}
+          suffix="₽"
+          formatter={(value) => value?.toLocaleString("ru-RU")}
+        />
+      </Card>
+      <List
+        dataSource={expenses}
+        renderItem={(expense) => {
           const category = categories.find(
             (c) => c.id === expense.category.id
           ) || expense.category;
 
           return (
-            <div key={expense.id} className={styles.expense}>
-              <div className={styles.expenseLeft}>
-                <div
-                  className={styles.categoryBadge}
-                  style={{ backgroundColor: category.color + "20" }}
-                >
-                  <span className={styles.categoryIcon}>{category.icon}</span>
-                </div>
-                <div className={styles.expenseInfo}>
-                  <div className={styles.expenseDescription}>
-                    {expense.description || "Без описания"}
-                  </div>
-                  <div className={styles.expenseDetails}>
-                    <span className={styles.expenseCategory}>
-                      {category.name}
-                    </span>
-                    <span className={styles.expenseDate}>
-                      {new Date(expense.date).toLocaleDateString("ru-RU", {
-                        day: "numeric",
-                        month: "long",
-                      })}
+            <List.Item className={styles.listItem}>
+              <Card className={styles.expense} bordered={false}>
+                <div className={styles.expenseLeft}>
+                  <div
+                    className={styles.categoryBadge}
+                    style={{ backgroundColor: category.color + "20" }}
+                  >
+                    <span className={styles.categoryIcon}>
+                      {category.icon}
                     </span>
                   </div>
+                  <div className={styles.expenseInfo}>
+                    <div className={styles.expenseDescription}>
+                      {expense.description || "Без описания"}
+                    </div>
+                    <div className={styles.expenseDetails}>
+                      <Tag color={category.color}>{category.name}</Tag>
+                      <span className={styles.expenseDate}>
+                        {new Date(expense.date).toLocaleDateString("ru-RU", {
+                          day: "numeric",
+                          month: "long",
+                        })}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className={styles.expenseRight}>
-                <div className={styles.expenseAmount}>
-                  {expense.amount.toLocaleString("ru-RU")} ₽
+                <div className={styles.expenseRight}>
+                  <div className={styles.expenseAmount}>
+                    {expense.amount.toLocaleString("ru-RU")} ₽
+                  </div>
+                  <Button
+                    type="text"
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={() => deletePlannedExpense(expense.id)}
+                    className={styles.deleteButton}
+                  />
                 </div>
-                <button
-                  className={styles.deleteButton}
-                  onClick={() => deletePlannedExpense(expense.id)}
-                  aria-label="Удалить"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
+              </Card>
+            </List.Item>
           );
-        })}
-      </div>
+        }}
+      />
     </div>
   );
 };

@@ -1,4 +1,6 @@
 import React from "react";
+import { List, Card, Empty, Tag, Button } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import { Transaction } from "../context/FinanceContext";
 import * as styles from "./TransactionList.module.css";
@@ -33,14 +35,14 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
   if (transactions.length === 0) {
     return (
-      <div className={styles.empty}>
-        <div className={styles.emptyIcon}>📊</div>
-        <div className={styles.emptyText}>
-          {selectedCategory
+      <Empty
+        description={
+          selectedCategory
             ? "Нет операций в этой категории"
-            : "Нет операций"}
-        </div>
-      </div>
+            : "Нет операций"
+        }
+        image={Empty.PRESENTED_IMAGE_SIMPLE}
+      />
     );
   }
 
@@ -49,51 +51,56 @@ const TransactionList: React.FC<TransactionListProps> = ({
       {Object.entries(groupedTransactions).map(([date, items]) => (
         <div key={date} className={styles.dateGroup}>
           <div className={styles.dateHeader}>{date}</div>
-          {items.map((transaction) => {
-            const category = categories.find(
-              (c) => c.id === transaction.category.id
-            ) || transaction.category;
+          <List
+            dataSource={items}
+            renderItem={(transaction) => {
+              const category = categories.find(
+                (c) => c.id === transaction.category.id
+              ) || transaction.category;
 
-            return (
-              <div key={transaction.id} className={styles.transaction}>
-                <div className={styles.transactionLeft}>
-                  <div
-                    className={styles.categoryBadge}
-                    style={{ backgroundColor: category.color + "20" }}
-                  >
-                    <span className={styles.categoryIcon}>{category.icon}</span>
-                  </div>
-                  <div className={styles.transactionInfo}>
-                    <div className={styles.transactionDescription}>
-                      {transaction.description || "Без описания"}
+              return (
+                <List.Item className={styles.listItem}>
+                  <Card className={styles.transaction} bordered={false}>
+                    <div className={styles.transactionLeft}>
+                      <div
+                        className={styles.categoryBadge}
+                        style={{ backgroundColor: category.color + "20" }}
+                      >
+                        <span className={styles.categoryIcon}>
+                          {category.icon}
+                        </span>
+                      </div>
+                      <div className={styles.transactionInfo}>
+                        <div className={styles.transactionDescription}>
+                          {transaction.description || "Без описания"}
+                        </div>
+                        <Tag color={category.color}>{category.name}</Tag>
+                      </div>
                     </div>
-                    <div className={styles.transactionCategory}>
-                      {category.name}
+                    <div className={styles.transactionRight}>
+                      <div
+                        className={`${styles.transactionAmount} ${
+                          transaction.type === "income"
+                            ? styles.income
+                            : styles.expense
+                        }`}
+                      >
+                        {transaction.type === "income" ? "+" : "-"}
+                        {transaction.amount.toLocaleString("ru-RU")} ₽
+                      </div>
+                      <Button
+                        type="text"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => deleteTransaction(transaction.id)}
+                        className={styles.deleteButton}
+                      />
                     </div>
-                  </div>
-                </div>
-                <div className={styles.transactionRight}>
-                  <div
-                    className={`${styles.transactionAmount} ${
-                      transaction.type === "income"
-                        ? styles.income
-                        : styles.expense
-                    }`}
-                  >
-                    {transaction.type === "income" ? "+" : "-"}
-                    {transaction.amount.toLocaleString("ru-RU")} ₽
-                  </div>
-                  <button
-                    className={styles.deleteButton}
-                    onClick={() => deleteTransaction(transaction.id)}
-                    aria-label="Удалить"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+                  </Card>
+                </List.Item>
+              );
+            }}
+          />
         </div>
       ))}
     </div>

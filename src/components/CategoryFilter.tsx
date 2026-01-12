@@ -1,4 +1,5 @@
 import React from "react";
+import { Space, Button } from "antd";
 import { useFinance } from "../context/FinanceContext";
 import * as styles from "./CategoryFilter.module.css";
 
@@ -15,35 +16,33 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
 
   return (
     <div className={styles.filter}>
-      <button
-        className={`${styles.filterButton} ${
-          selectedCategory === null ? styles.active : ""
-        }`}
-        onClick={() => onSelectCategory(null)}
-      >
-        Все
-      </button>
-      {categories.map((category) => (
-        <button
-          key={category.id}
-          className={`${styles.filterButton} ${
-            selectedCategory === category.id ? styles.active : ""
-          }`}
-          onClick={() =>
-            onSelectCategory(
-              selectedCategory === category.id ? null : category.id
-            )
-          }
-          style={
-            selectedCategory === category.id
-              ? { backgroundColor: category.color, color: "white" }
-              : {}
-          }
+      <Space size={8} wrap>
+        <Button
+          type={selectedCategory === null ? "primary" : "default"}
+          onClick={() => onSelectCategory(null)}
         >
-          <span className={styles.categoryIcon}>{category.icon}</span>
-          {category.name}
-        </button>
-      ))}
+          Все
+        </Button>
+        {categories.map((category) => (
+          <Button
+            key={category.id}
+            type={selectedCategory === category.id ? "primary" : "default"}
+            onClick={() =>
+              onSelectCategory(
+                selectedCategory === category.id ? null : category.id
+              )
+            }
+            style={
+              selectedCategory === category.id
+                ? { backgroundColor: category.color, borderColor: category.color }
+                : {}
+            }
+          >
+            <span className={styles.categoryIcon}>{category.icon}</span>
+            {category.name}
+          </Button>
+        ))}
+      </Space>
     </div>
   );
 };

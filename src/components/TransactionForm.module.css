@@ -185,3 +185,49 @@
 .submitButton:active {
   transform: scale(0.98);
 }
+
+@media (min-width: 768px) {
+  .overlay {
+    align-items: center;
+    padding: 24px;
+  }
+
+  .modal {
+    border-radius: 16px;
+    max-width: 500px;
+    max-height: 85vh;
+    animation: fadeInScale 0.2s;
+  }
+
+  @keyframes fadeInScale {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .header {
+    padding: 24px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .form {
+    padding: 24px;
+  }
+
+  .categoryGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .submitButton:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+}

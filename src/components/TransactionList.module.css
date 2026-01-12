@@ -18,7 +18,17 @@
   padding: 0 4px;
 }
 
+.listItem {
+  margin-bottom: 12px;
+}
+
+.listItem :global(.ant-list-item) {
+  padding: 0;
+  border: none;
+}
+
 .transaction {
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -29,8 +39,12 @@
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.transaction:active {
-  transform: scale(0.98);
+.transaction :global(.ant-card-body) {
+  padding: 0 !important;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .transactionLeft {
@@ -58,21 +72,18 @@
 .transactionInfo {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .transactionDescription {
   font-size: 16px;
   font-weight: 500;
   color: #1f2937;
-  margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.transactionCategory {
-  font-size: 14px;
-  color: #6b7280;
 }
 
 .transactionRight {
@@ -96,45 +107,32 @@
 }
 
 .deleteButton {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background-color: #f3f4f6;
-  border-radius: 8px;
-  color: #6b7280;
-  font-size: 24px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s;
   flex-shrink: 0;
 }
 
-.deleteButton:hover {
-  background-color: #e5e7eb;
-}
+@media (min-width: 768px) {
+  .transaction {
+    padding: 20px;
+  }
 
-.deleteButton:active {
-  background-color: #d1d5db;
-}
+  .transaction:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  }
 
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
-}
+  .categoryBadge {
+    width: 56px;
+    height: 56px;
+  }
 
-.emptyIcon {
-  font-size: 64px;
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
+  .categoryIcon {
+    font-size: 28px;
+  }
 
-.emptyText {
-  font-size: 16px;
-  color: #6b7280;
+  .transactionDescription {
+    font-size: 17px;
+  }
+
+  .transactionAmount {
+    font-size: 20px;
+  }
 }

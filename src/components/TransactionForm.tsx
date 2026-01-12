@@ -1,22 +1,36 @@
 import React, { useState } from "react";
+import {
+  Modal,
+  Form,
+  InputNumber,
+  Input,
+  Radio,
+  Button,
+  DatePicker,
+  Space,
+} from "antd";
+import dayjs from "dayjs";
 import { useFinance } from "../context/FinanceContext";
 import * as styles from "./TransactionForm.module.css";
 
 interface TransactionFormProps {
+  open: boolean;
   onClose: () => void;
   type: "actual" | "planned";
 }
 
-const TransactionForm: React.FC<TransactionFormProps> = ({ onClose, type }) => {
+const TransactionForm: React.FC<TransactionFormProps> = ({
+  open,
+  onClose,
+  type,
+}) => {
   const { addTransaction, addPlannedExpense, categories } = useFinance();
+  const [form] = Form.useForm();
   const [transactionType, setTransactionType] = useState<"income" | "expense">(
-    type === "planned" ? "expense" : "expense"
+    "expense"
   );
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(categories[0].id);
-  const [date, setDate] = useState(
-    new Date().toISOString().split("T")[0]
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    categories[0].id
   );
 
   const availableCategories =
@@ -24,139 +38,120 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onClose, type }) => {
       ? categories.filter((c) => c.name === "Зарплата" || c.name === "Другое")
       : categories;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      const category = categories.find((c) => c.id === selectedCategory);
+      if (!category) return;
 
-    if (!amount || parseFloat(amount) <= 0) {
-      return;
+      const transaction = {
+        id: Date.now().toString(),
+        type: transactionType,
+        amount: values.amount,
+        category,
+        description: values.description || "",
+        date: values.date.format("YYYY-MM-DD"),
+      };
+
+      if (type === "planned") {
+        addPlannedExpense(transaction);
+      } else {
+        addTransaction(transaction);
+      }
+
+      form.resetFields();
+      onClose();
+    } catch (error) {
+      console.error("Validation failed:", error);
     }
+  };
 
-    const category = categories.find((c) => c.id === selectedCategory);
-    if (!category) return;
-
-    const transaction = {
-      id: Date.now().toString(),
-      type: transactionType,
-      amount: parseFloat(amount),
-      category,
-      description,
-      date,
-    };
-
-    if (type === "planned") {
-      addPlannedExpense(transaction);
-    } else {
-      addTransaction(transaction);
-    }
-
+  const handleCancel = () => {
+    form.resetFields();
     onClose();
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <h2 className={styles.title}>
-            {type === "planned" ? "Планируемая трата" : "Новая операция"}
-          </h2>
-          <button className={styles.closeButton} onClick={onClose}>
-            ×
-          </button>
-        </div>
+    <Modal
+      title={type === "planned" ? "Планируемая трата" : "Новая операция"}
+      open={open}
+      onCancel={handleCancel}
+      footer={[
+        <Button key="cancel" onClick={handleCancel}>
+          Отмена
+        </Button>,
+        <Button key="submit" type="primary" onClick={handleSubmit}>
+          Добавить
+        </Button>,
+      ]}
+      width={window.innerWidth < 768 ? "100%" : 500}
+      style={window.innerWidth < 768 ? { top: 0, paddingBottom: 0 } : undefined}
+    >
+      <Form form={form} layout="vertical" initialValues={{ date: dayjs() }}>
+        {type === "actual" && (
+          <Form.Item label="Тип операции" name="type">
+            <Radio.Group
+              value={transactionType}
+              onChange={(e: any) => {
+                setTransactionType(e.target.value);
+                setSelectedCategory(categories[0].id);
+              }}
+            >
+              <Radio value="income">Доход</Radio>
+              <Radio value="expense">Расход</Radio>
+            </Radio.Group>
+          </Form.Item>
+        )}
 
-        <form className={styles.form} onSubmit={handleSubmit}>
-          {type === "actual" && (
-            <div className={styles.typeSelector}>
-              <button
-                type="button"
-                className={`${styles.typeButton} ${
-                  transactionType === "income" ? styles.active : ""
-                }`}
-                onClick={() => setTransactionType("income")}
+        <Form.Item
+          label="Сумма (₽)"
+          name="amount"
+          rules={[{ required: true, message: "Введите сумму" }]}
+        >
+          <InputNumber
+            style={{ width: "100%" }}
+            min={0}
+            step={0.01}
+            precision={2}
+            placeholder="0"
+          />
+        </Form.Item>
+
+        <Form.Item label="Категория" required>
+          <Space wrap size={8}>
+            {availableCategories.map((category) => (
+              <Button
+                key={category.id}
+                type={selectedCategory === category.id ? "primary" : "default"}
+                onClick={() => setSelectedCategory(category.id)}
+                style={
+                  selectedCategory === category.id
+                    ? {
+                        backgroundColor: category.color,
+                        borderColor: category.color,
+                      }
+                    : {}
+                }
               >
-                Доход
-              </button>
-              <button
-                type="button"
-                className={`${styles.typeButton} ${
-                  transactionType === "expense" ? styles.active : ""
-                }`}
-                onClick={() => setTransactionType("expense")}
-              >
-                Расход
-              </button>
-            </div>
-          )}
+                <span>{category.icon}</span> {category.name}
+              </Button>
+            ))}
+          </Space>
+        </Form.Item>
 
-          <div className={styles.field}>
-            <label className={styles.label}>Сумма (₽)</label>
-            <input
-              type="number"
-              className={styles.input}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0"
-              min="0"
-              step="0.01"
-              required
-            />
-          </div>
+        <Form.Item label="Описание" name="description">
+          <Input placeholder="Введите описание" />
+        </Form.Item>
 
-          <div className={styles.field}>
-            <label className={styles.label}>Категория</label>
-            <div className={styles.categoryGrid}>
-              {availableCategories.map((category) => (
-                <button
-                  key={category.id}
-                  type="button"
-                  className={`${styles.categoryButton} ${
-                    selectedCategory === category.id ? styles.active : ""
-                  }`}
-                  onClick={() => setSelectedCategory(category.id)}
-                  style={
-                    selectedCategory === category.id
-                      ? {
-                          backgroundColor: category.color,
-                          borderColor: category.color,
-                        }
-                      : {}
-                  }
-                >
-                  <span className={styles.categoryIcon}>{category.icon}</span>
-                  <span className={styles.categoryName}>{category.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label}>Описание</label>
-            <input
-              type="text"
-              className={styles.input}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Введите описание"
-            />
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label}>Дата</label>
-            <input
-              type="date"
-              className={styles.input}
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-            />
-          </div>
-
-          <button type="submit" className={styles.submitButton}>
-            Добавить
-          </button>
-        </form>
-      </div>
-    </div>
+        <Form.Item
+          label="Дата"
+          name="date"
+          rules={[{ required: true, message: "Выберите дату" }]}
+        >
+          <DatePicker style={{ width: "100%" }} format="DD.MM.YYYY" />
+        </Form.Item>
+      </Form>
+    </Modal>
   );
 };
 
