@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { List, Card, Empty, Tag, Button, Statistic } from "antd";
-import { DeleteOutlined } from "@ant-design/icons";
+import { DeleteOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import { Transaction } from "../context/FinanceContext";
 import * as styles from "./PlannedExpenses.module.css";
@@ -11,6 +11,44 @@ interface PlannedExpensesProps {
 
 const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
   const { deletePlannedExpense, categories } = useFinance();
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
+
+  // Группировка по месяцам
+  const expensesByMonth = useMemo(() => {
+    const grouped = expenses.reduce((groups, expense) => {
+      const date = new Date(expense.date);
+      const monthKey = date.toLocaleDateString("ru-RU", {
+        month: "long",
+        year: "numeric",
+      });
+
+      if (!groups[monthKey]) {
+        groups[monthKey] = [];
+      }
+      groups[monthKey].push(expense);
+      return groups;
+    }, {} as Record<string, Transaction[]>);
+
+    // Сортируем месяцы (сначала новые)
+    const sortedMonths = Object.keys(grouped).sort((a, b) => {
+      const dateA = new Date(
+        grouped[a][0].date.substring(0, 7) + "-01"
+      ).getTime();
+      const dateB = new Date(
+        grouped[b][0].date.substring(0, 7) + "-01"
+      ).getTime();
+      return dateB - dateA;
+    });
+
+    return { grouped, sortedMonths };
+  }, [expenses]);
+
+  // Устанавливаем первый месяц по умолчанию
+  useEffect(() => {
+    if (expensesByMonth.sortedMonths.length > 0 && !selectedMonth) {
+      setSelectedMonth(expensesByMonth.sortedMonths[0]);
+    }
+  }, [expensesByMonth.sortedMonths, selectedMonth]);
 
   if (expenses.length === 0) {
     return (
@@ -21,13 +59,48 @@ const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
     );
   }
 
-  const totalPlanned = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const currentMonthExpenses =
+    expensesByMonth.grouped[selectedMonth] || [];
+  const totalPlanned = currentMonthExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+  const currentMonthIndex = expensesByMonth.sortedMonths.indexOf(selectedMonth);
+  const canGoPrev = currentMonthIndex > 0;
+  const canGoNext = currentMonthIndex < expensesByMonth.sortedMonths.length - 1;
+
+  const handlePrevMonth = () => {
+    if (canGoPrev) {
+      setSelectedMonth(expensesByMonth.sortedMonths[currentMonthIndex - 1]);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (canGoNext) {
+      setSelectedMonth(expensesByMonth.sortedMonths[currentMonthIndex + 1]);
+    }
+  };
 
   return (
     <div className={styles.planned}>
+      <div className={styles.monthSelector}>
+        <Button
+          icon={<LeftOutlined />}
+          onClick={handlePrevMonth}
+          disabled={!canGoPrev}
+          className={styles.monthButton}
+        />
+        <div className={styles.monthLabel}>
+          {selectedMonth.charAt(0).toUpperCase() + selectedMonth.slice(1)}
+        </div>
+        <Button
+          icon={<RightOutlined />}
+          onClick={handleNextMonth}
+          disabled={!canGoNext}
+          className={styles.monthButton}
+        />
+      </div>
       <Card className={styles.plannedTotal} bordered={false}>
         <Statistic
-          title="Запланировано всего"
+          title={`Запланировано за ${selectedMonth.charAt(0).toUpperCase() + selectedMonth.slice(1)}`}
           value={totalPlanned}
           precision={0}
           suffix="₽"
@@ -35,7 +108,9 @@ const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
         />
       </Card>
       <List
-        dataSource={expenses}
+        dataSource={currentMonthExpenses.sort((a, b) => {
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        })}
         renderItem={(expense) => {
           const category = categories.find(
             (c) => c.id === expense.category.id

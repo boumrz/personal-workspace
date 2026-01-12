@@ -36,6 +36,7 @@ const Dashboard: React.FC = () => {
         <TransactionList
           transactions={filteredTransactions}
           selectedCategory={selectedCategory}
+          plannedExpenses={plannedExpenses}
         />
       ),
     },
@@ -70,7 +71,11 @@ const Dashboard: React.FC = () => {
               title="Доходы"
               value={totalIncome}
               precision={0}
-              valueStyle={{ color: "#86efac", fontSize: "18px", fontWeight: 600 }}
+              valueStyle={{
+                color: "#86efac",
+                fontSize: "18px",
+                fontWeight: 600,
+              }}
               prefix="+"
               suffix="₽"
               formatter={(value) => value?.toLocaleString("ru-RU")}
@@ -81,7 +86,11 @@ const Dashboard: React.FC = () => {
               title="Расходы"
               value={totalExpenses}
               precision={0}
-              valueStyle={{ color: "#fca5a5", fontSize: "18px", fontWeight: 600 }}
+              valueStyle={{
+                color: "#fca5a5",
+                fontSize: "18px",
+                fontWeight: 600,
+              }}
               prefix="-"
               suffix="₽"
               formatter={(value) => value?.toLocaleString("ru-RU")}

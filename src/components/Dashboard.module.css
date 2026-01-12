@@ -68,6 +68,10 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+
+  :global(.ant-tabs-nav) {
+    padding: 0 24px !important;
+  }
 }
 
 .content :global(.ant-tabs) {

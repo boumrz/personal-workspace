@@ -1,21 +1,31 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
-.dateGroup {
+.monthSelector {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.dateHeader {
-  font-size: 14px;
+.monthLabel {
+  font-size: 16px;
   font-weight: 600;
-  color: #6b7280;
-  text-transform: capitalize;
-  padding: 0 4px;
+  color: #1f2937;
+  min-width: 150px;
+  text-align: center;
+}
+
+.monthButton {
+  flex-shrink: 0;
 }
 
 .listItem {
@@ -84,6 +94,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.transactionMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.plannedProgress {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
 }
 
 .transactionRight {
