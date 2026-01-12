@@ -1,0 +1,28 @@
+{
+  "name": "finance-assistant",
+  "version": "1.0.0",
+  "description": "Финансовый помощник",
+  "type": "module",
+  "scripts": {
+    "dev": "rspack serve",
+    "build": "rspack build",
+    "preview": "rspack preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.0"
+  },
+  "devDependencies": {
+    "@rspack/cli": "^1.7.1",
+    "@rspack/core": "^1.7.1",
+    "@rspack/plugin-react-refresh": "^1.1.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^7.13.1",
+    "@typescript-eslint/parser": "^7.13.1",
+    "css-loader": "^7.1.2",
+    "style-loader": "^4.0.0",
+    "typescript": "^5.5.3"
+  }
+}

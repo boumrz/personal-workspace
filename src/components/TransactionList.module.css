@@ -1,0 +1,140 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.dateGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dateHeader {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: capitalize;
+  padding: 0 4px;
+}
+
+.transaction {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.transaction:active {
+  transform: scale(0.98);
+}
+
+.transactionLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.categoryBadge {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.categoryIcon {
+  font-size: 24px;
+}
+
+.transactionInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.transactionDescription {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transactionCategory {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.transactionRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.transactionAmount {
+  font-size: 18px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.transactionAmount.income {
+  color: #10b981;
+}
+
+.transactionAmount.expense {
+  color: #ef4444;
+}
+
+.deleteButton {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background-color: #f3f4f6;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.deleteButton:hover {
+  background-color: #e5e7eb;
+}
+
+.deleteButton:active {
+  background-color: #d1d5db;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.emptyText {
+  font-size: 16px;
+  color: #6b7280;
+}

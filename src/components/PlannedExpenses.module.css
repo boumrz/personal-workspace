@@ -1,0 +1,153 @@
+.planned {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.plannedTotal {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+}
+
+.plannedTotalLabel {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.plannedTotalAmount {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.expense {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #f59e0b;
+}
+
+.expenseLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.categoryBadge {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.categoryIcon {
+  font-size: 24px;
+}
+
+.expenseInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.expenseDescription {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.expenseDetails {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.expenseCategory {
+  padding: 2px 8px;
+  background-color: #f3f4f6;
+  border-radius: 6px;
+}
+
+.expenseDate {
+  color: #9ca3af;
+}
+
+.expenseRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.expenseAmount {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f59e0b;
+  white-space: nowrap;
+}
+
+.deleteButton {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background-color: #f3f4f6;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.deleteButton:hover {
+  background-color: #e5e7eb;
+}
+
+.deleteButton:active {
+  background-color: #d1d5db;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.emptyText {
+  font-size: 16px;
+  color: #6b7280;
+}
