@@ -57,7 +57,7 @@ const Dashboard: React.FC = () => {
             value={balance}
             precision={0}
             valueStyle={{
-              color: balance >= 0 ? "#fff" : "#fca5a5",
+              color: balance >= 0 ? "#fff" : "#FFAB91",
               fontSize: "32px",
               fontWeight: 700,
             }}
@@ -72,7 +72,7 @@ const Dashboard: React.FC = () => {
               value={totalIncome}
               precision={0}
               valueStyle={{
-                color: "#86efac",
+                color: "#A5D6A7",
                 fontSize: "18px",
                 fontWeight: 600,
               }}
@@ -87,7 +87,7 @@ const Dashboard: React.FC = () => {
               value={totalExpenses}
               precision={0}
               valueStyle={{
-                color: "#fca5a5",
+                color: "#FFAB91",
                 fontSize: "18px",
                 fontWeight: 600,
               }}

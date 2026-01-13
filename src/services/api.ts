@@ -38,6 +38,13 @@ class ApiService {
     return this.request<Category[]>("/categories");
   }
 
+  async createCategory(category: Omit<Category, "id">): Promise<Category> {
+    return this.request<Category>("/categories", {
+      method: "POST",
+      body: JSON.stringify(category),
+    });
+  }
+
   // Transactions
   async getTransactions(): Promise<Transaction[]> {
     return this.request<Transaction[]>("/transactions");

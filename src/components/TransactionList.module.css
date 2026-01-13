@@ -122,11 +122,11 @@
 }
 
 .transactionAmount.income {
-  color: #10b981;
+  color: #66BB6A;
 }
 
 .transactionAmount.expense {
-  color: #ef4444;
+  color: #FF7043;
 }
 
 .deleteButton {

@@ -22,6 +22,41 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Create category
+router.post("/", async (req, res) => {
+  try {
+    const { name, color, icon } = req.body;
+
+    if (!name || !color || !icon) {
+      return res.status(400).json({ error: "Missing required fields: name, color, icon" });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO categories (name, color, icon)
+       VALUES ($1, $2, $3)
+       RETURNING id, name, color, icon`,
+      [name, color, icon]
+    );
+
+    const row = result.rows[0];
+    const category = {
+      id: row.id.toString(),
+      name: row.name,
+      color: row.color,
+      icon: row.icon,
+    };
+
+    res.status(201).json(category);
+  } catch (error) {
+    console.error("Error creating category:", error);
+    // Check if it's a unique constraint violation
+    if (error.code === "23505") {
+      return res.status(409).json({ error: "Category with this name already exists" });
+    }
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Get category by ID
 router.get("/:id", async (req, res) => {
   try {

@@ -42,14 +42,14 @@ const App: React.FC = () => {
       console.error("Error loading data:", error);
       // Fallback to default categories if API fails
       setCategories([
-        { id: "1", name: "Продукты", color: "#ef4444", icon: "🍔" },
-        { id: "2", name: "Транспорт", color: "#3b82f6", icon: "🚗" },
-        { id: "3", name: "Развлечения", color: "#8b5cf6", icon: "🎬" },
-        { id: "4", name: "Здоровье", color: "#10b981", icon: "🏥" },
-        { id: "5", name: "Одежда", color: "#f59e0b", icon: "👕" },
-        { id: "6", name: "Жилье", color: "#6366f1", icon: "🏠" },
-        { id: "7", name: "Зарплата", color: "#22c55e", icon: "💰" },
-        { id: "8", name: "Другое", color: "#6b7280", icon: "📦" },
+        { id: "1", name: "Продукты", color: "#FF8A65", icon: "🍔" },
+        { id: "2", name: "Транспорт", color: "#64B5F6", icon: "🚗" },
+        { id: "3", name: "Развлечения", color: "#BA68C8", icon: "🎬" },
+        { id: "4", name: "Здоровье", color: "#81C784", icon: "🏥" },
+        { id: "5", name: "Одежда", color: "#FFB74D", icon: "👕" },
+        { id: "6", name: "Жилье", color: "#90CAF9", icon: "🏠" },
+        { id: "7", name: "Зарплата", color: "#66BB6A", icon: "💰" },
+        { id: "8", name: "Другое", color: "#90A4AE", icon: "📦" },
       ]);
     } finally {
       setLoading(false);
@@ -96,6 +96,17 @@ const App: React.FC = () => {
     }
   };
 
+  const addCategory = async (category: Omit<Category, "id">): Promise<Category> => {
+    try {
+      const newCategory = await apiService.createCategory(category);
+      setCategories([...categories, newCategory]);
+      return newCategory;
+    } catch (error) {
+      console.error("Error adding category:", error);
+      throw error;
+    }
+  };
+
   if (loading) {
     return (
       <ConfigProvider locale={ruRU}>
@@ -116,7 +127,14 @@ const App: React.FC = () => {
   }
 
   return (
-    <ConfigProvider locale={ruRU}>
+    <ConfigProvider 
+      locale={ruRU}
+      theme={{
+        token: {
+          colorPrimary: '#42A5F5',
+        },
+      }}
+    >
       <FinanceContext.Provider
         value={{
           transactions,
@@ -126,6 +144,7 @@ const App: React.FC = () => {
           addPlannedExpense,
           deleteTransaction,
           deletePlannedExpense,
+          addCategory,
         }}
       >
         <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f5" }}>

@@ -9,8 +9,10 @@ import {
   DatePicker,
   Space,
 } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useFinance } from "../context/FinanceContext";
+import CategoryForm from "./CategoryForm";
 import * as styles from "./TransactionForm.module.css";
 
 interface TransactionFormProps {
@@ -30,6 +32,12 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     "expense"
   );
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+
+  const handleCategoryCreated = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    setShowCategoryForm(false);
+  };
 
   const availableCategories =
     transactionType === "income"
@@ -150,6 +158,14 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                 <span>{category.icon}</span> {category.name}
               </Button>
             ))}
+            <Button
+              type="dashed"
+              icon={<PlusOutlined />}
+              onClick={() => setShowCategoryForm(true)}
+              className={styles.addCategoryButton}
+            >
+              Добавить категорию
+            </Button>
           </Space>
         </Form.Item>
 
@@ -165,6 +181,13 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           <DatePicker style={{ width: "100%" }} format="DD.MM.YYYY" />
         </Form.Item>
       </Form>
+
+      <CategoryForm
+        open={showCategoryForm}
+        onClose={() => setShowCategoryForm(false)}
+        transactionType={transactionType}
+        onCategoryCreated={handleCategoryCreated}
+      />
     </Modal>
   );
 };
