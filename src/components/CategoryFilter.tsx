@@ -1,6 +1,6 @@
-import React, { useState, useRef } from "react";
-import { Space, Button, Popconfirm } from "antd";
-import { DeleteOutlined } from "@ant-design/icons";
+import React, { useState, useRef, useEffect } from "react";
+import { Space, Button, Popconfirm, Popover } from "antd";
+import { DeleteOutlined, MoreOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import IconRenderer from "./IconRenderer";
 import * as styles from "./CategoryFilter.module.css";
@@ -19,8 +19,21 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
   const [popconfirmVisible, setPopconfirmVisible] = useState<string | null>(
     null
   );
+  const [popoverVisible, setPopoverVisible] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrapperRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Определяем, мобильное ли устройство
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Базовые категории, которые нельзя удалить
   const defaultCategoryNames = [
@@ -85,6 +98,7 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
   const handleDeleteButtonClick = (categoryId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setPopconfirmVisible(categoryId);
+    setPopoverVisible(null);
   };
 
   const handlePopconfirmOpenChange = (categoryId: string, visible: boolean) => {
@@ -93,6 +107,26 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
       // При закрытии модалки скрываем кнопку удаления
       setHoveredCategory(null);
     }
+  };
+
+  const handleLongPressStart = (categoryId: string) => {
+    if (isMobile) {
+      longPressTimerRef.current = setTimeout(() => {
+        setPopconfirmVisible(categoryId);
+      }, 500); // 500ms для долгого нажатия
+    }
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const handleMenuClick = (categoryId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPopoverVisible(popoverVisible === categoryId ? null : categoryId);
   };
 
   return (
@@ -113,8 +147,13 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
               key={category.id}
               ref={(el) => (wrapperRefs.current[category.id] = el)}
               className={styles.categoryWrapper}
-              onMouseEnter={() => handleMouseEnter(category.id)}
-              onMouseLeave={() => handleMouseLeave(category.id)}
+              onMouseEnter={() => !isMobile && handleMouseEnter(category.id)}
+              onMouseLeave={() => !isMobile && handleMouseLeave(category.id)}
+              onTouchStart={() =>
+                canDelete && handleLongPressStart(category.id)
+              }
+              onTouchEnd={handleLongPressEnd}
+              onTouchCancel={handleLongPressEnd}
             >
               <Button
                 type={selectedCategory === category.id ? "primary" : "default"}
@@ -137,7 +176,8 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
                 </span>
                 {category.name}
               </Button>
-              {showDelete && (
+              {/* Кнопка удаления для десктопа (hover) */}
+              {showDelete && !isMobile && (
                 <Popconfirm
                   title="Удалить категорию?"
                   description="Эта категория будет удалена. Это действие нельзя отменить."
@@ -169,6 +209,49 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
                     onClick={(e) => handleDeleteButtonClick(category.id, e)}
                   />
                 </Popconfirm>
+              )}
+
+              {/* Кнопка меню для мобильных устройств */}
+              {canDelete && isMobile && (
+                <Popover
+                  content={
+                    <div className={styles.mobileMenu}>
+                      <Popconfirm
+                        title="Удалить категорию?"
+                        description="Эта категория будет удалена. Это действие нельзя отменить."
+                        onConfirm={(e) => handleDelete(category.id, e!)}
+                        onCancel={() => setPopoverVisible(null)}
+                        okText="Да"
+                        cancelText="Нет"
+                        placement="top"
+                      >
+                        <Button
+                          type="text"
+                          danger
+                          icon={<DeleteOutlined />}
+                          block
+                          className={styles.mobileDeleteButton}
+                        >
+                          Удалить категорию
+                        </Button>
+                      </Popconfirm>
+                    </div>
+                  }
+                  trigger="click"
+                  open={popoverVisible === category.id}
+                  onOpenChange={(visible) =>
+                    setPopoverVisible(visible ? category.id : null)
+                  }
+                  placement="bottomRight"
+                >
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<MoreOutlined />}
+                    className={styles.mobileMenuButton}
+                    onClick={(e) => handleMenuClick(category.id, e)}
+                  />
+                </Popover>
               )}
             </div>
           );

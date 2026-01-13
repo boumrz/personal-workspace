@@ -44,11 +44,47 @@
   z-index: 1000;
 }
 
+.mobileMenuButton {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  z-index: 10;
+  background-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  min-width: 24px;
+}
+
+.mobileMenuButton:hover {
+  background-color: #f5f5f5;
+}
+
+.mobileMenu {
+  min-width: 150px;
+}
+
+.mobileDeleteButton {
+  text-align: left;
+  padding: 8px 12px;
+  height: auto;
+}
+
 @media (min-width: 768px) {
   .filter {
     padding: 16px 24px;
     margin: 0 24px;
     border-radius: 12px 12px 0 0;
     margin-bottom: 0;
+  }
+
+  .mobileMenuButton {
+    display: none;
   }
 }
