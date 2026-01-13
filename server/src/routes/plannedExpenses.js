@@ -1,11 +1,16 @@
 import express from "express";
 import pool from "../database/db.js";
+import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
+
+// All routes require authentication
+router.use(authenticateToken);
 
 // Get all planned expenses
 router.get("/", async (req, res) => {
   try {
+    const userId = req.user.userId;
     const result = await pool.query(`
       SELECT 
         pe.*,
@@ -15,8 +20,9 @@ router.get("/", async (req, res) => {
         c.icon as category_icon
       FROM planned_expenses pe
       JOIN categories c ON pe.category_id = c.id
+      WHERE pe.user_id = $1
       ORDER BY pe.date ASC, pe.created_at DESC
-    `);
+    `, [userId]);
 
     const expenses = result.rows.map((row) => ({
       id: row.id.toString(),
@@ -42,6 +48,7 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user.userId;
     const result = await pool.query(
       `
       SELECT 
@@ -52,9 +59,9 @@ router.get("/:id", async (req, res) => {
         c.icon as category_icon
       FROM planned_expenses pe
       JOIN categories c ON pe.category_id = c.id
-      WHERE pe.id = $1
+      WHERE pe.id = $1 AND pe.user_id = $2
     `,
-      [id]
+      [id, userId]
     );
 
     if (result.rows.length === 0) {
@@ -86,18 +93,28 @@ router.get("/:id", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const { amount, description, date, category } = req.body;
+    const userId = req.user.userId;
 
     if (!amount || !date || !category?.id) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
+    // Verify category belongs to user
+    const categoryCheck = await pool.query(
+      "SELECT id FROM categories WHERE id = $1 AND user_id = $2",
+      [category.id, userId]
+    );
+    if (categoryCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Category not found" });
+    }
+
     const result = await pool.query(
       `
-      INSERT INTO planned_expenses (amount, description, date, category_id)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO planned_expenses (user_id, amount, description, date, category_id)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING id
     `,
-      [amount, description || null, date, category.id]
+      [userId, amount, description || null, date, category.id]
     );
 
     const expenseId = result.rows[0].id;
@@ -144,18 +161,28 @@ router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { amount, description, date, category } = req.body;
+    const userId = req.user.userId;
 
     if (!amount || !date || !category?.id) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Verify category belongs to user
+    const categoryCheck = await pool.query(
+      "SELECT id FROM categories WHERE id = $1 AND user_id = $2",
+      [category.id, userId]
+    );
+    if (categoryCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Category not found" });
     }
 
     await pool.query(
       `
       UPDATE planned_expenses
       SET amount = $1, description = $2, date = $3, category_id = $4, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $5
+      WHERE id = $5 AND user_id = $6
     `,
-      [amount, description || null, date, category.id, id]
+      [amount, description || null, date, category.id, id, userId]
     );
 
     // Fetch updated expense
@@ -203,7 +230,8 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query("DELETE FROM planned_expenses WHERE id = $1 RETURNING id", [id]);
+    const userId = req.user.userId;
+    const result = await pool.query("DELETE FROM planned_expenses WHERE id = $1 AND user_id = $2 RETURNING id", [id, userId]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Planned expense not found" });

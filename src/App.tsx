@@ -7,6 +7,10 @@ import "dayjs/locale/ru";
 import Layout from "./components/Layout";
 import DashboardPage from "./pages/DashboardPage";
 import TransactionsPage from "./pages/TransactionsPage";
+import Login from "./components/Login";
+import ProtectedRoute from "./components/ProtectedRoute";
+import PublicRoute from "./components/PublicRoute";
+import { AuthProvider } from "./context/AuthContext";
 import {
   FinanceContext,
   Transaction,
@@ -148,29 +152,48 @@ const App: React.FC = () => {
         },
       }}
     >
-      <FinanceContext.Provider
-        value={{
-          transactions,
-          plannedExpenses,
-          categories,
-          addTransaction,
-          addPlannedExpense,
-          deleteTransaction,
-          deletePlannedExpense,
-          addCategory,
-          deleteCategory,
-        }}
-      >
+      <AuthProvider>
         <BrowserRouter>
-          <Layout>
-            <Routes>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/transactions" element={<TransactionsPage />} />
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            </Routes>
-          </Layout>
+          <Routes>
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <FinanceContext.Provider
+                    value={{
+                      transactions,
+                      plannedExpenses,
+                      categories,
+                      addTransaction,
+                      addPlannedExpense,
+                      deleteTransaction,
+                      deletePlannedExpense,
+                      addCategory,
+                      deleteCategory,
+                    }}
+                  >
+                    <Layout>
+                      <Routes>
+                        <Route path="/dashboard" element={<DashboardPage />} />
+                        <Route path="/transactions" element={<TransactionsPage />} />
+                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                      </Routes>
+                    </Layout>
+                  </FinanceContext.Provider>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
         </BrowserRouter>
-      </FinanceContext.Provider>
+      </AuthProvider>
     </ConfigProvider>
   );
 };

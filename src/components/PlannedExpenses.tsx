@@ -30,7 +30,14 @@ const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
       return groups;
     }, {} as Record<string, Transaction[]>);
 
-    // Сортируем месяцы (сначала новые)
+    // Сортируем транзакции внутри каждого месяца (сначала старые)
+    Object.keys(grouped).forEach((monthKey) => {
+      grouped[monthKey].sort((a, b) => {
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      });
+    });
+
+    // Сортируем месяцы (сначала старые)
     const sortedMonths = Object.keys(grouped).sort((a, b) => {
       const dateA = new Date(
         grouped[a][0].date.substring(0, 7) + "-01"
@@ -38,16 +45,16 @@ const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
       const dateB = new Date(
         grouped[b][0].date.substring(0, 7) + "-01"
       ).getTime();
-      return dateB - dateA;
+      return dateA - dateB;
     });
 
     return { grouped, sortedMonths };
   }, [expenses]);
 
-  // Устанавливаем первый месяц по умолчанию
+  // Устанавливаем последний месяц по умолчанию (самый новый)
   useEffect(() => {
     if (expensesByMonth.sortedMonths.length > 0 && !selectedMonth) {
-      setSelectedMonth(expensesByMonth.sortedMonths[0]);
+      setSelectedMonth(expensesByMonth.sortedMonths[expensesByMonth.sortedMonths.length - 1]);
     }
   }, [expensesByMonth.sortedMonths, selectedMonth]);
 
@@ -109,9 +116,7 @@ const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
         />
       </Card>
       <List
-        dataSource={currentMonthExpenses.sort((a, b) => {
-          return new Date(b.date).getTime() - new Date(a.date).getTime();
-        })}
+        dataSource={currentMonthExpenses}
         renderItem={(expense) => {
           const category = categories.find(
             (c) => c.id === expense.category.id

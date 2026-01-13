@@ -23,10 +23,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
   // Группировка по месяцам
   const groupedTransactions = useMemo(() => {
     const grouped = transactions
-      .sort((a, b) => {
-        // Сортируем по дате (сначала новые)
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
-      })
       .reduce((groups, transaction) => {
         const date = new Date(transaction.date);
         const monthKey = date.toLocaleDateString("ru-RU", {
@@ -41,20 +37,27 @@ const TransactionList: React.FC<TransactionListProps> = ({
         return groups;
       }, {} as Record<string, Transaction[]>);
 
-    // Сортируем месяцы (сначала новые)
+    // Сортируем транзакции внутри каждого месяца (сначала старые)
+    Object.keys(grouped).forEach((monthKey) => {
+      grouped[monthKey].sort((a, b) => {
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      });
+    });
+
+    // Сортируем месяцы (сначала старые)
     const sortedMonths = Object.keys(grouped).sort((a, b) => {
       const dateA = new Date(grouped[a][0].date.substring(0, 7) + "-01").getTime();
       const dateB = new Date(grouped[b][0].date.substring(0, 7) + "-01").getTime();
-      return dateB - dateA;
+      return dateA - dateB;
     });
 
     return { grouped, sortedMonths };
   }, [transactions]);
 
-  // Устанавливаем первый месяц по умолчанию
+  // Устанавливаем последний месяц по умолчанию (самый новый)
   useEffect(() => {
     if (groupedTransactions.sortedMonths.length > 0 && !selectedMonth) {
-      setSelectedMonth(groupedTransactions.sortedMonths[0]);
+      setSelectedMonth(groupedTransactions.sortedMonths[groupedTransactions.sortedMonths.length - 1]);
     }
   }, [groupedTransactions.sortedMonths, selectedMonth]);
 

@@ -17,13 +17,24 @@ export interface Transaction {
 }
 
 class ApiService {
+  private getToken(): string | null {
+    return localStorage.getItem("token");
+  }
+
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    const token = this.getToken();
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    };
+
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-      },
+      headers,
     });
 
     if (!response.ok) {

@@ -39,7 +39,7 @@ const TransactionsPage: React.FC = () => {
 
   return (
     <div className={styles.transactionsPage}>
-      <h1 className={styles.pageTitle}>Расчет</h1>
+      <h1 className={styles.pageTitle}>Операции</h1>
 
       <div className={styles.content}>
         <CategoryFilter

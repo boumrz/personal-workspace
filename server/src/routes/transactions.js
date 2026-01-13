@@ -1,11 +1,16 @@
 import express from "express";
 import pool from "../database/db.js";
+import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
+
+// All routes require authentication
+router.use(authenticateToken);
 
 // Get all transactions
 router.get("/", async (req, res) => {
   try {
+    const userId = req.user.userId;
     const result = await pool.query(`
       SELECT 
         t.*,
@@ -15,8 +20,9 @@ router.get("/", async (req, res) => {
         c.icon as category_icon
       FROM transactions t
       JOIN categories c ON t.category_id = c.id
+      WHERE t.user_id = $1
       ORDER BY t.date DESC, t.created_at DESC
-    `);
+    `, [userId]);
 
     const transactions = result.rows.map((row) => ({
       id: row.id.toString(),
@@ -43,6 +49,7 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user.userId;
     const result = await pool.query(
       `
       SELECT 
@@ -53,9 +60,9 @@ router.get("/:id", async (req, res) => {
         c.icon as category_icon
       FROM transactions t
       JOIN categories c ON t.category_id = c.id
-      WHERE t.id = $1
+      WHERE t.id = $1 AND t.user_id = $2
     `,
-      [id]
+      [id, userId]
     );
 
     if (result.rows.length === 0) {
@@ -88,18 +95,28 @@ router.get("/:id", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const { type, amount, description, date, category } = req.body;
+    const userId = req.user.userId;
 
     if (!type || !amount || !date || !category?.id) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
+    // Verify category belongs to user
+    const categoryCheck = await pool.query(
+      "SELECT id FROM categories WHERE id = $1 AND user_id = $2",
+      [category.id, userId]
+    );
+    if (categoryCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Category not found" });
+    }
+
     const result = await pool.query(
       `
-      INSERT INTO transactions (type, amount, description, date, category_id)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO transactions (user_id, type, amount, description, date, category_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id
     `,
-      [type, amount, description || null, date, category.id]
+      [userId, type, amount, description || null, date, category.id]
     );
 
     const transactionId = result.rows[0].id;
@@ -147,18 +164,28 @@ router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { type, amount, description, date, category } = req.body;
+    const userId = req.user.userId;
 
     if (!type || !amount || !date || !category?.id) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Verify category belongs to user
+    const categoryCheck = await pool.query(
+      "SELECT id FROM categories WHERE id = $1 AND user_id = $2",
+      [category.id, userId]
+    );
+    if (categoryCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Category not found" });
     }
 
     await pool.query(
       `
       UPDATE transactions
       SET type = $1, amount = $2, description = $3, date = $4, category_id = $5, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $6
+      WHERE id = $6 AND user_id = $7
     `,
-      [type, amount, description || null, date, category.id, id]
+      [type, amount, description || null, date, category.id, id, userId]
     );
 
     // Fetch updated transaction
@@ -207,7 +234,8 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query("DELETE FROM transactions WHERE id = $1 RETURNING id", [id]);
+    const userId = req.user.userId;
+    const result = await pool.query("DELETE FROM transactions WHERE id = $1 AND user_id = $2 RETURNING id", [id, userId]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Transaction not found" });
