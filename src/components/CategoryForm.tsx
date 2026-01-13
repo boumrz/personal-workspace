@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Modal, Form, Input, Button } from "antd";
 import { useFinance } from "../context/FinanceContext";
+import IconRenderer from "./IconRenderer";
+import { AVAILABLE_ICONS } from "../utils/iconList";
 import * as styles from "./CategoryForm.module.css";
 
 interface CategoryFormProps {
@@ -9,15 +11,6 @@ interface CategoryFormProps {
   transactionType?: "income" | "expense";
   onCategoryCreated?: (categoryId: string) => void;
 }
-
-const AVAILABLE_ICONS = [
-  "🍔", "🚗", "🎬", "🏥", "👕", "🏠", "💰", "📦",
-  "🍕", "☕", "🍺", "🎮", "📱", "💻", "✈️", "🏖️",
-  "🎓", "💊", "🎁", "💳", "🏋️", "🎨", "📚", "🎵",
-  "🍰", "🥗", "🍷", "🚌", "🚇", "🚲", "⛽", "🛒",
-  "💄", "🧴", "🧹", "🔧", "💡", "🌡️", "📺", "🔌",
-  "💼", "📊", "📈", "💵", "💴", "💶", "💷", "💸"
-];
 
 const COLOR_PALETTE = [
   "#FF8A65", "#64B5F6", "#BA68C8", "#81C784", "#FFB74D", "#90CAF9",
@@ -36,7 +29,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
   const { addCategory } = useFinance();
   const [form] = Form.useForm();
   const [selectedColor, setSelectedColor] = useState<string>(COLOR_PALETTE[0]);
-  const [selectedIcon, setSelectedIcon] = useState<string>(AVAILABLE_ICONS[0]);
+  const [selectedIcon, setSelectedIcon] = useState<string>(AVAILABLE_ICONS[0] || "Home");
 
   const handleSubmit = async () => {
     try {
@@ -53,7 +46,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
       
       form.resetFields();
       setSelectedColor(COLOR_PALETTE[0]);
-      setSelectedIcon(AVAILABLE_ICONS[0]);
+      setSelectedIcon(AVAILABLE_ICONS[0] || "Home");
       onClose();
     } catch (error) {
       console.error("Validation failed:", error);
@@ -108,7 +101,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
                     : {}
                 }
               >
-                {icon}
+                <IconRenderer iconName={icon} size={20} color={selectedIcon === icon ? "white" : undefined} />
               </button>
             ))}
           </div>
@@ -137,7 +130,9 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
             className={styles.previewBadge}
             style={{ backgroundColor: selectedColor }}
           >
-            <span className={styles.previewIcon}>{selectedIcon}</span>
+            <span className={styles.previewIcon}>
+              <IconRenderer iconName={selectedIcon} size={24} color="white" />
+            </span>
             <span className={styles.previewName}>
               {form.getFieldValue("name") || "Название категории"}
             </span>

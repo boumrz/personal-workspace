@@ -25,6 +25,7 @@ export interface FinanceContextType {
   deleteTransaction: (id: string) => Promise<void>;
   deletePlannedExpense: (id: string) => Promise<void>;
   addCategory: (category: Omit<Category, "id">) => Promise<Category>;
+  deleteCategory: (id: string) => Promise<void>;
 }
 
 export const FinanceContext = createContext<FinanceContextType | undefined>(

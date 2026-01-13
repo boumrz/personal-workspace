@@ -3,6 +3,7 @@ import { List, Card, Empty, Tag, Button } from "antd";
 import { DeleteOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import { Transaction } from "../context/FinanceContext";
+import IconRenderer from "./IconRenderer";
 import * as styles from "./TransactionList.module.css";
 
 interface TransactionListProps {
@@ -189,7 +190,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                       style={{ backgroundColor: category.color + "20" }}
                     >
                       <span className={styles.categoryIcon}>
-                        {category.icon}
+                        <IconRenderer iconName={category.icon} size={24} color={category.color} />
                       </span>
                     </div>
                     <div className={styles.transactionInfo}>

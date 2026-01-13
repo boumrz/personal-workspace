@@ -27,7 +27,18 @@ class ApiService {
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.statusText}`);
+      let errorMessage = `API error: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+      } catch {
+        // Если не удалось распарсить JSON, используем стандартное сообщение
+      }
+      const error: any = new Error(errorMessage);
+      error.response = { data: { error: errorMessage }, status: response.status };
+      throw error;
     }
 
     return response.json();
@@ -42,6 +53,12 @@ class ApiService {
     return this.request<Category>("/categories", {
       method: "POST",
       body: JSON.stringify(category),
+    });
+  }
+
+  async deleteCategory(id: string): Promise<void> {
+    return this.request<void>(`/categories/${id}`, {
+      method: "DELETE",
     });
   }
 

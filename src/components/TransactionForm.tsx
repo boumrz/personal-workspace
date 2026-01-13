@@ -13,6 +13,7 @@ import { PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useFinance } from "../context/FinanceContext";
 import CategoryForm from "./CategoryForm";
+import IconRenderer from "./IconRenderer";
 import * as styles from "./TransactionForm.module.css";
 
 interface TransactionFormProps {
@@ -155,7 +156,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                     : {}
                 }
               >
-                <span>{category.icon}</span> {category.name}
+                <IconRenderer iconName={category.icon} size={16} /> {category.name}
               </Button>
             ))}
             <Button

@@ -82,4 +82,63 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// Delete category
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const categoryId = parseInt(id, 10);
+    
+    // Проверяем, что ID валидный
+    if (isNaN(categoryId)) {
+      return res.status(400).json({ error: "Invalid category ID" });
+    }
+
+    // Сначала проверяем, существует ли категория
+    const categoryCheck = await pool.query(
+      "SELECT id, name FROM categories WHERE id = $1",
+      [categoryId]
+    );
+
+    if (categoryCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Category not found" });
+    }
+
+    const categoryName = categoryCheck.rows[0].name;
+    
+    // Проверяем, используется ли категория в транзакциях или планируемых расходах
+    const transactionsCheck = await pool.query(
+      "SELECT COUNT(*)::int as count FROM transactions WHERE category_id = $1",
+      [categoryId]
+    );
+    const plannedCheck = await pool.query(
+      "SELECT COUNT(*)::int as count FROM planned_expenses WHERE category_id = $1",
+      [categoryId]
+    );
+
+    const transactionCount = transactionsCheck.rows[0].count;
+    const plannedCount = plannedCheck.rows[0].count;
+
+    if (transactionCount > 0 || plannedCount > 0) {
+      return res.status(400).json({ 
+        error: `Невозможно удалить категорию "${categoryName}", так как она используется в ${transactionCount} транзакциях и ${plannedCount} планируемых расходах` 
+      });
+    }
+
+    // Удаляем категорию
+    const result = await pool.query(
+      "DELETE FROM categories WHERE id = $1 RETURNING id",
+      [categoryId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Category not found" });
+    }
+
+    res.json({ message: "Category deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;

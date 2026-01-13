@@ -42,14 +42,14 @@ const App: React.FC = () => {
       console.error("Error loading data:", error);
       // Fallback to default categories if API fails
       setCategories([
-        { id: "1", name: "Продукты", color: "#FF8A65", icon: "🍔" },
-        { id: "2", name: "Транспорт", color: "#64B5F6", icon: "🚗" },
-        { id: "3", name: "Развлечения", color: "#BA68C8", icon: "🎬" },
-        { id: "4", name: "Здоровье", color: "#81C784", icon: "🏥" },
-        { id: "5", name: "Одежда", color: "#FFB74D", icon: "👕" },
-        { id: "6", name: "Жилье", color: "#90CAF9", icon: "🏠" },
-        { id: "7", name: "Зарплата", color: "#66BB6A", icon: "💰" },
-        { id: "8", name: "Другое", color: "#90A4AE", icon: "📦" },
+        { id: "1", name: "Продукты", color: "#FF8A65", icon: "Utensils" },
+        { id: "2", name: "Транспорт", color: "#64B5F6", icon: "Car" },
+        { id: "3", name: "Развлечения", color: "#BA68C8", icon: "Film" },
+        { id: "4", name: "Здоровье", color: "#81C784", icon: "Hospital" },
+        { id: "5", name: "Одежда", color: "#FFB74D", icon: "Shirt" },
+        { id: "6", name: "Жилье", color: "#90CAF9", icon: "Home" },
+        { id: "7", name: "Зарплата", color: "#66BB6A", icon: "Wallet" },
+        { id: "8", name: "Другое", color: "#90A4AE", icon: "Package" },
       ]);
     } finally {
       setLoading(false);
@@ -107,6 +107,16 @@ const App: React.FC = () => {
     }
   };
 
+  const deleteCategory = async (id: string) => {
+    try {
+      await apiService.deleteCategory(id);
+      setCategories(categories.filter((c) => c.id !== id));
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      throw error;
+    }
+  };
+
   if (loading) {
     return (
       <ConfigProvider locale={ruRU}>
@@ -145,6 +155,7 @@ const App: React.FC = () => {
           deleteTransaction,
           deletePlannedExpense,
           addCategory,
+          deleteCategory,
         }}
       >
         <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
