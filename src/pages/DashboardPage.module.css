@@ -1,0 +1,42 @@
+.dashboardPage {
+  width: 100%;
+  max-width: 100%;
+}
+
+.pageTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 24px;
+}
+
+.statsRow {
+  margin-bottom: 24px;
+}
+
+.chartsRow {
+  margin-bottom: 24px;
+}
+
+.chartCard {
+  height: 100%;
+  min-height: 400px;
+}
+
+.chartCard :global(.ant-card-body) {
+  height: calc(100% - 57px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .pageTitle {
+    font-size: 24px;
+    margin-bottom: 16px;
+  }
+
+  .chartCard {
+    min-height: 300px;
+  }
+}

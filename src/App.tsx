@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ConfigProvider } from "antd";
 import ruRU from "antd/locale/ru_RU";
 import dayjs from "dayjs";
 import "dayjs/locale/ru";
-import Dashboard from "./components/Dashboard";
+import Layout from "./components/Layout";
+import DashboardPage from "./pages/DashboardPage";
+import TransactionsPage from "./pages/TransactionsPage";
 import {
   FinanceContext,
   Transaction,
@@ -158,9 +161,15 @@ const App: React.FC = () => {
           deleteCategory,
         }}
       >
-        <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
-          <Dashboard />
-        </div>
+        <BrowserRouter>
+          <Layout>
+            <Routes>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/transactions" element={<TransactionsPage />} />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </Layout>
+        </BrowserRouter>
       </FinanceContext.Provider>
     </ConfigProvider>
   );
