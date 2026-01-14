@@ -1,4 +1,10 @@
-const API_BASE_URL = "http://localhost:3001/api";
+// API URL определяется через переменную окружения или используется localhost для разработки
+// В production это будет заменено через DefinePlugin в rspack.config.cjs
+declare const __API_BASE_URL__: string | undefined;
+const API_BASE_URL: string =
+  typeof __API_BASE_URL__ !== "undefined"
+    ? __API_BASE_URL__
+    : "http://localhost:3001/api";
 
 export interface Category {
   id: string;
@@ -21,11 +27,14 @@ class ApiService {
     return localStorage.getItem("token");
   }
 
-  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  private async request<T>(
+    endpoint: string,
+    options?: RequestInit
+  ): Promise<T> {
     const token = this.getToken();
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      ...options?.headers,
+      ...(options?.headers as Record<string, string>),
     };
 
     if (token) {
@@ -48,7 +57,10 @@ class ApiService {
         // Если не удалось распарсить JSON, используем стандартное сообщение
       }
       const error: any = new Error(errorMessage);
-      error.response = { data: { error: errorMessage }, status: response.status };
+      error.response = {
+        data: { error: errorMessage },
+        status: response.status,
+      };
       throw error;
     }
 
@@ -78,7 +90,9 @@ class ApiService {
     return this.request<Transaction[]>("/transactions");
   }
 
-  async createTransaction(transaction: Omit<Transaction, "id">): Promise<Transaction> {
+  async createTransaction(
+    transaction: Omit<Transaction, "id">
+  ): Promise<Transaction> {
     return this.request<Transaction>("/transactions", {
       method: "POST",
       body: JSON.stringify(transaction),
@@ -96,7 +110,9 @@ class ApiService {
     return this.request<Transaction[]>("/planned-expenses");
   }
 
-  async createPlannedExpense(expense: Omit<Transaction, "id">): Promise<Transaction> {
+  async createPlannedExpense(
+    expense: Omit<Transaction, "id">
+  ): Promise<Transaction> {
     return this.request<Transaction>("/planned-expenses", {
       method: "POST",
       body: JSON.stringify(expense),

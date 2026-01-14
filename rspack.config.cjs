@@ -82,10 +82,12 @@ module.exports = {
   plugins: [
     new rspack.DefinePlugin({
       "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV || "development"),
+      "__API_BASE_URL__": JSON.stringify(process.env.VITE_API_URL || "http://localhost:3001/api"),
     }),
     new rspack.ProgressPlugin({}),
     new rspack.HtmlRspackPlugin({
       template: "./index.html",
+      minify: process.env.NODE_ENV === "production",
     }),
     new rspack.CopyRspackPlugin({
       patterns: [
