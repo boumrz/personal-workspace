@@ -1,10 +1,26 @@
-// API URL определяется через переменную окружения или используется localhost для разработки
-// В production это будет заменено через DefinePlugin в rspack.config.cjs
+// API URL определяется автоматически:
+// - В разработке (localhost:3000) используется http://localhost:3001/api
+// - В продакшене используется относительный путь /api (Nginx проксирует на бэкенд)
+const getApiBaseUrl = (): string => {
+  // Если определена переменная окружения, используем её
+  if (typeof __API_BASE_URL__ !== "undefined") {
+    return __API_BASE_URL__;
+  }
+
+  // Автоматическое определение: если на localhost - используем localhost:3001, иначе относительный путь
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return "http://localhost:3001/api";
+    }
+  }
+
+  // Для продакшена используем относительный путь (Nginx проксирует /api на бэкенд)
+  return "/api";
+};
+
 declare const __API_BASE_URL__: string | undefined;
-const API_BASE_URL: string =
-  typeof __API_BASE_URL__ !== "undefined"
-    ? __API_BASE_URL__
-    : "http://localhost:3001/api";
+const API_BASE_URL: string = getApiBaseUrl();
 
 export interface Category {
   id: string;

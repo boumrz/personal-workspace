@@ -82,7 +82,11 @@ module.exports = {
   plugins: [
     new rspack.DefinePlugin({
       "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV || "development"),
-      "__API_BASE_URL__": JSON.stringify(process.env.VITE_API_URL || "http://localhost:3001/api"),
+      // Переопределяем API URL только если явно указана переменная окружения
+      // Иначе используется автоматическое определение в api.ts
+      ...(process.env.VITE_API_URL 
+        ? { "__API_BASE_URL__": JSON.stringify(process.env.VITE_API_URL) }
+        : {}),
     }),
     new rspack.ProgressPlugin({}),
     new rspack.HtmlRspackPlugin({
