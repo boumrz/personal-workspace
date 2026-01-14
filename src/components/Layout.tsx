@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Layout as AntLayout, Menu, Button, Dropdown } from "antd";
 import {
-  DashboardOutlined,
-  CalculatorOutlined,
+  WalletOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   LogoutOutlined,
@@ -28,14 +27,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const menuItems = [
     {
-      key: "/dashboard",
-      icon: <DashboardOutlined />,
-      label: "Дашборд",
-    },
-    {
-      key: "/transactions",
-      icon: <CalculatorOutlined />,
-      label: "Операции",
+      key: "/finance",
+      icon: <WalletOutlined />,
+      label: "Финансы",
     },
   ];
 
@@ -73,7 +67,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const selectedKey =
-    location.pathname === "/" ? "/dashboard" : location.pathname;
+    location.pathname === "/" || location.pathname.startsWith("/finance")
+      ? "/finance"
+      : location.pathname;
 
   const userMenuItems = [
     {
@@ -123,7 +119,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         trigger={null}
       >
         <div className={styles.siderHeader}>
-          <div className={styles.logo}>{!collapsed ? "💰 Финансы" : "💰"}</div>
+          <div className={styles.logo}>
+            {!collapsed ? "💼 Рабочее пространство" : "💼"}
+          </div>
           <Button
             type="text"
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}

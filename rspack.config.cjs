@@ -11,6 +11,7 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, "dist"),
     clean: true,
+    publicPath: "/",
   },
   resolve: {
     extensions: [".js", ".jsx", ".ts", ".tsx"],
@@ -101,7 +102,10 @@ module.exports = {
   },
   devServer: {
     port: 3000,
-    historyApiFallback: true,
+    historyApiFallback: {
+      index: "/index.html",
+      disableDotRule: true,
+    },
     static: {
       directory: "./public",
     },

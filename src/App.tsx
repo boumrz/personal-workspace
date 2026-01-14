@@ -5,8 +5,7 @@ import ruRU from "antd/locale/ru_RU";
 import dayjs from "dayjs";
 import "dayjs/locale/ru";
 import Layout from "./components/Layout";
-import DashboardPage from "./pages/DashboardPage";
-import TransactionsPage from "./pages/TransactionsPage";
+import FinancePage from "./pages/FinancePage";
 import Login from "./components/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
@@ -182,9 +181,8 @@ const App: React.FC = () => {
                   >
                     <Layout>
                       <Routes>
-                        <Route path="/dashboard" element={<DashboardPage />} />
-                        <Route path="/transactions" element={<TransactionsPage />} />
-                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/finance/*" element={<FinancePage />} />
+                        <Route path="/" element={<Navigate to="/finance/dashboard" replace />} />
                       </Routes>
                     </Layout>
                   </FinanceContext.Provider>

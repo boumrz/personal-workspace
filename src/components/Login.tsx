@@ -14,7 +14,7 @@ const Login: React.FC = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate("/dashboard", { replace: true });
+      navigate("/finance/dashboard", { replace: true });
     }
   }, [user, navigate]);
 
@@ -23,7 +23,7 @@ const Login: React.FC = () => {
       setLoading(true);
       await login(values.email, values.password);
       message.success("Вход выполнен успешно");
-      navigate("/dashboard", { replace: true });
+      navigate("/finance/dashboard", { replace: true });
     } catch (error: any) {
       message.error(error.message || "Ошибка входа");
     } finally {
@@ -36,7 +36,7 @@ const Login: React.FC = () => {
       setLoading(true);
       await register(values.email, values.password, values.name);
       message.success("Регистрация выполнена успешно");
-      navigate("/dashboard", { replace: true });
+      navigate("/finance/dashboard", { replace: true });
     } catch (error: any) {
       message.error(error.message || "Ошибка регистрации");
     } finally {

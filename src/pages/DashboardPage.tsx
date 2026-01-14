@@ -35,7 +35,9 @@ const DashboardPage: React.FC = () => {
     });
 
     return Array.from(categoryMap.entries()).map(([categoryId, amount]) => {
-      const category = transactions.find((t) => t.category.id === categoryId)?.category;
+      const category = transactions.find(
+        (t) => t.category.id === categoryId
+      )?.category;
       return {
         categoryId,
         categoryName: category?.name || "Неизвестно",
@@ -48,8 +50,8 @@ const DashboardPage: React.FC = () => {
 
   // Данные для графика динамики баланса
   const balanceHistory = useMemo(() => {
-    const sortedTransactions = [...transactions].sort((a, b) => 
-      dayjs(a.date).valueOf() - dayjs(b.date).valueOf()
+    const sortedTransactions = [...transactions].sort(
+      (a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf()
     );
 
     let runningBalance = 0;
@@ -72,8 +74,6 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className={styles.dashboardPage}>
-      <h1 className={styles.pageTitle}>Дашборд</h1>
-
       {/* Статистика */}
       <Row gutter={[16, 16]} className={styles.statsRow}>
         <Col xs={24} sm={12} lg={8}>
@@ -103,7 +103,6 @@ const DashboardPage: React.FC = () => {
                 fontSize: "24px",
                 fontWeight: 600,
               }}
-              prefix="+"
               suffix="₽"
               formatter={(value) => value?.toLocaleString("ru-RU")}
             />
@@ -120,7 +119,6 @@ const DashboardPage: React.FC = () => {
                 fontSize: "24px",
                 fontWeight: 600,
               }}
-              prefix="-"
               suffix="₽"
               formatter={(value) => value?.toLocaleString("ru-RU")}
             />
