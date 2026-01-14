@@ -264,6 +264,7 @@ psql -U finance_user -d finance_assistant < backup_20240101.sql
 ## Мониторинг
 
 Рекомендуется настроить мониторинг:
+
 - PM2 Plus (бесплатный мониторинг PM2)
 - Uptime Robot (мониторинг доступности)
 - Sentry (отслеживание ошибок)
