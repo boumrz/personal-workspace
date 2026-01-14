@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Layout as AntLayout, Menu, Button, Dropdown } from "antd";
 import {
   DashboardOutlined,
@@ -7,6 +7,7 @@ import {
   MenuUnfoldOutlined,
   LogoutOutlined,
   UserOutlined,
+  MenuOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -23,6 +24,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
 
   const menuItems = [
     {
@@ -37,6 +39,25 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     },
   ];
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Определяем, мобильное ли устройство
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 992;
+      setIsMobile(mobile);
+      if (mobile) {
+        setCollapsed(true);
+      } else {
+        setMobileMenuVisible(false);
+        setCollapsed(false);
+      }
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const handleMenuClick = ({ key }: { key: string }) => {
     if (key === "logout") {
       logout();
@@ -44,6 +65,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       return;
     }
     navigate(key);
+    // Закрываем меню на мобильных после выбора пункта
+    if (isMobile) {
+      setMobileMenuVisible(false);
+      setCollapsed(true);
+    }
   };
 
   const selectedKey =
@@ -74,11 +100,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <AntLayout className={styles.layout} hasSider>
+      {/* Оверлей для мобильного меню */}
+      <div
+        className={`${styles.siderOverlay} ${
+          mobileMenuVisible ? styles.visible : ""
+        }`}
+        onClick={() => {
+          setMobileMenuVisible(false);
+          setCollapsed(true);
+        }}
+      />
       <Sider
         collapsible
         collapsed={collapsed}
         onCollapse={setCollapsed}
-        className={styles.sider}
+        className={`${styles.sider} ${
+          mobileMenuVisible ? styles.mobileVisible : ""
+        }`}
         width={250}
         breakpoint="lg"
         collapsedWidth={80}
@@ -115,6 +153,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       </Sider>
       <AntLayout className={styles.siteLayout}>
+        {/* Кнопка открытия меню на мобильных */}
+        <Button
+          type="text"
+          icon={<MenuOutlined />}
+          onClick={() => {
+            setMobileMenuVisible(true);
+            setCollapsed(false);
+          }}
+          className={styles.mobileMenuButton}
+        />
         <Content className={styles.content}>{children}</Content>
       </AntLayout>
     </AntLayout>

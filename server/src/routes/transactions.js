@@ -1,4 +1,5 @@
 import express from "express";
+import asyncHandler from "express-async-handler";
 import pool from "../database/db.js";
 import { authenticateToken } from "../middleware/auth.js";
 
@@ -8,10 +9,12 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // Get all transactions
-router.get("/", async (req, res) => {
-  try {
+router.get(
+  "/",
+  asyncHandler(async (req, res) => {
     const userId = req.user.userId;
-    const result = await pool.query(`
+    const result = await pool.query(
+      `
       SELECT 
         t.*,
         c.id as category_id,
@@ -22,7 +25,9 @@ router.get("/", async (req, res) => {
       JOIN categories c ON t.category_id = c.id
       WHERE t.user_id = $1
       ORDER BY t.date DESC, t.created_at DESC
-    `, [userId]);
+    `,
+      [userId]
+    );
 
     const transactions = result.rows.map((row) => ({
       id: row.id.toString(),
@@ -39,15 +44,13 @@ router.get("/", async (req, res) => {
     }));
 
     res.json(transactions);
-  } catch (error) {
-    console.error("Error fetching transactions:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+  })
+);
 
 // Get transaction by ID
-router.get("/:id", async (req, res) => {
-  try {
+router.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
     const { id } = req.params;
     const userId = req.user.userId;
     const result = await pool.query(
@@ -85,15 +88,13 @@ router.get("/:id", async (req, res) => {
     };
 
     res.json(transaction);
-  } catch (error) {
-    console.error("Error fetching transaction:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+  })
+);
 
 // Create transaction
-router.post("/", async (req, res) => {
-  try {
+router.post(
+  "/",
+  asyncHandler(async (req, res) => {
     const { type, amount, description, date, category } = req.body;
     const userId = req.user.userId;
 
@@ -153,15 +154,13 @@ router.post("/", async (req, res) => {
     };
 
     res.status(201).json(transaction);
-  } catch (error) {
-    console.error("Error creating transaction:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+  })
+);
 
 // Update transaction
-router.put("/:id", async (req, res) => {
-  try {
+router.put(
+  "/:id",
+  asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { type, amount, description, date, category } = req.body;
     const userId = req.user.userId;
@@ -224,28 +223,26 @@ router.put("/:id", async (req, res) => {
     };
 
     res.json(transaction);
-  } catch (error) {
-    console.error("Error updating transaction:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+  })
+);
 
 // Delete transaction
-router.delete("/:id", async (req, res) => {
-  try {
+router.delete(
+  "/:id",
+  asyncHandler(async (req, res) => {
     const { id } = req.params;
     const userId = req.user.userId;
-    const result = await pool.query("DELETE FROM transactions WHERE id = $1 AND user_id = $2 RETURNING id", [id, userId]);
+    const result = await pool.query("DELETE FROM transactions WHERE id = $1 AND user_id = $2 RETURNING id", [
+      id,
+      userId,
+    ]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Transaction not found" });
     }
 
     res.json({ message: "Transaction deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting transaction:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+  })
+);
 
 export default router;

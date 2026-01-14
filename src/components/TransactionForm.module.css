@@ -198,6 +198,48 @@
   background-color: #f0f7ff !important;
 }
 
+@media (max-width: 767px) {
+  .header {
+    padding: 16px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .form {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .categoryGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .categoryButton {
+    padding: 12px 8px;
+  }
+
+  .categoryIcon {
+    font-size: 20px;
+  }
+
+  .categoryName {
+    font-size: 11px;
+  }
+
+  .input {
+    padding: 10px 14px;
+    font-size: 16px;
+  }
+
+  .submitButton {
+    padding: 14px;
+    font-size: 15px;
+  }
+}
+
 @media (min-width: 768px) {
   .overlay {
     align-items: center;

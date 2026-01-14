@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Modal,
   Form,
@@ -40,10 +40,13 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     setShowCategoryForm(false);
   };
 
-  const availableCategories =
-    transactionType === "income"
-      ? categories.filter((c) => c.name === "Зарплата" || c.name === "Другое")
-      : categories;
+  const availableCategories = useMemo(
+    () =>
+      transactionType === "income"
+        ? categories.filter((c) => c.name === "Зарплата" || c.name === "Другое")
+        : categories,
+    [transactionType, categories]
+  );
 
   useEffect(() => {
     if (categories.length > 0 && !selectedCategory) {
@@ -51,7 +54,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         availableCategories[0]?.id || categories[0]?.id || ""
       );
     }
-  }, [categories]);
+  }, [categories, availableCategories, selectedCategory]);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();

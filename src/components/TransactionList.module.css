@@ -133,6 +133,49 @@
   flex-shrink: 0;
 }
 
+@media (max-width: 768px) {
+  .transaction {
+    padding: 12px;
+  }
+
+  .transactionLeft {
+    gap: 8px;
+  }
+
+  .categoryBadge {
+    width: 40px;
+    height: 40px;
+  }
+
+  .categoryIcon {
+    font-size: 20px;
+  }
+
+  .transactionDescription {
+    font-size: 14px;
+  }
+
+  .transactionAmount {
+    font-size: 16px;
+  }
+
+  .transactionRight {
+    gap: 8px;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .monthLabel {
+    min-width: 120px;
+    font-size: 14px;
+  }
+
+  .monthSelector {
+    padding: 8px;
+    gap: 12px;
+  }
+}
+
 @media (min-width: 768px) {
   .transaction {
     padding: 20px;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, Statistic, Tabs, FloatButton } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
@@ -14,38 +14,47 @@ const Dashboard: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
-  const totalIncome = transactions
-    .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
+  const totalIncome = useMemo(
+    () => transactions.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0),
+    [transactions]
+  );
 
-  const totalExpenses = transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = useMemo(
+    () => transactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + t.amount, 0),
+    [transactions]
+  );
 
-  const balance = totalIncome - totalExpenses;
+  const balance = useMemo(() => totalIncome - totalExpenses, [totalIncome, totalExpenses]);
 
-  const filteredTransactions = selectedCategory
-    ? transactions.filter((t) => t.category.id === selectedCategory)
-    : transactions;
+  const filteredTransactions = useMemo(
+    () =>
+      selectedCategory
+        ? transactions.filter((t) => t.category.id === selectedCategory)
+        : transactions,
+    [transactions, selectedCategory]
+  );
 
-  const tabItems = [
-    {
-      key: "actual",
-      label: "Актуальные",
-      children: (
-        <TransactionList
-          transactions={filteredTransactions}
-          selectedCategory={selectedCategory}
-          plannedExpenses={plannedExpenses}
-        />
-      ),
-    },
-    {
-      key: "planned",
-      label: "Планируемые",
-      children: <PlannedExpenses expenses={plannedExpenses} />,
-    },
-  ];
+  const tabItems = useMemo(
+    () => [
+      {
+        key: "actual",
+        label: "Актуальные",
+        children: (
+          <TransactionList
+            transactions={filteredTransactions}
+            selectedCategory={selectedCategory}
+            plannedExpenses={plannedExpenses}
+          />
+        ),
+      },
+      {
+        key: "planned",
+        label: "Планируемые",
+        children: <PlannedExpenses expenses={plannedExpenses} />,
+      },
+    ],
+    [filteredTransactions, selectedCategory, plannedExpenses]
+  );
 
   return (
     <div className={styles.dashboard}>

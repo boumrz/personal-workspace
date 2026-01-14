@@ -1,4 +1,5 @@
 import express from "express";
+import asyncHandler from "express-async-handler";
 import pool from "../database/db.js";
 import { authenticateToken } from "../middleware/auth.js";
 
@@ -8,10 +9,12 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // Get all planned expenses
-router.get("/", async (req, res) => {
-  try {
+router.get(
+  "/",
+  asyncHandler(async (req, res) => {
     const userId = req.user.userId;
-    const result = await pool.query(`
+    const result = await pool.query(
+      `
       SELECT 
         pe.*,
         c.id as category_id,
@@ -22,7 +25,9 @@ router.get("/", async (req, res) => {
       JOIN categories c ON pe.category_id = c.id
       WHERE pe.user_id = $1
       ORDER BY pe.date ASC, pe.created_at DESC
-    `, [userId]);
+    `,
+      [userId]
+    );
 
     const expenses = result.rows.map((row) => ({
       id: row.id.toString(),
@@ -38,15 +43,13 @@ router.get("/", async (req, res) => {
     }));
 
     res.json(expenses);
-  } catch (error) {
-    console.error("Error fetching planned expenses:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+  })
+);
 
 // Get planned expense by ID
-router.get("/:id", async (req, res) => {
-  try {
+router.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
     const { id } = req.params;
     const userId = req.user.userId;
     const result = await pool.query(
@@ -83,15 +86,13 @@ router.get("/:id", async (req, res) => {
     };
 
     res.json(expense);
-  } catch (error) {
-    console.error("Error fetching planned expense:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+  })
+);
 
 // Create planned expense
-router.post("/", async (req, res) => {
-  try {
+router.post(
+  "/",
+  asyncHandler(async (req, res) => {
     const { amount, description, date, category } = req.body;
     const userId = req.user.userId;
 
@@ -150,15 +151,13 @@ router.post("/", async (req, res) => {
     };
 
     res.status(201).json(expense);
-  } catch (error) {
-    console.error("Error creating planned expense:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+  })
+);
 
 // Update planned expense
-router.put("/:id", async (req, res) => {
-  try {
+router.put(
+  "/:id",
+  asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { amount, description, date, category } = req.body;
     const userId = req.user.userId;
@@ -220,28 +219,26 @@ router.put("/:id", async (req, res) => {
     };
 
     res.json(expense);
-  } catch (error) {
-    console.error("Error updating planned expense:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+  })
+);
 
 // Delete planned expense
-router.delete("/:id", async (req, res) => {
-  try {
+router.delete(
+  "/:id",
+  asyncHandler(async (req, res) => {
     const { id } = req.params;
     const userId = req.user.userId;
-    const result = await pool.query("DELETE FROM planned_expenses WHERE id = $1 AND user_id = $2 RETURNING id", [id, userId]);
+    const result = await pool.query("DELETE FROM planned_expenses WHERE id = $1 AND user_id = $2 RETURNING id", [
+      id,
+      userId,
+    ]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Planned expense not found" });
     }
 
     res.json({ message: "Planned expense deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting planned expense:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+  })
+);
 
 export default router;

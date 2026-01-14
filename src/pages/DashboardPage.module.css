@@ -31,12 +31,28 @@
 }
 
 @media (max-width: 768px) {
+  .dashboardPage {
+    padding: 12px;
+  }
+
   .pageTitle {
-    font-size: 24px;
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .statsRow {
+    margin-bottom: 16px;
+  }
+
+  .chartsRow {
     margin-bottom: 16px;
   }
 
   .chartCard {
-    min-height: 300px;
+    min-height: 250px;
+  }
+
+  .chartCard :global(.ant-card-body) {
+    padding: 12px !important;
   }
 }

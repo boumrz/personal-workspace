@@ -27,16 +27,29 @@
 }
 
 @media (max-width: 768px) {
+  .transactionsPage {
+    padding: 12px;
+  }
+
   .pageTitle {
-    font-size: 24px;
-    margin-bottom: 16px;
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .content {
+    border-radius: 8px;
   }
 
   .content :global(.ant-tabs-nav) {
-    padding: 0 16px;
+    padding: 0 12px;
   }
 
   .content :global(.ant-tabs-content-holder) {
-    padding: 16px;
+    padding: 12px;
+  }
+
+  .content :global(.ant-tabs-tab) {
+    padding: 8px 12px;
+    font-size: 14px;
   }
 }
