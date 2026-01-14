@@ -22,58 +22,70 @@ async function migrate() {
     `);
     console.log("Users table created/verified");
 
-    // Check if categories table exists and has user_id column
-    const categoriesCheck = await pool.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'categories' AND column_name = 'user_id'
+    // Check if categories table exists
+    const tableExists = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'categories'
+      );
     `);
 
-    if (categoriesCheck.rows.length === 0) {
-      // Table exists but doesn't have user_id - need to migrate
-      console.log("Migrating categories table...");
-      
-      // First, drop the unique constraint on name if it exists
-      try {
-        await pool.query(`ALTER TABLE categories DROP CONSTRAINT IF EXISTS categories_name_key`);
-      } catch (e) {
-        // Ignore if constraint doesn't exist
-      }
-
-      // Add user_id column (nullable for now)
-      await pool.query(`ALTER TABLE categories ADD COLUMN IF NOT EXISTS user_id INTEGER`);
-      
-      // Create a default user for existing data
-      const defaultUserResult = await pool.query(`
-        INSERT INTO users (email, password_hash, name) 
-        VALUES ('migrated@example.com', '$2b$10$dummy', 'Migrated User')
-        ON CONFLICT (email) DO NOTHING
-        RETURNING id
+    if (tableExists.rows[0].exists) {
+      // Table exists, check if it has user_id column
+      const categoriesCheck = await pool.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'categories' AND column_name = 'user_id'
       `);
-      
-      let defaultUserId;
-      if (defaultUserResult.rows.length > 0) {
-        defaultUserId = defaultUserResult.rows[0].id;
-      } else {
-        const existingUser = await pool.query(`SELECT id FROM users WHERE email = 'migrated@example.com'`);
-        defaultUserId = existingUser.rows[0].id;
-      }
 
-      // Update existing categories with default user_id
-      await pool.query(`UPDATE categories SET user_id = $1 WHERE user_id IS NULL`, [defaultUserId]);
-      
-      // Make user_id NOT NULL and add foreign key
-      await pool.query(`ALTER TABLE categories ALTER COLUMN user_id SET NOT NULL`);
-      await pool.query(`ALTER TABLE categories ADD CONSTRAINT categories_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE`);
-      
-      // Add unique constraint on (user_id, name)
-      await pool.query(`ALTER TABLE categories ADD CONSTRAINT categories_user_id_name_key UNIQUE (user_id, name)`);
+      if (categoriesCheck.rows.length === 0) {
+        // Table exists but doesn't have user_id - need to migrate
+        console.log("Migrating categories table...");
+        
+        // First, drop the unique constraint on name if it exists
+        try {
+          await pool.query(`ALTER TABLE categories DROP CONSTRAINT IF EXISTS categories_name_key`);
+        } catch (e) {
+          // Ignore if constraint doesn't exist
+        }
+
+        // Add user_id column (nullable for now)
+        await pool.query(`ALTER TABLE categories ADD COLUMN IF NOT EXISTS user_id INTEGER`);
+        
+        // Create a default user for existing data
+        const defaultUserResult = await pool.query(`
+          INSERT INTO users (email, password_hash, name) 
+          VALUES ('migrated@example.com', '$2b$10$dummy', 'Migrated User')
+          ON CONFLICT (email) DO NOTHING
+          RETURNING id
+        `);
+        
+        let defaultUserId;
+        if (defaultUserResult.rows.length > 0) {
+          defaultUserId = defaultUserResult.rows[0].id;
+        } else {
+          const existingUser = await pool.query(`SELECT id FROM users WHERE email = 'migrated@example.com'`);
+          defaultUserId = existingUser.rows[0].id;
+        }
+
+        // Update existing categories with default user_id
+        await pool.query(`UPDATE categories SET user_id = $1 WHERE user_id IS NULL`, [defaultUserId]);
+        
+        // Make user_id NOT NULL and add foreign key
+        await pool.query(`ALTER TABLE categories ALTER COLUMN user_id SET NOT NULL`);
+        await pool.query(`ALTER TABLE categories ADD CONSTRAINT categories_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE`);
+        
+        // Add unique constraint on (user_id, name)
+        await pool.query(`ALTER TABLE categories ADD CONSTRAINT categories_user_id_name_key UNIQUE (user_id, name)`);
+      }
     } else {
-      // Table might not exist at all, create it
+      // Table doesn't exist, create it
+      console.log("Creating categories table...");
       await pool.query(`
         CREATE TABLE IF NOT EXISTS categories (
           id SERIAL PRIMARY KEY,
-          user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
           name VARCHAR(100) NOT NULL,
           color VARCHAR(7) NOT NULL,
           icon VARCHAR(10) NOT NULL,
@@ -84,36 +96,49 @@ async function migrate() {
     }
     console.log("Categories table created/verified");
 
-    // Check and migrate transactions table
-    const transactionsCheck = await pool.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'transactions' AND column_name = 'user_id'
+    // Check if transactions table exists
+    const transactionsTableExists = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'transactions'
+      );
     `);
 
-    if (transactionsCheck.rows.length === 0) {
-      console.log("Migrating transactions table...");
-      
-      // Get default user id
-      const defaultUser = await pool.query(`SELECT id FROM users WHERE email = 'migrated@example.com' LIMIT 1`);
-      const defaultUserId = defaultUser.rows[0]?.id;
+    if (transactionsTableExists.rows[0].exists) {
+      // Table exists, check if it has user_id column
+      const transactionsCheck = await pool.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'transactions' AND column_name = 'user_id'
+      `);
 
-      if (defaultUserId) {
-        await pool.query(`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS user_id INTEGER`);
-        await pool.query(`UPDATE transactions SET user_id = $1 WHERE user_id IS NULL`, [defaultUserId]);
-        await pool.query(`ALTER TABLE transactions ALTER COLUMN user_id SET NOT NULL`);
-        await pool.query(`ALTER TABLE transactions ADD CONSTRAINT transactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE`);
+      if (transactionsCheck.rows.length === 0) {
+        console.log("Migrating transactions table...");
+        
+        // Get default user id
+        const defaultUser = await pool.query(`SELECT id FROM users WHERE email = 'migrated@example.com' LIMIT 1`);
+        const defaultUserId = defaultUser.rows[0]?.id;
+
+        if (defaultUserId) {
+          await pool.query(`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS user_id INTEGER`);
+          await pool.query(`UPDATE transactions SET user_id = $1 WHERE user_id IS NULL`, [defaultUserId]);
+          await pool.query(`ALTER TABLE transactions ALTER COLUMN user_id SET NOT NULL`);
+          await pool.query(`ALTER TABLE transactions ADD CONSTRAINT transactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE`);
+        }
       }
     } else {
+      // Table doesn't exist, create it
+      console.log("Creating transactions table...");
       await pool.query(`
         CREATE TABLE IF NOT EXISTS transactions (
           id SERIAL PRIMARY KEY,
-          user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
           type VARCHAR(10) NOT NULL CHECK (type IN ('income', 'expense')),
           amount DECIMAL(10, 2) NOT NULL,
           description TEXT,
           date DATE NOT NULL,
-          category_id INTEGER REFERENCES categories(id) ON DELETE CASCADE,
+          category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
@@ -121,34 +146,47 @@ async function migrate() {
     }
     console.log("Transactions table created/verified");
 
-    // Check and migrate planned_expenses table
-    const plannedCheck = await pool.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'planned_expenses' AND column_name = 'user_id'
+    // Check if planned_expenses table exists
+    const plannedTableExists = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'planned_expenses'
+      );
     `);
 
-    if (plannedCheck.rows.length === 0) {
-      console.log("Migrating planned_expenses table...");
-      
-      const defaultUser = await pool.query(`SELECT id FROM users WHERE email = 'migrated@example.com' LIMIT 1`);
-      const defaultUserId = defaultUser.rows[0]?.id;
+    if (plannedTableExists.rows[0].exists) {
+      // Table exists, check if it has user_id column
+      const plannedCheck = await pool.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'planned_expenses' AND column_name = 'user_id'
+      `);
 
-      if (defaultUserId) {
-        await pool.query(`ALTER TABLE planned_expenses ADD COLUMN IF NOT EXISTS user_id INTEGER`);
-        await pool.query(`UPDATE planned_expenses SET user_id = $1 WHERE user_id IS NULL`, [defaultUserId]);
-        await pool.query(`ALTER TABLE planned_expenses ALTER COLUMN user_id SET NOT NULL`);
-        await pool.query(`ALTER TABLE planned_expenses ADD CONSTRAINT planned_expenses_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE`);
+      if (plannedCheck.rows.length === 0) {
+        console.log("Migrating planned_expenses table...");
+        
+        const defaultUser = await pool.query(`SELECT id FROM users WHERE email = 'migrated@example.com' LIMIT 1`);
+        const defaultUserId = defaultUser.rows[0]?.id;
+
+        if (defaultUserId) {
+          await pool.query(`ALTER TABLE planned_expenses ADD COLUMN IF NOT EXISTS user_id INTEGER`);
+          await pool.query(`UPDATE planned_expenses SET user_id = $1 WHERE user_id IS NULL`, [defaultUserId]);
+          await pool.query(`ALTER TABLE planned_expenses ALTER COLUMN user_id SET NOT NULL`);
+          await pool.query(`ALTER TABLE planned_expenses ADD CONSTRAINT planned_expenses_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE`);
+        }
       }
     } else {
+      // Table doesn't exist, create it
+      console.log("Creating planned_expenses table...");
       await pool.query(`
         CREATE TABLE IF NOT EXISTS planned_expenses (
           id SERIAL PRIMARY KEY,
-          user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
           amount DECIMAL(10, 2) NOT NULL,
           description TEXT,
           date DATE NOT NULL,
-          category_id INTEGER REFERENCES categories(id) ON DELETE CASCADE,
+          category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
