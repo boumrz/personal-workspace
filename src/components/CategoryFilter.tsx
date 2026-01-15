@@ -131,14 +131,20 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
 
   return (
     <div className={styles.filter}>
-      <Space size={8} wrap>
-        <Button
-          type={selectedCategory === null ? "primary" : "default"}
-          onClick={() => onSelectCategory(null)}
+      <div className={styles.categoriesContainer}>
+        <Space 
+          size={8} 
+          wrap={!isMobile}
+          className={styles.categoriesSpace}
         >
-          Все
-        </Button>
-        {categories.map((category) => {
+          <Button
+            type={selectedCategory === null ? "primary" : "default"}
+            onClick={() => onSelectCategory(null)}
+            className={styles.categoryButton}
+          >
+            Все
+          </Button>
+          {categories.map((category) => {
           const canDelete = !isDefaultCategory(category.name);
           const showDelete = hoveredCategory === category.id && canDelete;
 
@@ -162,6 +168,7 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
                     selectedCategory === category.id ? null : category.id
                   )
                 }
+                className={styles.categoryButton}
                 style={
                   selectedCategory === category.id
                     ? {
@@ -256,7 +263,8 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
             </div>
           );
         })}
-      </Space>
+        </Space>
+      </div>
     </div>
   );
 };

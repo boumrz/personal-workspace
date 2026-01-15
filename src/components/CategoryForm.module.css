@@ -107,6 +107,27 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
+/* Стили для Drawer на мобильных */
+.drawer {
+  z-index: 1001;
+}
+
+.drawer :global(.ant-drawer-content-wrapper) {
+  border-radius: 8px 8px 0 0 !important;
+  overflow: hidden !important;
+}
+
+.drawer :global(.ant-drawer-content) {
+  border-radius: 8px 8px 0 0 !important;
+  overflow: hidden !important;
+}
+
+.drawer :global(.ant-drawer-header) {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 16px 24px;
+  border-radius: 8px 8px 0 0 !important;
+}
+
 @media (min-width: 768px) {
   .iconGrid {
     grid-template-columns: repeat(10, 1fr);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Modal,
+  Drawer,
   Form,
   InputNumber,
   Input,
@@ -35,6 +36,17 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   );
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Определяем, мобильное ли устройство
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const handleCategoryCreated = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -110,157 +122,196 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     const isDisabled = disabledDate(current);
 
     // Для заблокированных дат добавляем тултип
-    const content = isDisabled && type === "actual" ? (
-      <Tooltip title="Нельзя добавлять операции на будущие месяцы">
-        <div style={{ width: "100%", height: "100%", cursor: "not-allowed" }}>
-          {current.date()}
-        </div>
-      </Tooltip>
-    ) : (
-      <div style={{ width: "100%", height: "100%" }}>{current.date()}</div>
-    );
+    const content =
+      isDisabled && type === "actual" ? (
+        <Tooltip title="Нельзя добавлять операции на будущие месяцы">
+          <div style={{ width: "100%", height: "100%", cursor: "not-allowed" }}>
+            {current.date()}
+          </div>
+        </Tooltip>
+      ) : (
+        <div style={{ width: "100%", height: "100%" }}>{current.date()}</div>
+      );
 
     // Возвращаем содержимое, обернутое в стандартную структуру Ant Design
     // Это сохраняет стандартные классы и поведение (выделение текущего дня, выбранной даты и т.д.)
     return (
-      <div className="ant-picker-cell-inner" style={{ width: "100%", height: "100%" }}>
+      <div
+        className="ant-picker-cell-inner"
+        style={{ width: "100%", height: "100%" }}
+      >
         {content}
       </div>
     );
   };
 
-  return (
-    <Modal
-      title={type === "planned" ? "Планируемая трата" : "Новая операция"}
-      open={open}
-      onCancel={handleCancel}
-      footer={[
-        <Button key="cancel" onClick={handleCancel}>
-          Отмена
-        </Button>,
-        <Button key="submit" type="primary" onClick={handleSubmit}>
-          Добавить
-        </Button>,
-      ]}
-      width={window.innerWidth < 768 ? "100%" : 500}
-      style={window.innerWidth < 768 ? { top: 0, paddingBottom: 0 } : undefined}
+  const formContent = (
+    <Form
+      form={form}
+      layout="vertical"
+      initialValues={{ date: dayjs(), type: "expense" }}
     >
-      <Form form={form} layout="vertical" initialValues={{ date: dayjs(), type: "expense" }}>
-        {type === "actual" && (
-          <Form.Item label="Тип операции" name="type">
-            <Radio.Group
-              value={transactionType}
-              onChange={(e: any) => {
-                setTransactionType(e.target.value);
-                const firstAvailable =
-                  e.target.value === "income"
-                    ? categories.find(
-                        (c) => c.name === "Зарплата" || c.name === "Другое"
-                      )
-                    : categories[0];
-                if (firstAvailable) {
-                  setSelectedCategory(firstAvailable.id);
-                }
-              }}
-            >
-              <Radio value="expense">Расход</Radio>
-              <Radio value="income">Доход</Radio>
-            </Radio.Group>
-          </Form.Item>
-        )}
-
-        <Form.Item
-          label="Сумма (₽)"
-          name="amount"
-          rules={[{ required: true, message: "Введите сумму" }]}
-        >
-          <InputNumber
-            style={{ width: "100%" }}
-            min={0}
-            step={0.01}
-            precision={2}
-            placeholder="0"
-          />
+      {type === "actual" && (
+        <Form.Item label="Тип операции" name="type">
+          <Radio.Group
+            value={transactionType}
+            onChange={(e: any) => {
+              setTransactionType(e.target.value);
+              const firstAvailable =
+                e.target.value === "income"
+                  ? categories.find(
+                      (c) => c.name === "Зарплата" || c.name === "Другое"
+                    )
+                  : categories[0];
+              if (firstAvailable) {
+                setSelectedCategory(firstAvailable.id);
+              }
+            }}
+          >
+            <Radio value="expense">Расход</Radio>
+            <Radio value="income">Доход</Radio>
+          </Radio.Group>
         </Form.Item>
+      )}
 
-        <Form.Item label="Категория" required>
-          <Space wrap size={8}>
-            {availableCategories.map((category) => (
-              <Button
-                key={category.id}
-                type={selectedCategory === category.id ? "primary" : "default"}
-                onClick={() => setSelectedCategory(category.id)}
-                style={
-                  selectedCategory === category.id
-                    ? {
-                        backgroundColor: category.color,
-                        borderColor: category.color,
-                      }
-                    : {}
-                }
-              >
-                <IconRenderer iconName={category.icon} size={16} /> {category.name}
-              </Button>
-            ))}
+      <Form.Item
+        label="Сумма (₽)"
+        name="amount"
+        rules={[{ required: true, message: "Введите сумму" }]}
+      >
+        <InputNumber
+          style={{ width: "100%" }}
+          min={0}
+          step={0.01}
+          precision={2}
+          placeholder="0"
+        />
+      </Form.Item>
+
+      <Form.Item label="Категория" required>
+        <Space wrap size={8}>
+          {availableCategories.map((category) => (
             <Button
-              type="dashed"
-              icon={<PlusOutlined />}
-              onClick={() => setShowCategoryForm(true)}
-              className={styles.addCategoryButton}
+              key={category.id}
+              type={selectedCategory === category.id ? "primary" : "default"}
+              onClick={() => setSelectedCategory(category.id)}
+              style={
+                selectedCategory === category.id
+                  ? {
+                      backgroundColor: category.color,
+                      borderColor: category.color,
+                    }
+                  : {}
+              }
             >
-              Добавить категорию
+              <IconRenderer iconName={category.icon} size={16} />{" "}
+              {category.name}
             </Button>
-          </Space>
-        </Form.Item>
+          ))}
+          <Button
+            type="dashed"
+            icon={<PlusOutlined />}
+            onClick={() => setShowCategoryForm(true)}
+            className={styles.addCategoryButton}
+          >
+            Добавить категорию
+          </Button>
+        </Space>
+      </Form.Item>
 
-        <Form.Item label="Описание" name="description">
-          <Input placeholder="Введите описание" />
-        </Form.Item>
+      <Form.Item label="Описание" name="description">
+        <Input placeholder="Введите описание" />
+      </Form.Item>
 
-        <Form.Item
-          label="Дата"
-          name="date"
-          rules={[
-            { required: true, message: "Выберите дату" },
-            {
-              validator: (_, value) => {
-                if (!value) {
-                  return Promise.resolve();
-                }
-
-                // Для актуальных операций проверяем, что дата не в будущем месяце
-                if (type === "actual") {
-                  const endOfCurrentMonth = dayjs().endOf("month");
-                  const selectedDate = dayjs(value);
-
-                  if (selectedDate.isAfter(endOfCurrentMonth, "day")) {
-                    return Promise.reject(
-                      new Error("Нельзя добавлять операции на будущие месяцы")
-                    );
-                  }
-                }
-
+      <Form.Item
+        label="Дата"
+        name="date"
+        rules={[
+          { required: true, message: "Выберите дату" },
+          {
+            validator: (_, value) => {
+              if (!value) {
                 return Promise.resolve();
-              },
-            },
-          ]}
-        >
-          <DatePicker
-            style={{ width: "100%" }}
-            format="DD.MM.YYYY"
-            disabledDate={disabledDate}
-            dateRender={type === "actual" ? dateRender : undefined}
-          />
-        </Form.Item>
-      </Form>
+              }
 
+              // Для актуальных операций проверяем, что дата не в будущем месяце
+              if (type === "actual") {
+                const endOfCurrentMonth = dayjs().endOf("month");
+                const selectedDate = dayjs(value);
+
+                if (selectedDate.isAfter(endOfCurrentMonth, "day")) {
+                  return Promise.reject(
+                    new Error("Нельзя добавлять операции на будущие месяцы")
+                  );
+                }
+              }
+
+              return Promise.resolve();
+            },
+          },
+        ]}
+      >
+        <DatePicker
+          style={{ width: "100%" }}
+          format="DD.MM.YYYY"
+          disabledDate={disabledDate}
+          dateRender={type === "actual" ? dateRender : undefined}
+        />
+      </Form.Item>
+    </Form>
+  );
+
+  return (
+    <>
+      {isMobile ? (
+        <Drawer
+          title={type === "planned" ? "Планируемая трата" : "Новая операция"}
+          placement="bottom"
+          height="auto"
+          open={open}
+          onClose={handleCancel}
+          className={styles.drawer}
+          styles={{
+            body: { padding: 24 },
+          }}
+          footer={
+            <div style={{ display: "flex", gap: 12, padding: "16px 24px" }}>
+              <Button block onClick={handleCancel}>
+                Отмена
+              </Button>
+              <Button block type="primary" onClick={handleSubmit}>
+                Добавить
+              </Button>
+            </div>
+          }
+        >
+          {formContent}
+        </Drawer>
+      ) : (
+        <Modal
+          title={type === "planned" ? "Планируемая трата" : "Новая операция"}
+          open={open}
+          onCancel={handleCancel}
+          footer={[
+            <Button key="cancel" onClick={handleCancel}>
+              Отмена
+            </Button>,
+            <Button key="submit" type="primary" onClick={handleSubmit}>
+              Добавить
+            </Button>,
+          ]}
+          width={500}
+        >
+          {formContent}
+        </Modal>
+      )}
       <CategoryForm
         open={showCategoryForm}
         onClose={() => setShowCategoryForm(false)}
         transactionType={transactionType}
         onCategoryCreated={handleCategoryCreated}
       />
-    </Modal>
+    </>
   );
 };
 

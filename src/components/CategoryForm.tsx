@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Modal, Form, Input, Button } from "antd";
+import React, { useState, useEffect } from "react";
+import { Modal, Drawer, Form, Input, Button } from "antd";
 import { useFinance } from "../context/FinanceContext";
 import IconRenderer from "./IconRenderer";
 import { AVAILABLE_ICONS } from "../utils/iconList";
@@ -30,6 +30,17 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
   const [form] = Form.useForm();
   const [selectedColor, setSelectedColor] = useState<string>(COLOR_PALETTE[0]);
   const [selectedIcon, setSelectedIcon] = useState<string>(AVAILABLE_ICONS[0] || "Home");
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Определяем, мобильное ли устройство
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const handleSubmit = async () => {
     try {
@@ -60,23 +71,8 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
     onClose();
   };
 
-  return (
-    <Modal
-      title="Создать категорию"
-      open={open}
-      onCancel={handleCancel}
-      footer={[
-        <Button key="cancel" onClick={handleCancel}>
-          Отмена
-        </Button>,
-        <Button key="submit" type="primary" onClick={handleSubmit}>
-          Создать
-        </Button>,
-      ]}
-      width={window.innerWidth < 768 ? "100%" : 500}
-      style={window.innerWidth < 768 ? { top: 0, paddingBottom: 0 } : undefined}
-    >
-      <Form form={form} layout="vertical">
+  const formContent = (
+    <Form form={form} layout="vertical">
         <Form.Item
           label="Название категории"
           name="name"
@@ -139,7 +135,56 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
           </div>
         </div>
       </Form>
-    </Modal>
+  );
+
+  return (
+    <>
+      {isMobile ? (
+        <Drawer
+          title="Создать категорию"
+          placement="bottom"
+          height="auto"
+          open={open}
+          onClose={handleCancel}
+          className={styles.drawer}
+          styles={{
+            body: { padding: 24 },
+            content: { borderRadius: "8px 8px 0 0" },
+            wrapper: { borderRadius: "8px 8px 0 0" },
+            header: { borderRadius: "8px 8px 0 0" },
+          }}
+          footer={
+            <div style={{ display: "flex", gap: 12, padding: "16px 24px" }}>
+              <Button block onClick={handleCancel}>
+                Отмена
+              </Button>
+              <Button block type="primary" onClick={handleSubmit}>
+                Создать
+              </Button>
+            </div>
+          }
+        >
+          {formContent}
+        </Drawer>
+      ) : (
+        <Modal
+          title="Создать категорию"
+          open={open}
+          onCancel={handleCancel}
+          footer={[
+            <Button key="cancel" onClick={handleCancel}>
+              Отмена
+            </Button>,
+            <Button key="submit" type="primary" onClick={handleSubmit}>
+              Создать
+            </Button>,
+          ]}
+          width={500}
+        >
+          {formContent}
+        </Modal>
+      )}
+    </>
   );
 };
 

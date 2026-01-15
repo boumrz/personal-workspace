@@ -240,6 +240,26 @@
   }
 }
 
+.drawer {
+  z-index: 1001;
+}
+
+.drawer :global(.ant-drawer-content-wrapper) {
+  border-radius: 8px 8px 0 0 !important;
+  overflow: hidden !important;
+}
+
+.drawer :global(.ant-drawer-content) {
+  border-radius: 8px 8px 0 0 !important;
+  overflow: hidden !important;
+}
+
+.drawer :global(.ant-drawer-header) {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 16px 24px;
+  border-radius: 8px 8px 0 0 !important;
+}
+
 @media (min-width: 768px) {
   .overlay {
     align-items: center;

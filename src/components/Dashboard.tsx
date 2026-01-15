@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { Card, Statistic, Tabs, FloatButton } from "antd";
+import React, { useState, useMemo, useEffect } from "react";
+import { Card, Statistic, Tabs, FloatButton, Button } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import TransactionList from "./TransactionList";
@@ -13,6 +13,17 @@ const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"actual" | "planned">("actual");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Определяем, мобильное ли устройство
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const totalIncome = useMemo(
     () => transactions.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0),
@@ -120,11 +131,27 @@ const Dashboard: React.FC = () => {
         />
       </div>
 
-      <FloatButton
-        icon={<PlusOutlined />}
-        type="primary"
-        onClick={() => setShowForm(true)}
-      />
+      {/* Кнопка добавления операции */}
+      {isMobile ? (
+        <FloatButton
+          icon={<PlusOutlined />}
+          type="primary"
+          onClick={() => setShowForm(true)}
+          className={styles.addButtonMobile}
+        />
+      ) : (
+        <div className={styles.addButtonContainer}>
+          <Button
+            type="primary"
+            size="large"
+            icon={<PlusOutlined />}
+            onClick={() => setShowForm(true)}
+            className={styles.addButtonDesktop}
+          >
+            Добавить операцию
+          </Button>
+        </div>
+      )}
 
       {showForm && (
         <TransactionForm
