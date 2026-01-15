@@ -19,7 +19,7 @@ const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
   }
 
   if (user) {
-    return <Navigate to="/finance/dashboard" replace />;
+    return <Navigate to="/finance/transactions" replace />;
   }
 
   return <>{children}</>;

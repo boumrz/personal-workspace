@@ -20,12 +20,12 @@ const FinancePage: React.FC = () => {
   const tabItems = useMemo(
     () => [
       {
-        key: "dashboard",
-        label: "Дашборд",
-      },
-      {
         key: "transactions",
         label: "Операции",
+      },
+      {
+        key: "dashboard",
+        label: "Дашборд",
       },
     ],
     []
@@ -50,7 +50,7 @@ const FinancePage: React.FC = () => {
       <Routes>
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="transactions" element={<TransactionsPage />} />
-        <Route path="" element={<Navigate to="dashboard" replace />} />
+        <Route path="" element={<Navigate to="transactions" replace />} />
       </Routes>
     </div>
   );

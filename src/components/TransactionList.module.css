@@ -109,6 +109,11 @@
   font-weight: 500;
 }
 
+.plannedProgress.overLimit {
+  color: #F44336;
+  font-weight: 600;
+}
+
 .transactionRight {
   display: flex;
   align-items: center;
@@ -127,6 +132,10 @@
 
 .transactionAmount.expense {
   color: #FF7043;
+}
+
+.transactionAmount.overLimit {
+  color: #F44336;
 }
 
 .deleteButton {

@@ -8,6 +8,7 @@ import {
   Button,
   DatePicker,
   Space,
+  Tooltip,
 } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -89,6 +90,45 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     onClose();
   };
 
+  // Функция для блокировки дат из будущих месяцев (только для актуальных операций)
+  const disabledDate = (current: dayjs.Dayjs | null) => {
+    if (!current || type !== "actual") {
+      return false; // Для планируемых операций не блокируем даты
+    }
+
+    // Получаем конец текущего месяца
+    const endOfCurrentMonth = dayjs().endOf("month");
+
+    // Блокируем даты, которые позже конца текущего месяца
+    return current.isAfter(endOfCurrentMonth, "day");
+  };
+
+  // Функция для кастомного рендеринга дат с тултипами
+  // Важно: возвращаем правильную структуру для сохранения стандартного поведения Ant Design
+  const dateRender = (current: dayjs.Dayjs) => {
+    // Проверяем, заблокирована ли дата
+    const isDisabled = disabledDate(current);
+
+    // Для заблокированных дат добавляем тултип
+    const content = isDisabled && type === "actual" ? (
+      <Tooltip title="Нельзя добавлять операции на будущие месяцы">
+        <div style={{ width: "100%", height: "100%", cursor: "not-allowed" }}>
+          {current.date()}
+        </div>
+      </Tooltip>
+    ) : (
+      <div style={{ width: "100%", height: "100%" }}>{current.date()}</div>
+    );
+
+    // Возвращаем содержимое, обернутое в стандартную структуру Ant Design
+    // Это сохраняет стандартные классы и поведение (выделение текущего дня, выбранной даты и т.д.)
+    return (
+      <div className="ant-picker-cell-inner" style={{ width: "100%", height: "100%" }}>
+        {content}
+      </div>
+    );
+  };
+
   return (
     <Modal
       title={type === "planned" ? "Планируемая трата" : "Новая операция"}
@@ -105,7 +145,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       width={window.innerWidth < 768 ? "100%" : 500}
       style={window.innerWidth < 768 ? { top: 0, paddingBottom: 0 } : undefined}
     >
-      <Form form={form} layout="vertical" initialValues={{ date: dayjs() }}>
+      <Form form={form} layout="vertical" initialValues={{ date: dayjs(), type: "expense" }}>
         {type === "actual" && (
           <Form.Item label="Тип операции" name="type">
             <Radio.Group
@@ -123,8 +163,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                 }
               }}
             >
-              <Radio value="income">Доход</Radio>
               <Radio value="expense">Расход</Radio>
+              <Radio value="income">Доход</Radio>
             </Radio.Group>
           </Form.Item>
         )}
@@ -180,9 +220,37 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         <Form.Item
           label="Дата"
           name="date"
-          rules={[{ required: true, message: "Выберите дату" }]}
+          rules={[
+            { required: true, message: "Выберите дату" },
+            {
+              validator: (_, value) => {
+                if (!value) {
+                  return Promise.resolve();
+                }
+
+                // Для актуальных операций проверяем, что дата не в будущем месяце
+                if (type === "actual") {
+                  const endOfCurrentMonth = dayjs().endOf("month");
+                  const selectedDate = dayjs(value);
+
+                  if (selectedDate.isAfter(endOfCurrentMonth, "day")) {
+                    return Promise.reject(
+                      new Error("Нельзя добавлять операции на будущие месяцы")
+                    );
+                  }
+                }
+
+                return Promise.resolve();
+              },
+            },
+          ]}
         >
-          <DatePicker style={{ width: "100%" }} format="DD.MM.YYYY" />
+          <DatePicker
+            style={{ width: "100%" }}
+            format="DD.MM.YYYY"
+            disabledDate={disabledDate}
+            dateRender={type === "actual" ? dateRender : undefined}
+          />
         </Form.Item>
       </Form>
 

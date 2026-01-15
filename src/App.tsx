@@ -9,7 +9,7 @@ import FinancePage from "./pages/FinancePage";
 import Login from "./components/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import {
   FinanceContext,
   Transaction,
@@ -20,47 +20,59 @@ import * as styles from "./App.module.css";
 
 dayjs.locale("ru");
 
-const App: React.FC = () => {
+// Внутренний компонент, который имеет доступ к AuthContext
+const AppContent: React.FC = () => {
+  const { user, token } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [plannedExpenses, setPlannedExpenses] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Загружать данные только когда пользователь авторизован
   useEffect(() => {
+    const loadData = async () => {
+      if (!user || !token) {
+        // Если пользователь не авторизован, очистить данные
+        setTransactions([]);
+        setPlannedExpenses([]);
+        setCategories([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const [categoriesData, transactionsData, plannedData] = await Promise.all(
+          [
+            apiService.getCategories(),
+            apiService.getTransactions(),
+            apiService.getPlannedExpenses(),
+          ]
+        );
+
+        setCategories(categoriesData);
+        setTransactions(transactionsData);
+        setPlannedExpenses(plannedData);
+      } catch (error) {
+        console.error("Error loading data:", error);
+        // Fallback to default categories if API fails
+        setCategories([
+          { id: "1", name: "Продукты", color: "#FF8A65", icon: "Utensils" },
+          { id: "2", name: "Транспорт", color: "#64B5F6", icon: "Car" },
+          { id: "3", name: "Развлечения", color: "#BA68C8", icon: "Film" },
+          { id: "4", name: "Здоровье", color: "#81C784", icon: "Hospital" },
+          { id: "5", name: "Одежда", color: "#FFB74D", icon: "Shirt" },
+          { id: "6", name: "Жилье", color: "#90CAF9", icon: "Home" },
+          { id: "7", name: "Зарплата", color: "#66BB6A", icon: "Wallet" },
+          { id: "8", name: "Другое", color: "#90A4AE", icon: "Package" },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [categoriesData, transactionsData, plannedData] = await Promise.all(
-        [
-          apiService.getCategories(),
-          apiService.getTransactions(),
-          apiService.getPlannedExpenses(),
-        ]
-      );
-
-      setCategories(categoriesData);
-      setTransactions(transactionsData);
-      setPlannedExpenses(plannedData);
-    } catch (error) {
-      console.error("Error loading data:", error);
-      // Fallback to default categories if API fails
-      setCategories([
-        { id: "1", name: "Продукты", color: "#FF8A65", icon: "Utensils" },
-        { id: "2", name: "Транспорт", color: "#64B5F6", icon: "Car" },
-        { id: "3", name: "Развлечения", color: "#BA68C8", icon: "Film" },
-        { id: "4", name: "Здоровье", color: "#81C784", icon: "Hospital" },
-        { id: "5", name: "Одежда", color: "#FFB74D", icon: "Shirt" },
-        { id: "6", name: "Жилье", color: "#90CAF9", icon: "Home" },
-        { id: "7", name: "Зарплата", color: "#66BB6A", icon: "Wallet" },
-        { id: "8", name: "Другое", color: "#90A4AE", icon: "Package" },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [user, token]);
 
   const addTransaction = async (transaction: Omit<Transaction, "id">) => {
     try {
@@ -125,23 +137,65 @@ const App: React.FC = () => {
 
   if (loading) {
     return (
-      <ConfigProvider locale={ruRU}>
-        <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              height: "100vh",
-            }}
-          >
-            Загрузка...
-          </div>
+      <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+          }}
+        >
+          Загрузка...
         </div>
-      </ConfigProvider>
+      </div>
     );
   }
 
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/*"
+          element={
+            <ProtectedRoute>
+              <FinanceContext.Provider
+                value={{
+                  transactions,
+                  plannedExpenses,
+                  categories,
+                  addTransaction,
+                  addPlannedExpense,
+                  deleteTransaction,
+                  deletePlannedExpense,
+                  addCategory,
+                  deleteCategory,
+                }}
+              >
+                <Layout>
+                  <Routes>
+                    <Route path="/finance/*" element={<FinancePage />} />
+                    <Route path="/" element={<Navigate to="/finance/transactions" replace />} />
+                  </Routes>
+                </Layout>
+              </FinanceContext.Provider>
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
+  );
+};
+
+const App: React.FC = () => {
   return (
     <ConfigProvider 
       locale={ruRU}
@@ -152,45 +206,7 @@ const App: React.FC = () => {
       }}
     >
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route
-              path="/login"
-              element={
-                <PublicRoute>
-                  <Login />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="/*"
-              element={
-                <ProtectedRoute>
-                  <FinanceContext.Provider
-                    value={{
-                      transactions,
-                      plannedExpenses,
-                      categories,
-                      addTransaction,
-                      addPlannedExpense,
-                      deleteTransaction,
-                      deletePlannedExpense,
-                      addCategory,
-                      deleteCategory,
-                    }}
-                  >
-                    <Layout>
-                      <Routes>
-                        <Route path="/finance/*" element={<FinancePage />} />
-                        <Route path="/" element={<Navigate to="/finance/dashboard" replace />} />
-                      </Routes>
-                    </Layout>
-                  </FinanceContext.Provider>
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </BrowserRouter>
+        <AppContent />
       </AuthProvider>
     </ConfigProvider>
   );

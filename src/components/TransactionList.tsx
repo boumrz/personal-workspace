@@ -184,6 +184,12 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   )
                 : 0;
 
+            // Проверяем, превысил ли расход запланированную сумму
+            const isOverLimit =
+              transaction.type === "expense" &&
+              plannedAmount > 0 &&
+              spentAmount > plannedAmount;
+
             return (
               <List.Item className={styles.listItem}>
                 <Card className={styles.transaction} bordered={false}>
@@ -204,7 +210,11 @@ const TransactionList: React.FC<TransactionListProps> = ({
                         <Tag color={category.color}>{category.name}</Tag>
                         {transaction.type === "expense" &&
                           plannedAmount > 0 && (
-                            <span className={styles.plannedProgress}>
+                            <span
+                              className={`${styles.plannedProgress} ${
+                                isOverLimit ? styles.overLimit : ""
+                              }`}
+                            >
                               {spentAmount.toLocaleString("ru-RU")}/
                               {plannedAmount.toLocaleString("ru-RU")} ₽
                             </span>
