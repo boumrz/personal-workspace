@@ -1,80 +1,13 @@
 .layout {
   min-height: 100vh;
   width: 100%;
-  overflow: hidden;
-}
-
-.sider {
-  background: #001529;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-  overflow-y: auto;
-  overflow-x: hidden;
-  height: 100vh;
-  position: fixed;
-  left: 0;
-  top: 0;
-  z-index: 100;
-}
-
-.siderHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px;
-  gap: 8px;
-}
-
-.collapseButton {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  padding: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.collapseButton:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border-color: rgba(255, 255, 255, 0.2) !important;
-  color: white !important;
-}
-
-.logo {
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 18px;
-  font-weight: 600;
-  border-radius: 8px;
-  transition: all 0.2s;
-  flex: 1;
-}
-
-.siteLayout {
   background: #f5f5f5;
-  min-height: 100vh;
-  margin-left: 250px;
-  transition: margin-left 0.2s;
-}
-
-.layout :global(.ant-layout-sider-collapsed) ~ .siteLayout {
-  margin-left: 80px;
 }
 
 .content {
-  margin: 0;
+  margin-top: 64px;
   padding: 24px;
-  min-height: 100vh;
+  min-height: calc(100vh - 64px);
   background: #f5f5f5;
   width: 100%;
   max-width: 100%;
@@ -82,113 +15,9 @@
   overflow-x: hidden;
 }
 
-.siderOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: 999;
-  display: none;
-  transition: opacity 0.3s ease;
-}
-
-.siderOverlay.visible {
-  display: block;
-}
-
-@media (max-width: 992px) {
-  .sider {
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-  }
-
-  .sider.mobileVisible {
-    transform: translateX(0);
-  }
-
-  .siteLayout {
-    margin-left: 0 !important;
-    width: 100%;
-  }
-
-  .layout :global(.ant-layout-sider-collapsed) ~ .siteLayout {
-    margin-left: 0 !important;
-  }
-}
-
-.footer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.userInfo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: white;
-  padding: 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.2s;
-  margin-bottom: 8px;
-}
-
-.userInfo:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.userInfo span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.mobileMenuButton {
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  z-index: 998;
-  width: 40px;
-  height: 40px;
-  display: none;
-  background: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  border-radius: 8px;
-}
-
-@media (max-width: 992px) {
-  .mobileMenuButton {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-}
-
 @media (max-width: 768px) {
   .content {
     padding: 12px;
-  }
-
-  .logo {
-    height: 48px;
-    font-size: 16px;
-  }
-
-  .siderHeader {
-    padding: 12px;
-  }
-
-  .footer {
-    padding: 12px;
+    margin-top: 64px;
   }
 }
