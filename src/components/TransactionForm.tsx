@@ -10,8 +10,9 @@ import {
   DatePicker,
   Space,
   Tooltip,
+  Popconfirm,
 } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
+import { PlusOutlined, CloseOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useFinance } from "../context/FinanceContext";
 import CategoryForm from "./CategoryForm";
@@ -29,7 +30,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   onClose,
   type,
 }) => {
-  const { addTransaction, addPlannedExpense, categories } = useFinance();
+  const { addTransaction, addPlannedExpense, categories, deleteCategory } = useFinance();
   const [form] = Form.useForm();
   const [transactionType, setTransactionType] = useState<"income" | "expense">(
     "expense"
@@ -37,6 +38,46 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Базовые категории, которые нельзя удалить
+  const defaultCategoryNames = [
+    "Продукты",
+    "Транспорт",
+    "Развлечения",
+    "Здоровье",
+    "Одежда",
+    "Жилье",
+    "Зарплата",
+    "Другое",
+  ];
+
+  const isDefaultCategory = (categoryName: string) => {
+    return defaultCategoryNames.includes(categoryName);
+  };
+
+  const handleDeleteCategory = async (categoryId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    try {
+      await deleteCategory(categoryId);
+      // Если удаленная категория была выбрана, сбрасываем выбор
+      if (selectedCategory === categoryId) {
+        const remainingCategories = availableCategories.filter(c => c.id !== categoryId);
+        if (remainingCategories.length > 0) {
+          setSelectedCategory(remainingCategories[0].id);
+        } else {
+          setSelectedCategory("");
+        }
+      }
+    } catch (error: any) {
+      const errorMessage =
+        error?.message ||
+        error?.response?.data?.error ||
+        "Ошибка при удалении категории";
+      alert(errorMessage);
+    }
+  };
 
   // Определяем, мобильное ли устройство
   useEffect(() => {
@@ -189,25 +230,50 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       </Form.Item>
 
       <Form.Item label="Категория" required>
-        <Space wrap size={8}>
-          {availableCategories.map((category) => (
-            <Button
-              key={category.id}
-              type={selectedCategory === category.id ? "primary" : "default"}
-              onClick={() => setSelectedCategory(category.id)}
-              style={
-                selectedCategory === category.id
-                  ? {
-                      backgroundColor: category.color,
-                      borderColor: category.color,
-                    }
-                  : {}
-              }
-            >
-              <IconRenderer iconName={category.icon} size={16} />{" "}
-              {category.name}
-            </Button>
-          ))}
+        <Space wrap size={12} className={styles.categoriesContainer}>
+          {availableCategories.map((category) => {
+            const canDelete = !isDefaultCategory(category.name);
+            return (
+              <div key={category.id} className={styles.categoryWrapper}>
+                <Button
+                  type={selectedCategory === category.id ? "primary" : "default"}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={styles.categoryButton}
+                  style={
+                    selectedCategory === category.id
+                      ? {
+                          backgroundColor: category.color,
+                          borderColor: category.color,
+                        }
+                      : {}
+                  }
+                >
+                  <IconRenderer iconName={category.icon} size={16} />{" "}
+                  {category.name}
+                </Button>
+                {canDelete && (
+                  <Popconfirm
+                    title="Удалить категорию?"
+                    description="Эта категория будет удалена. Это действие нельзя отменить."
+                    onConfirm={(e) => handleDeleteCategory(category.id, e)}
+                    onCancel={(e) => e?.stopPropagation()}
+                    okText="Да"
+                    cancelText="Нет"
+                    placement="top"
+                  >
+                    <Button
+                      type="text"
+                      danger
+                      size="small"
+                      icon={<CloseOutlined />}
+                      className={styles.deleteCategoryButton}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </Popconfirm>
+                )}
+              </div>
+            );
+          })}
           <Button
             type="dashed"
             icon={<PlusOutlined />}
