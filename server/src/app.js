@@ -14,11 +14,15 @@ import { handleDbError } from "./middleware/dbErrorHandler.js";
 const app = express();
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+}));
 app.use(
   cors({
-    origin: config.corsOrigin,
+    origin: config.corsOrigin === "*" ? true : config.corsOrigin,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 

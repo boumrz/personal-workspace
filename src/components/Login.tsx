@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { Form, Input, Button, Card, message, Tabs } from "antd";
-import { UserOutlined, LockOutlined, MailOutlined } from "@ant-design/icons";
+// Google OAuth - временно отключено
+// import { Divider } from "antd";
+import { UserOutlined, LockOutlined } from "@ant-design/icons";
+// Google OAuth - временно отключено
+// import { GoogleOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import * as styles from "./Login.module.css";
 
 const Login: React.FC = () => {
-  const { login, register, user } = useAuth();
+  const { login, register, loginWithGoogle, user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  // Google OAuth - временно отключено
+  // const [googleLoading, setGoogleLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
 
   // Redirect if already logged in
@@ -18,10 +24,10 @@ const Login: React.FC = () => {
     }
   }, [user, navigate]);
 
-  const onLogin = async (values: { email: string; password: string }) => {
+  const onLogin = async (values: { login: string; password: string }) => {
     try {
       setLoading(true);
-      await login(values.email, values.password);
+      await login(values.login, values.password);
       message.success("Вход выполнен успешно");
       navigate("/finance/transactions", { replace: true });
     } catch (error: any) {
@@ -31,10 +37,10 @@ const Login: React.FC = () => {
     }
   };
 
-  const onRegister = async (values: { email: string; password: string; name?: string }) => {
+  const onRegister = async (values: { fullName: string; login: string; password: string }) => {
     try {
       setLoading(true);
-      await register(values.email, values.password, values.name);
+      await register(values.fullName, values.login, values.password);
       message.success("Регистрация выполнена успешно");
       navigate("/finance/transactions", { replace: true });
     } catch (error: any) {
@@ -44,33 +50,62 @@ const Login: React.FC = () => {
     }
   };
 
+  // Google OAuth - временно отключено
+  /*
+  const handleGoogleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+      await loginWithGoogle();
+      message.success("Вход через Google выполнен успешно");
+      navigate("/finance/transactions", { replace: true });
+    } catch (error: any) {
+      message.error(error.message || "Ошибка входа через Google");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+  */
+
   const tabItems = [
     {
       key: "login",
       label: "Вход",
       children: (
-        <Form onFinish={onLogin} layout="vertical" size="large">
-          <Form.Item
-            name="email"
-            rules={[
-              { required: true, message: "Введите email" },
-              { type: "email", message: "Введите корректный email" },
-            ]}
+        <>
+          <Form onFinish={onLogin} layout="vertical" size="large">
+            <Form.Item
+              name="login"
+              rules={[{ required: true, message: "Введите логин" }]}
+            >
+              <Input prefix={<UserOutlined />} placeholder="Логин" />
+            </Form.Item>
+            <Form.Item
+              name="password"
+              rules={[{ required: true, message: "Введите пароль" }]}
+            >
+              <Input.Password prefix={<LockOutlined />} placeholder="Пароль" />
+            </Form.Item>
+            <Form.Item>
+              <Button type="primary" htmlType="submit" block loading={loading}>
+                Войти
+              </Button>
+            </Form.Item>
+          </Form>
+          {/* Google OAuth - временно отключено
+          <Divider>или</Divider>
+          <Button
+            type="default"
+            icon={<GoogleOutlined />}
+            block
+            size="large"
+            loading={googleLoading}
+            onClick={handleGoogleLogin}
+            className={styles.googleButton}
           >
-            <Input prefix={<MailOutlined />} placeholder="Email" />
-          </Form.Item>
-          <Form.Item
-            name="password"
-            rules={[{ required: true, message: "Введите пароль" }]}
-          >
-            <Input.Password prefix={<LockOutlined />} placeholder="Пароль" />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit" block loading={loading}>
-              Войти
-            </Button>
-          </Form.Item>
-        </Form>
+            Войти через Google
+          </Button>
+          */}
+        </>
       ),
     },
     {
@@ -79,19 +114,20 @@ const Login: React.FC = () => {
       children: (
         <Form onFinish={onRegister} layout="vertical" size="large">
           <Form.Item
-            name="name"
-            rules={[{ required: false }]}
+            name="fullName"
+            rules={[{ required: true, message: "Введите ФИО" }]}
           >
-            <Input prefix={<UserOutlined />} placeholder="Имя (необязательно)" />
+            <Input prefix={<UserOutlined />} placeholder="ФИО" />
           </Form.Item>
           <Form.Item
-            name="email"
+            name="login"
             rules={[
-              { required: true, message: "Введите email" },
-              { type: "email", message: "Введите корректный email" },
+              { required: true, message: "Введите логин" },
+              { min: 3, message: "Логин должен быть не менее 3 символов" },
+              { pattern: /^[a-zA-Z0-9_]+$/, message: "Логин может содержать только буквы, цифры и подчеркивание" },
             ]}
           >
-            <Input prefix={<MailOutlined />} placeholder="Email" />
+            <Input prefix={<UserOutlined />} placeholder="Логин" />
           </Form.Item>
           <Form.Item
             name="password"

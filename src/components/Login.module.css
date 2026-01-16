@@ -41,3 +41,22 @@
   font-size: 16px;
   font-weight: 500;
 }
+
+.googleButton {
+  border-radius: 8px;
+  height: 44px;
+  font-size: 16px;
+  font-weight: 500;
+  border-color: #db4437;
+  color: #db4437;
+}
+
+.googleButton:hover {
+  border-color: #c23321;
+  color: #c23321;
+  background-color: #fff;
+}
+
+.loginCard :global(.ant-divider) {
+  margin: 20px 0;
+}

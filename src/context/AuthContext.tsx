@@ -3,15 +3,17 @@ import { getApiBaseUrl } from "../utils/apiConfig";
 
 export interface User {
   id: number;
-  email: string;
+  email?: string;
+  login?: string;
   name?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name?: string) => Promise<void>;
+  login: (login: string, password: string) => Promise<void>;
+  register: (fullName: string, login: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -47,14 +49,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (login: string, password: string) => {
     const apiBaseUrl = getApiBaseUrl();
     const response = await fetch(`${apiBaseUrl}/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ login, password }),
     });
 
     if (!response.ok) {
@@ -69,14 +71,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.setItem("user", JSON.stringify(data.user));
   };
 
-  const register = async (email: string, password: string, name?: string) => {
+  const register = async (fullName: string, login: string, password: string) => {
     const apiBaseUrl = getApiBaseUrl();
     const response = await fetch(`${apiBaseUrl}/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email, password, name }),
+      body: JSON.stringify({ fullName, login, password }),
     });
 
     if (!response.ok) {
@@ -91,6 +93,63 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.setItem("user", JSON.stringify(data.user));
   };
 
+  const loginWithGoogle = async () => {
+    // OAuth 2.0 flow через Google
+    const apiBaseUrl = getApiBaseUrl();
+    
+    // Открываем popup для авторизации Google
+    // Не используем fetch, так как это редирект на Google
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    
+    const popup = window.open(
+      `${apiBaseUrl}/auth/google`,
+      "Google Login",
+      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
+    );
+
+    if (!popup) {
+      throw new Error("Popup blocked. Please allow popups for this site.");
+    }
+
+    // Ждем сообщение от popup с токеном
+    return new Promise<void>((resolve, reject) => {
+      const messageListener = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) {
+          return;
+        }
+
+        if (event.data.type === "GOOGLE_AUTH_SUCCESS") {
+          const { token, user } = event.data;
+          setToken(token);
+          setUser(user);
+          localStorage.setItem("token", token);
+          localStorage.setItem("user", JSON.stringify(user));
+          window.removeEventListener("message", messageListener);
+          popup.close();
+          resolve();
+        } else if (event.data.type === "GOOGLE_AUTH_ERROR") {
+          window.removeEventListener("message", messageListener);
+          popup.close();
+          reject(new Error(event.data.error || "Google authentication failed"));
+        }
+      };
+
+      window.addEventListener("message", messageListener);
+
+      // Проверяем, не закрыл ли пользователь popup
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          window.removeEventListener("message", messageListener);
+          reject(new Error("Authentication cancelled"));
+        }
+      }, 1000);
+    });
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -99,7 +158,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, register, loginWithGoogle, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

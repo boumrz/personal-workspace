@@ -114,7 +114,146 @@ DB_USER=finance_user
 DB_PASSWORD=your_secure_password
 JWT_SECRET=your_very_secure_jwt_secret_key
 CORS_ORIGIN=https://yourdomain.com
+
+# Google OAuth (опционально, для входа через Google)
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_REDIRECT_URI=https://yourdomain.com/api/auth/google/callback
 ```
+
+### 3.2.1 Настройка Google OAuth (опционально)
+
+Google OAuth позволяет пользователям входить в приложение через свой Google аккаунт. Это опциональная функция - приложение будет работать и без неё.
+
+#### Шаг 1: Создание проекта в Google Cloud Console
+
+1. Перейдите на [Google Cloud Console](https://console.cloud.google.com/)
+2. Войдите в свой Google аккаунт (или создайте новый)
+3. Нажмите на выпадающий список проектов в верхней панели (рядом с логотипом Google Cloud)
+4. Нажмите "New Project" (Новый проект)
+5. Введите название проекта (например, "Finance Assistant")
+6. Нажмите "Create" (Создать)
+7. Дождитесь создания проекта (обычно несколько секунд)
+8. Убедитесь, что выбран созданный проект (в верхней панели должен отображаться ваш проект)
+
+#### Шаг 2: Настройка OAuth consent screen
+
+1. В левом меню найдите раздел "APIs & Services" (APIs и сервисы)
+2. Выберите "OAuth consent screen" (Экран согласия OAuth)
+3. Выберите тип приложения:
+   - **External** (Внешнее) - для публичного использования
+   - **Internal** (Внутреннее) - только для пользователей вашей организации (требует Google Workspace)
+4. Нажмите "Create" (Создать)
+5. Заполните обязательные поля:
+   - **App name** (Название приложения): например, "Finance Assistant"
+   - **User support email** (Email поддержки): ваш email
+   - **Developer contact information** (Контактная информация разработчика): ваш email
+6. Нажмите "Save and Continue" (Сохранить и продолжить)
+7. На экране "Scopes" (Области видимости):
+   - Нажмите "Add or Remove Scopes" (Добавить или удалить области)
+   - Выберите:
+     - `.../auth/userinfo.email` (Email пользователя)
+     - `.../auth/userinfo.profile` (Основная информация профиля)
+   - Нажмите "Update" (Обновить)
+   - Нажмите "Save and Continue" (Сохранить и продолжить)
+8. На экране "Test users" (Тестовые пользователи):
+   - Если приложение в статусе "Testing" (Тестирование), добавьте тестовых пользователей (email адреса)
+   - Нажмите "Save and Continue" (Сохранить и продолжить)
+9. Просмотрите сводку и нажмите "Back to Dashboard" (Вернуться на панель управления)
+
+#### Шаг 3: Создание OAuth 2.0 Client ID
+
+1. В левом меню выберите "APIs & Services" → "Credentials" (Учетные данные)
+2. Нажмите "Create Credentials" (Создать учетные данные) в верхней части страницы
+3. Выберите "OAuth client ID" (Идентификатор клиента OAuth)
+4. Если появится предупреждение о настройке экрана согласия, нажмите "Configure Consent Screen" и завершите настройку из Шага 2
+5. В поле "Application type" (Тип приложения) выберите "Web application" (Веб-приложение)
+6. Введите "Name" (Название): например, "Finance Assistant Web Client"
+7. В разделе "Authorized JavaScript origins" (Разрешенные источники JavaScript):
+   - Для разработки добавьте: `http://localhost:3001`
+   - Для продакшена добавьте: `https://yourdomain.com` (замените на ваш домен)
+8. В разделе "Authorized redirect URIs" (Разрешенные URI перенаправления):
+   - Для разработки добавьте: `http://localhost:3001/api/auth/google/callback`
+   - Для продакшена добавьте: `https://yourdomain.com/api/auth/google/callback` (замените на ваш домен)
+9. Нажмите "Create" (Создать)
+10. Появится окно с вашими учетными данными:
+    - **Your Client ID** (Ваш идентификатор клиента) - скопируйте это значение
+    - **Your Client Secret** (Ваш секретный ключ клиента) - скопируйте это значение
+    - ⚠️ **Важно**: Сохраните эти значения в безопасном месте! Client Secret показывается только один раз.
+
+#### Шаг 4: Добавление учетных данных в .env файл
+
+1. Откройте файл `.env` в папке `server/`
+2. Добавьте следующие строки:
+
+```env
+# Google OAuth (опционально)
+GOOGLE_CLIENT_ID=ваш_client_id_здесь
+GOOGLE_CLIENT_SECRET=ваш_client_secret_здесь
+GOOGLE_REDIRECT_URI=https://yourdomain.com/api/auth/google/callback
+```
+
+**Пример для разработки:**
+
+```env
+GOOGLE_CLIENT_ID=123456789-abcdefghijklmnop.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-abcdefghijklmnopqrstuvwxyz
+GOOGLE_REDIRECT_URI=http://localhost:3001/api/auth/google/callback
+```
+
+**Пример для продакшена:**
+
+```env
+GOOGLE_CLIENT_ID=123456789-abcdefghijklmnop.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-abcdefghijklmnopqrstuvwxyz
+GOOGLE_REDIRECT_URI=https://domiknote.ru/api/auth/google/callback
+```
+
+3. Сохраните файл
+
+#### Шаг 5: Перезапуск сервера
+
+После добавления переменных окружения перезапустите сервер:
+
+```bash
+pm2 restart finance-assistant
+# или для разработки
+npm run dev
+```
+
+#### Шаг 6: Проверка работы
+
+1. Откройте приложение в браузере
+2. Перейдите на страницу входа
+3. Нажмите кнопку "Войти через Google"
+4. Должно открыться окно авторизации Google
+5. После успешной авторизации вы должны быть перенаправлены в приложение
+
+#### Важные замечания:
+
+- **Безопасность**: Никогда не публикуйте Client Secret в публичных репозиториях
+- **Тестовый режим**: В режиме "Testing" только добавленные тестовые пользователи смогут войти через Google
+- **Публикация**: Для публичного использования нужно отправить приложение на проверку Google (может занять несколько дней)
+- **Домены**: Убедитесь, что домены в "Authorized redirect URIs" точно совпадают с вашими (включая http/https и порты)
+- **Локальная разработка**: Для локальной разработки используйте `http://localhost:3001`, а не `http://localhost:3000`
+
+#### Решение проблем:
+
+**Ошибка "redirect_uri_mismatch":**
+
+- Проверьте, что URI в Google Console точно совпадает с URI в `.env` файле
+- Убедитесь, что используется правильный протокол (http/https)
+- Проверьте порты
+
+**Ошибка "access_denied":**
+
+- Убедитесь, что приложение опубликовано или вы добавили себя в тестовые пользователи
+- Проверьте настройки OAuth consent screen
+
+**Ошибка "invalid_client":**
+
+- Проверьте правильность Client ID и Client Secret в `.env` файле
+- Убедитесь, что нет лишних пробелов при копировании
 
 ### 3.3 Установка зависимостей и миграция
 

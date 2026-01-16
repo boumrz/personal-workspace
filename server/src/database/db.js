@@ -5,10 +5,13 @@ dotenv.config();
 
 const { Pool } = pg;
 
+// Очищаем имя базы данных от лишних символов
+const dbName = (process.env.DB_NAME || "finance_assistant").trim().replace(/[;,\s]+$/, "");
+
 const pool = new Pool({
   host: process.env.DB_HOST || "localhost",
   port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || "finance_assistant",
+  database: dbName,
   user: process.env.DB_USER || "postgres",
   password: process.env.DB_PASSWORD || "postgres",
 });
