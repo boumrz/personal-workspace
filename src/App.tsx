@@ -14,6 +14,7 @@ import {
   FinanceContext,
   Transaction,
   Category,
+  Saving,
 } from "./context/FinanceContext";
 import { apiService } from "./services/api";
 import * as styles from "./App.module.css";
@@ -25,6 +26,7 @@ const AppContent: React.FC = () => {
   const { user, token } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [plannedExpenses, setPlannedExpenses] = useState<Transaction[]>([]);
+  const [savings, setSavings] = useState<Saving[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,6 +37,7 @@ const AppContent: React.FC = () => {
         // Если пользователь не авторизован, очистить данные
         setTransactions([]);
         setPlannedExpenses([]);
+        setSavings([]);
         setCategories([]);
         setLoading(false);
         return;
@@ -42,17 +45,19 @@ const AppContent: React.FC = () => {
 
       try {
         setLoading(true);
-        const [categoriesData, transactionsData, plannedData] = await Promise.all(
+        const [categoriesData, transactionsData, plannedData, savingsData] = await Promise.all(
           [
             apiService.getCategories(),
             apiService.getTransactions(),
             apiService.getPlannedExpenses(),
+            apiService.getSavings(),
           ]
         );
 
         setCategories(categoriesData);
         setTransactions(transactionsData);
         setPlannedExpenses(plannedData);
+        setSavings(savingsData);
       } catch (error) {
         console.error("Error loading data:", error);
         // Fallback to default categories if API fails
@@ -94,6 +99,16 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const addSaving = async (saving: Omit<Saving, "id">) => {
+    try {
+      const newSaving = await apiService.createSaving(saving);
+      setSavings([newSaving, ...savings]);
+    } catch (error) {
+      console.error("Error adding saving:", error);
+      throw error;
+    }
+  };
+
   const deleteTransaction = async (id: string) => {
     try {
       await apiService.deleteTransaction(id);
@@ -110,6 +125,16 @@ const AppContent: React.FC = () => {
       setPlannedExpenses(plannedExpenses.filter((e) => e.id !== id));
     } catch (error) {
       console.error("Error deleting planned expense:", error);
+      throw error;
+    }
+  };
+
+  const deleteSaving = async (id: string) => {
+    try {
+      await apiService.deleteSaving(id);
+      setSavings(savings.filter((s) => s.id !== id));
+    } catch (error) {
+      console.error("Error deleting saving:", error);
       throw error;
     }
   };
@@ -171,11 +196,14 @@ const AppContent: React.FC = () => {
                 value={{
                   transactions,
                   plannedExpenses,
+                  savings,
                   categories,
                   addTransaction,
                   addPlannedExpense,
+                  addSaving,
                   deleteTransaction,
                   deletePlannedExpense,
+                  deleteSaving,
                   addCategory,
                   deleteCategory,
                 }}

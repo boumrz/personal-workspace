@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { List, Card, Empty, Tag, Button } from "antd";
+import { Card, Empty, Tag, Button } from "antd";
 import { DeleteOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import { Transaction } from "../context/FinanceContext";
@@ -161,9 +161,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
           image={Empty.PRESENTED_IMAGE_SIMPLE}
         />
       ) : (
-        <List
-          dataSource={currentMonthTransactions}
-          renderItem={(transaction) => {
+        <div className={styles.list}>
+          {currentMonthTransactions.map((transaction) => {
             const category = categories.find(
               (c) => c.id === transaction.category.id
             ) || transaction.category;
@@ -191,7 +190,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
               spentAmount > plannedAmount;
 
             return (
-              <List.Item className={styles.listItem}>
+              <div key={transaction.id} className={styles.listItem}>
                 <Card className={styles.transaction} bordered={false}>
                   <div className={styles.transactionLeft}>
                     <div
@@ -242,10 +241,10 @@ const TransactionList: React.FC<TransactionListProps> = ({
                     />
                   </div>
                 </Card>
-              </List.Item>
+              </div>
             );
-          }}
-        />
+          })}
+        </div>
       )}
     </div>
   );

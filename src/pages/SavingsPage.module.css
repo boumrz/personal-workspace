@@ -1,0 +1,257 @@
+.savingsPage {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+/* Глобальные стили для переопределения Ant Design */
+.savingsPage :global(.ant-statistic-content) {
+  font-size: 16px !important;
+}
+
+.savingsPage :global(.ant-statistic-content-value) {
+  font-size: 16px !important;
+}
+
+.savingsPage :global(.ant-statistic-content-value-int),
+.savingsPage :global(.ant-statistic-content-value-decimal),
+.savingsPage :global(.ant-statistic-content-suffix) {
+  font-size: 16px !important;
+}
+
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.statsContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  text-align: center;
+  overflow: hidden;
+}
+
+.statCard :global(.ant-card-body) {
+  padding: 16px 12px !important;
+  text-align: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.statCard :global(.ant-statistic-title) {
+  font-size: 12px;
+  margin-bottom: 8px;
+  line-height: 1.4;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.statCard :global(.ant-statistic) {
+  text-align: center !important;
+  width: 100%;
+}
+
+.statCard :global(.ant-statistic-content) {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  text-align: center !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+}
+
+.statCard :global(.ant-statistic-content),
+.statCard :global(.ant-statistic-content-value),
+.statCard :global(.ant-statistic-content-value-int),
+.statCard :global(.ant-statistic-content-value-decimal),
+.statCard :global(.ant-statistic-content-suffix),
+.statCard :global(.ant-statistic-content) span,
+.statCard :global(.ant-statistic-content) * {
+  font-size: 16px !important;
+  line-height: 1.2 !important;
+  text-align: center !important;
+}
+
+.statCard :global(.ant-statistic-content-value) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  max-width: 100%;
+}
+
+.statCard :global(.ant-statistic-content-suffix) {
+  white-space: nowrap;
+}
+
+.statCard :global(.ant-statistic-content-value-int) {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.statCard :global(.ant-statistic-content-value-decimal) {
+  display: inline-block;
+  text-align: center;
+}
+
+.statCard :global(.ant-statistic-content-suffix) {
+  text-align: center;
+  display: inline-block;
+}
+
+.emptyCard {
+  margin-top: 24px;
+}
+
+/* Кнопка добавления накопления для десктопа */
+.addButtonContainer {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .addButtonContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(
+      to top,
+      #ffffff 0%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .addButtonContainer .addButtonDesktop {
+    pointer-events: auto;
+  }
+
+  .addButtonDesktop {
+    height: 56px;
+    font-size: 18px;
+    font-weight: 600;
+    padding: 0 32px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(66, 165, 245, 0.3);
+  }
+
+  .addButtonDesktop:hover {
+    box-shadow: 0 6px 16px rgba(66, 165, 245, 0.4);
+    transform: translateY(-2px);
+  }
+}
+
+/* Кнопка добавления накопления для мобилки */
+.addButtonMobile {
+  position: fixed !important;
+  bottom: 24px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  right: auto !important;
+  width: 56px !important;
+  height: 56px !important;
+  font-size: 24px !important;
+  box-shadow: 0 4px 12px rgba(66, 165, 245, 0.4) !important;
+  z-index: 1000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.addButtonMobile :global(.ant-float-btn-icon) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.addButtonMobile:hover {
+  box-shadow: 0 6px 16px rgba(66, 165, 245, 0.5) !important;
+  transform: translateX(-50%) translateY(-2px) !important;
+}
+
+@media (max-width: 767px) {
+  .statsContainer {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .savingsPage :global(.ant-statistic-content),
+  .savingsPage :global(.ant-statistic-content-value),
+  .savingsPage :global(.ant-statistic-content-value-int),
+  .savingsPage :global(.ant-statistic-content-value-decimal),
+  .savingsPage :global(.ant-statistic-content-suffix) {
+    font-size: 16px !important;
+  }
+
+  .statCard :global(.ant-card-body) {
+    padding: 12px 8px !important;
+  }
+
+  .statCard :global(.ant-statistic-title) {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  .statCard :global(.ant-statistic-content),
+  .statCard :global(.ant-statistic-content-value),
+  .statCard :global(.ant-statistic-content-value-int),
+  .statCard :global(.ant-statistic-content-value-decimal),
+  .statCard :global(.ant-statistic-content-suffix),
+  .statCard :global(.ant-statistic-content) span,
+  .statCard :global(.ant-statistic-content) * {
+    font-size: 16px !important;
+    line-height: 1.2 !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .statCard :global(.ant-card-body) {
+    padding: 20px 16px !important;
+  }
+
+  .statCard :global(.ant-statistic-title) {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  .savingsPage :global(.ant-statistic-content),
+  .savingsPage :global(.ant-statistic-content-value),
+  .savingsPage :global(.ant-statistic-content-value-int),
+  .savingsPage :global(.ant-statistic-content-value-decimal),
+  .savingsPage :global(.ant-statistic-content-suffix) {
+    font-size: 16px !important;
+  }
+
+  .statCard :global(.ant-statistic-content),
+  .statCard :global(.ant-statistic-content-value),
+  .statCard :global(.ant-statistic-content-value-int),
+  .statCard :global(.ant-statistic-content-value-decimal),
+  .statCard :global(.ant-statistic-content-suffix),
+  .statCard :global(.ant-statistic-content) span,
+  .statCard :global(.ant-statistic-content) * {
+    font-size: 16px !important;
+    line-height: 1.2 !important;
+  }
+}

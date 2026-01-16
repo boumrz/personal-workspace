@@ -18,6 +18,13 @@ export interface Transaction {
   date: string;
 }
 
+export interface Saving {
+  id: string;
+  amount: number;
+  description: string;
+  date: string;
+}
+
 class ApiService {
   private getToken(): string | null {
     return localStorage.getItem("token");
@@ -117,6 +124,24 @@ class ApiService {
 
   async deletePlannedExpense(id: string): Promise<void> {
     return this.request<void>(`/planned-expenses/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  // Savings
+  async getSavings(): Promise<Saving[]> {
+    return this.request<Saving[]>("/savings");
+  }
+
+  async createSaving(saving: Omit<Saving, "id">): Promise<Saving> {
+    return this.request<Saving>("/savings", {
+      method: "POST",
+      body: JSON.stringify(saving),
+    });
+  }
+
+  async deleteSaving(id: string): Promise<void> {
+    return this.request<void>(`/savings/${id}`, {
       method: "DELETE",
     });
   }

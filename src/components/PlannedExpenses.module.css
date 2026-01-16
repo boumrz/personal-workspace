@@ -42,11 +42,6 @@
   margin-bottom: 12px;
 }
 
-.listItem :global(.ant-list-item) {
-  padding: 0;
-  border: none;
-}
-
 .expense {
   width: 100%;
   display: flex;

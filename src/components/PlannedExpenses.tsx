@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { List, Card, Empty, Tag, Button, Statistic } from "antd";
+import { Card, Empty, Tag, Button, Statistic } from "antd";
 import { DeleteOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import { Transaction } from "../context/FinanceContext";
@@ -115,15 +115,14 @@ const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
           formatter={(value) => value?.toLocaleString("ru-RU")}
         />
       </Card>
-      <List
-        dataSource={currentMonthExpenses}
-        renderItem={(expense) => {
+      <div className={styles.planned}>
+        {currentMonthExpenses.map((expense) => {
           const category = categories.find(
             (c) => c.id === expense.category.id
           ) || expense.category;
 
           return (
-            <List.Item className={styles.listItem}>
+            <div key={expense.id} className={styles.listItem}>
               <Card className={styles.expense} bordered={false}>
                 <div className={styles.expenseLeft}>
                   <div
@@ -162,10 +161,10 @@ const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
                   />
                 </div>
               </Card>
-            </List.Item>
+            </div>
           );
-        }}
-      />
+        })}
+      </div>
     </div>
   );
 };

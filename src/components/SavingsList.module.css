@@ -1,0 +1,92 @@
+.savingsCard {
+  margin-top: 24px;
+}
+
+.monthSelector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.monthTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.monthButton {
+  border: none;
+  box-shadow: none;
+}
+
+.savingsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.savingItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 12px;
+}
+
+.savingItem:last-child {
+  border-bottom: none;
+}
+
+.savingContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.savingHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.savingAmount {
+  font-size: 16px;
+  font-weight: 600;
+  color: #52c41a;
+}
+
+.savingDate {
+  font-size: 14px;
+  color: #8c8c8c;
+}
+
+.savingDescription {
+  color: #595959;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.deleteButton {
+  flex-shrink: 0;
+}
+
+@media (max-width: 767px) {
+  .savingHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .savingAmount {
+    font-size: 14px;
+  }
+}

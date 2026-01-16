@@ -143,7 +143,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
         <Drawer
           title="Создать категорию"
           placement="bottom"
-          height="auto"
+          size="auto"
           open={open}
           onClose={handleCancel}
           className={styles.drawer}

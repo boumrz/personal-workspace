@@ -4,13 +4,46 @@ import "antd/dist/reset.css";
 import App from "./App";
 import "./index.css";
 
-// Регистрация Service Worker для PWA
+// Регистрация Service Worker для PWA с проверкой обновлений
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register("/sw.js")
+      .register("/sw.js", {
+        updateViaCache: "none", // Всегда проверяем обновления
+      })
       .then((registration) => {
         console.log("Service Worker зарегистрирован:", registration);
+
+        // Проверяем обновления каждые 60 секунд
+        setInterval(() => {
+          registration.update();
+        }, 60000);
+
+        // Обработка обновления Service Worker
+        registration.addEventListener("updatefound", () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener("statechange", () => {
+              if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+                // Новый Service Worker установлен, но старый еще активен
+                // Принудительно активируем новый
+                console.log("Новая версия доступна, обновляем...");
+                newWorker.postMessage({ type: "SKIP_WAITING" });
+                // Перезагружаем страницу для применения обновлений
+                window.location.reload();
+              }
+            });
+          }
+        });
+
+        // Обработка контроллера (когда Service Worker берет контроль)
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
       })
       .catch((error) => {
         console.log("Ошибка регистрации Service Worker:", error);

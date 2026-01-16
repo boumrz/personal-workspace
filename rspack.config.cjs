@@ -12,6 +12,15 @@ module.exports = {
     path: path.resolve(__dirname, "dist"),
     clean: true,
     publicPath: "/",
+    filename: process.env.NODE_ENV === "production" 
+      ? "js/[name].[contenthash:8].js" 
+      : "js/[name].js",
+    chunkFilename: process.env.NODE_ENV === "production"
+      ? "js/[name].[contenthash:8].chunk.js"
+      : "js/[name].chunk.js",
+    assetModuleFilename: process.env.NODE_ENV === "production"
+      ? "assets/[name].[contenthash:8][ext]"
+      : "assets/[name][ext]",
   },
   resolve: {
     extensions: [".js", ".jsx", ".ts", ".tsx"],
@@ -105,6 +114,8 @@ module.exports = {
   ],
   optimization: {
     minimize: process.env.NODE_ENV === "production",
+    moduleIds: process.env.NODE_ENV === "production" ? "deterministic" : "named",
+    chunkIds: process.env.NODE_ENV === "production" ? "deterministic" : "named",
   },
   devServer: {
     port: 3000,

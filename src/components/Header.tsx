@@ -200,7 +200,7 @@ const Header: React.FC<HeaderProps> = () => {
       <Drawer
         title="Разделы"
         placement="bottom"
-        height="50vh"
+        size="50vh"
         open={drawerVisible}
         onClose={() => setDrawerVisible(false)}
         className={styles.drawer}

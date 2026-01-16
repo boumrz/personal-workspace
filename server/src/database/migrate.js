@@ -326,6 +326,53 @@ async function migrate() {
     }
     console.log("Planned expenses table created/verified");
 
+    // Check if savings table exists
+    const savingsTableExists = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'savings'
+      );
+    `);
+
+    if (savingsTableExists.rows[0].exists) {
+      // Table exists, check if it has user_id column
+      const savingsCheck = await pool.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'savings' AND column_name = 'user_id'
+      `);
+
+      if (savingsCheck.rows.length === 0) {
+        console.log("Migrating savings table...");
+        
+        const defaultUser = await pool.query(`SELECT id FROM users WHERE email = 'migrated@example.com' LIMIT 1`);
+        const defaultUserId = defaultUser.rows[0]?.id;
+
+        if (defaultUserId) {
+          await pool.query(`ALTER TABLE savings ADD COLUMN IF NOT EXISTS user_id INTEGER`);
+          await pool.query(`UPDATE savings SET user_id = $1 WHERE user_id IS NULL`, [defaultUserId]);
+          await pool.query(`ALTER TABLE savings ALTER COLUMN user_id SET NOT NULL`);
+          await pool.query(`ALTER TABLE savings ADD CONSTRAINT savings_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE`);
+        }
+      }
+    } else {
+      // Table doesn't exist, create it
+      console.log("Creating savings table...");
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS savings (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          amount DECIMAL(10, 2) NOT NULL,
+          description TEXT,
+          date DATE NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+    }
+    console.log("Savings table created/verified");
+
     // Create indexes
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_login ON users(login) WHERE login IS NOT NULL`);
@@ -337,6 +384,8 @@ async function migrate() {
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_planned_expenses_user ON planned_expenses(user_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_planned_expenses_date ON planned_expenses(date)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_planned_expenses_category ON planned_expenses(category_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_savings_user ON savings(user_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_savings_date ON savings(date)`);
 
     console.log("Indexes created/verified");
     console.log("Migration completed successfully");

@@ -1,0 +1,43 @@
+.modal :global(.ant-modal-content) {
+  border-radius: 12px;
+}
+
+.drawer :global(.ant-drawer-content-wrapper) {
+  border-radius: 8px 8px 0 0;
+}
+
+.form {
+  margin-top: 24px;
+}
+
+.buttonGroup {
+  margin-top: 32px;
+  margin-bottom: 0;
+}
+
+.submitButton {
+  margin-bottom: 12px;
+  height: 48px;
+  font-size: 16px;
+  background: #42a5f5;
+  border: none;
+}
+
+.submitButton:hover {
+  background: #5c9bd5;
+}
+
+.cancelButton {
+  height: 48px;
+  font-size: 16px;
+}
+
+@media (max-width: 767px) {
+  .form {
+    margin-top: 0;
+  }
+
+  .buttonGroup {
+    margin-top: 24px;
+  }
+}

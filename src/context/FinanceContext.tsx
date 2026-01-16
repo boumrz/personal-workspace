@@ -16,14 +16,24 @@ export interface Transaction {
   date: string;
 }
 
+export interface Saving {
+  id: string;
+  amount: number;
+  description: string;
+  date: string;
+}
+
 export interface FinanceContextType {
   transactions: Transaction[];
   plannedExpenses: Transaction[];
+  savings: Saving[];
   categories: Category[];
   addTransaction: (transaction: Omit<Transaction, "id">) => Promise<void>;
   addPlannedExpense: (expense: Omit<Transaction, "id">) => Promise<void>;
+  addSaving: (saving: Omit<Saving, "id">) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   deletePlannedExpense: (id: string) => Promise<void>;
+  deleteSaving: (id: string) => Promise<void>;
   addCategory: (category: Omit<Category, "id">) => Promise<Category>;
   deleteCategory: (id: string) => Promise<void>;
 }

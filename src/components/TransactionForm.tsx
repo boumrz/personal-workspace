@@ -333,7 +333,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         <Drawer
           title={type === "planned" ? "Планируемая трата" : "Новая операция"}
           placement="bottom"
-          height="auto"
+          size="auto"
           open={open}
           onClose={handleCancel}
           className={styles.drawer}
