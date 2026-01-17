@@ -14,6 +14,10 @@ import { handleDbError } from "./middleware/dbErrorHandler.js";
 
 const app = express();
 
+// Trust proxy - необходимо для работы за Nginx прокси
+// Это позволяет Express правильно определять IP адреса клиентов из заголовка X-Forwarded-For
+app.set('trust proxy', true);
+
 // Security middleware
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
