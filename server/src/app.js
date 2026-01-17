@@ -15,8 +15,10 @@ import { handleDbError } from "./middleware/dbErrorHandler.js";
 const app = express();
 
 // Trust proxy - необходимо для работы за Nginx прокси
+// Устанавливаем trust proxy на 1 (один прокси - Nginx)
 // Это позволяет Express правильно определять IP адреса клиентов из заголовка X-Forwarded-For
-app.set('trust proxy', true);
+// и предотвращает обход rate limiting (более безопасно, чем true)
+app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet({
@@ -31,11 +33,13 @@ app.use(
   })
 );
 
-// Rate limiting
+// Rate limiting с правильной настройкой для работы за прокси
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
   message: "Too many requests from this IP, please try again after 15 minutes",
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 app.use("/api/", limiter);
 
