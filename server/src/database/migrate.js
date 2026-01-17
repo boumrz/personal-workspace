@@ -171,6 +171,19 @@ async function migrate() {
         WHERE table_name = 'categories' AND column_name = 'user_id'
       `);
 
+      // Check if icon column needs to be migrated (VARCHAR(10) -> VARCHAR(100))
+      const iconColumnCheck = await pool.query(`
+        SELECT character_maximum_length 
+        FROM information_schema.columns 
+        WHERE table_name = 'categories' AND column_name = 'icon'
+      `);
+
+      if (iconColumnCheck.rows.length > 0 && iconColumnCheck.rows[0].character_maximum_length === 10) {
+        console.log("Migrating categories table: updating icon column length from 10 to 100...");
+        await pool.query(`ALTER TABLE categories ALTER COLUMN icon TYPE VARCHAR(100)`);
+        console.log("Icon column migration completed");
+      }
+
       if (categoriesCheck.rows.length === 0) {
         // Table exists but doesn't have user_id - need to migrate
         console.log("Migrating categories table...");
@@ -220,7 +233,7 @@ async function migrate() {
           user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
           name VARCHAR(100) NOT NULL,
           color VARCHAR(7) NOT NULL,
-          icon VARCHAR(10) NOT NULL,
+          icon VARCHAR(100) NOT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           UNIQUE(user_id, name)
         );
