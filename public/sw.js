@@ -4,22 +4,10 @@ const CACHE_VERSION = "v" + Date.now();
 const CACHE_NAME = `finance-assistant-${CACHE_VERSION}`;
 const STATIC_CACHE_NAME = `finance-assistant-static-${CACHE_VERSION}`;
 
-// Файлы, которые нужно кешировать при установке
-const STATIC_ASSETS = [
-  "/",
-  "/index.html",
-  "/manifest.json",
-];
-
-// Стратегия кеширования: Network First для HTML, Cache First для статики
+// Стратегия кеширования: Network First для всех ресурсов - всегда проверяем обновления
 self.addEventListener("install", (event) => {
-  console.log("[SW] Installing service worker...", CACHE_NAME);
-  event.waitUntil(
-    caches.open(STATIC_CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
-  );
-  // Принудительно активируем новый Service Worker
+  console.log("[SW] Installing service worker...", CACHE_VERSION);
+  // Принудительно активируем новый Service Worker сразу
   self.skipWaiting();
 });
 
@@ -52,73 +40,33 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Для HTML файлов используем Network First - всегда проверяем обновления
-  if (request.method === "GET" && request.headers.get("accept")?.includes("text/html")) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Если получили ответ, обновляем кеш
-          if (response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(STATIC_CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          // Если сеть недоступна, используем кеш
-          return caches.match(request);
-        })
-    );
-    return;
-  }
-
-  // Для статических ресурсов (JS, CSS, изображения) используем Cache First
-  if (
-    request.method === "GET" &&
-    (url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json)$/) ||
-      url.pathname.startsWith("/assets/"))
-  ) {
-    event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        return fetch(request).then((response) => {
-          // Кешируем только успешные ответы
-          if (response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(STATIC_CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        });
-      })
-    );
-    return;
-  }
-
   // Для API запросов - только сеть, без кеширования
   if (url.pathname.startsWith("/api/")) {
     event.respondWith(fetch(request));
     return;
   }
 
-  // Для остальных запросов - Network First
+  // Для всех остальных запросов используем Network First - всегда проверяем обновления
+  // Кеш используется только как fallback при отсутствии сети
   event.respondWith(
-    fetch(request)
+    fetch(request, {
+      cache: "no-cache", // Не используем HTTP кеш браузера
+    })
       .then((response) => {
-        if (response.status === 200) {
+        // Если получили ответ, обновляем кеш для offline использования
+        if (response.status === 200 && request.method === "GET") {
           const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
+          const cacheToUse = url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json)$/) 
+            ? STATIC_CACHE_NAME 
+            : CACHE_NAME;
+          caches.open(cacheToUse).then((cache) => {
             cache.put(request, responseClone);
           });
         }
         return response;
       })
       .catch(() => {
+        // Если сеть недоступна, используем кеш как fallback
         return caches.match(request);
       })
   );

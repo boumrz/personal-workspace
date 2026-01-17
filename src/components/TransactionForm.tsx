@@ -11,6 +11,7 @@ import {
   Space,
   Tooltip,
   Popconfirm,
+  Alert,
 } from "antd";
 import { PlusOutlined, CloseOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -30,7 +31,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   onClose,
   type,
 }) => {
-  const { addTransaction, addPlannedExpense, categories, deleteCategory } = useFinance();
+  const { addTransaction, addPlannedExpense, categories, deleteCategory, transactions, plannedExpenses } = useFinance();
   const [form] = Form.useForm();
   const [transactionType, setTransactionType] = useState<"income" | "expense">(
     "expense"
@@ -38,6 +39,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [enteredAmount, setEnteredAmount] = useState<number | null>(null);
+  const [drawerHeight, setDrawerHeight] = useState<number>(80);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Базовые категории, которые нельзя удалить
   const defaultCategoryNames = [
@@ -89,6 +93,60 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Сброс введенной суммы при открытии/закрытии формы
+  useEffect(() => {
+    if (!open) {
+      setEnteredAmount(null);
+      setDrawerHeight(80);
+    }
+  }, [open]);
+
+  // Обработка перетаскивания Drawer
+  useEffect(() => {
+    if (!isMobile || !open) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const windowHeight = window.innerHeight;
+      const touchY = e.clientY;
+      const newHeight = ((windowHeight - touchY) / windowHeight) * 100;
+      const clampedHeight = Math.max(30, Math.min(95, newHeight));
+      setDrawerHeight(clampedHeight);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      const windowHeight = window.innerHeight;
+      const touchY = e.touches[0].clientY;
+      const newHeight = ((windowHeight - touchY) / windowHeight) * 100;
+      const clampedHeight = Math.max(30, Math.min(95, newHeight));
+      setDrawerHeight(clampedHeight);
+    };
+
+    const handleTouchEnd = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener("touchmove", handleTouchMove, { passive: false });
+      document.addEventListener("touchend", handleTouchEnd);
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [isDragging, isMobile, open]);
+
   const handleCategoryCreated = (categoryId: string) => {
     setSelectedCategory(categoryId);
     setShowCategoryForm(false);
@@ -101,6 +159,52 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         : categories,
     [transactionType, categories]
   );
+
+  // Функция для расчета остатка бюджета по категории за текущий месяц
+  const calculateBudgetRemaining = useMemo(() => {
+    if (type !== "actual" || transactionType !== "expense" || !selectedCategory) {
+      return null;
+    }
+
+    const now = dayjs();
+    const currentMonth = now.month();
+    const currentYear = now.year();
+
+    // Сумма запланированных расходов для категории в текущем месяце
+    const plannedAmount = plannedExpenses
+      .filter((expense) => {
+        const expenseDate = dayjs(expense.date);
+        return (
+          expense.category.id === selectedCategory &&
+          expenseDate.month() === currentMonth &&
+          expenseDate.year() === currentYear
+        );
+      })
+      .reduce((sum, expense) => sum + expense.amount, 0);
+
+    // Сумма фактических расходов для категории в текущем месяце
+    const spentAmount = transactions
+      .filter((transaction) => {
+        const transactionDate = dayjs(transaction.date);
+        return (
+          transaction.type === "expense" &&
+          transaction.category.id === selectedCategory &&
+          transactionDate.month() === currentMonth &&
+          transactionDate.year() === currentYear
+        );
+      })
+      .reduce((sum, transaction) => sum + transaction.amount, 0);
+
+    // Остаток бюджета
+    const remaining = plannedAmount - spentAmount;
+
+    return {
+      planned: plannedAmount,
+      spent: spentAmount,
+      remaining: remaining,
+      willRemainAfter: enteredAmount ? remaining - enteredAmount : remaining,
+    };
+  }, [type, transactionType, selectedCategory, plannedExpenses, transactions, enteredAmount]);
 
   useEffect(() => {
     if (categories.length > 0 && !selectedCategory) {
@@ -132,6 +236,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       }
 
       form.resetFields();
+      setEnteredAmount(null);
       onClose();
     } catch (error) {
       console.error("Validation failed:", error);
@@ -140,6 +245,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
 
   const handleCancel = () => {
     form.resetFields();
+    setEnteredAmount(null);
     onClose();
   };
 
@@ -198,6 +304,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
             value={transactionType}
             onChange={(e: any) => {
               setTransactionType(e.target.value);
+              setEnteredAmount(null);
               const firstAvailable =
                 e.target.value === "income"
                   ? categories.find(
@@ -226,8 +333,50 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           step={0.01}
           precision={2}
           placeholder="0"
+          onChange={(value) => setEnteredAmount(value)}
         />
       </Form.Item>
+
+      {/* Отображение остатка бюджета */}
+      {type === "actual" && transactionType === "expense" && calculateBudgetRemaining && calculateBudgetRemaining.planned > 0 && (
+        <Form.Item>
+          <Alert
+            message={
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <div style={{ fontSize: 14, fontWeight: 500 }}>
+                  Остаток бюджета на месяц
+                </div>
+                <div style={{ fontSize: 12, color: "#666" }}>
+                  Запланировано: {calculateBudgetRemaining.planned.toLocaleString("ru-RU")} ₽
+                  {" • "}
+                  Потрачено: {calculateBudgetRemaining.spent.toLocaleString("ru-RU")} ₽
+                </div>
+                <div
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 600,
+                    color:
+                      calculateBudgetRemaining.willRemainAfter >= 0
+                        ? "#52c41a"
+                        : "#ff4d4f",
+                  }}
+                >
+                  {enteredAmount
+                    ? `Останется после операции: ${calculateBudgetRemaining.willRemainAfter.toLocaleString("ru-RU")} ₽`
+                    : `Осталось: ${calculateBudgetRemaining.remaining.toLocaleString("ru-RU")} ₽`}
+                </div>
+              </div>
+            }
+            type={
+              calculateBudgetRemaining.willRemainAfter >= 0
+                ? "success"
+                : "warning"
+            }
+            showIcon
+            style={{ marginTop: 8 }}
+          />
+        </Form.Item>
+      )}
 
       <Form.Item label="Категория" required>
         <Space wrap size={12} className={styles.categoriesContainer}>
@@ -237,7 +386,10 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               <div key={category.id} className={styles.categoryWrapper}>
                 <Button
                   type={selectedCategory === category.id ? "primary" : "default"}
-                  onClick={() => setSelectedCategory(category.id)}
+                  onClick={() => {
+                    setSelectedCategory(category.id);
+                    setEnteredAmount(null);
+                  }}
                   className={styles.categoryButton}
                   style={
                     selectedCategory === category.id
@@ -333,13 +485,27 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         <Drawer
           title={type === "planned" ? "Планируемая трата" : "Новая операция"}
           placement="bottom"
-          size="auto"
+          height={`${drawerHeight}vh`}
           open={open}
           onClose={handleCancel}
           className={styles.drawer}
           styles={{
             body: { padding: 24 },
+            header: { position: "relative", paddingBottom: 16 },
           }}
+          extra={
+            <div
+              className={styles.drawerHandle}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+            />
+          }
           footer={
             <div style={{ display: "flex", gap: 12, padding: "16px 24px" }}>
               <Button block onClick={handleCancel}>

@@ -139,12 +139,6 @@ const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
                     </div>
                     <div className={styles.expenseDetails}>
                       <Tag color={category.color}>{category.name}</Tag>
-                      <span className={styles.expenseDate}>
-                        {new Date(expense.date).toLocaleDateString("ru-RU", {
-                          day: "numeric",
-                          month: "long",
-                        })}
-                      </span>
                     </div>
                   </div>
                 </div>

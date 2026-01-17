@@ -14,10 +14,10 @@ if ("serviceWorker" in navigator) {
       .then((registration) => {
         console.log("Service Worker зарегистрирован:", registration);
 
-        // Проверяем обновления каждые 60 секунд
+        // Проверяем обновления каждые 30 секунд для более быстрого обнаружения обновлений
         setInterval(() => {
           registration.update();
-        }, 60000);
+        }, 30000);
 
         // Обработка обновления Service Worker
         registration.addEventListener("updatefound", () => {

@@ -2,8 +2,53 @@
   border-radius: 12px;
 }
 
+.drawer {
+  z-index: 1001;
+}
+
 .drawer :global(.ant-drawer-content-wrapper) {
-  border-radius: 8px 8px 0 0;
+  border-radius: 8px 8px 0 0 !important;
+  overflow: hidden !important;
+  max-height: 95vh !important;
+}
+
+.drawer :global(.ant-drawer-content) {
+  border-radius: 8px 8px 0 0 !important;
+  overflow: hidden !important;
+}
+
+.drawer :global(.ant-drawer-header) {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 16px 24px 8px 24px;
+  border-radius: 8px 8px 0 0 !important;
+  position: relative;
+}
+
+.drawerHandle {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background-color: #d9d9d9;
+  border-radius: 2px;
+  cursor: grab;
+  transition: background-color 0.2s;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.drawerHandle:hover {
+  background-color: #bfbfbf;
+}
+
+.drawerHandle:active {
+  cursor: grabbing;
+  background-color: #999;
 }
 
 .form {
