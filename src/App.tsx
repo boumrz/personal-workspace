@@ -23,6 +23,7 @@ dayjs.locale("ru");
 
 // Внутренний компонент, который имеет доступ к AuthContext
 const AppContent: React.FC = () => {
+  console.log("Проверка автодеплоя");
   const { user, token } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [plannedExpenses, setPlannedExpenses] = useState<Transaction[]>([]);
@@ -45,14 +46,13 @@ const AppContent: React.FC = () => {
 
       try {
         setLoading(true);
-        const [categoriesData, transactionsData, plannedData, savingsData] = await Promise.all(
-          [
+        const [categoriesData, transactionsData, plannedData, savingsData] =
+          await Promise.all([
             apiService.getCategories(),
             apiService.getTransactions(),
             apiService.getPlannedExpenses(),
             apiService.getSavings(),
-          ]
-        );
+          ]);
 
         setCategories(categoriesData);
         setTransactions(transactionsData);
@@ -139,7 +139,9 @@ const AppContent: React.FC = () => {
     }
   };
 
-  const addCategory = async (category: Omit<Category, "id">): Promise<Category> => {
+  const addCategory = async (
+    category: Omit<Category, "id">
+  ): Promise<Category> => {
     try {
       const newCategory = await apiService.createCategory(category);
       setCategories([...categories, newCategory]);
@@ -211,7 +213,10 @@ const AppContent: React.FC = () => {
                 <Layout>
                   <Routes>
                     <Route path="/finance/*" element={<FinancePage />} />
-                    <Route path="/" element={<Navigate to="/finance/transactions" replace />} />
+                    <Route
+                      path="/"
+                      element={<Navigate to="/finance/transactions" replace />}
+                    />
                   </Routes>
                 </Layout>
               </FinanceContext.Provider>
@@ -225,11 +230,11 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <ConfigProvider 
+    <ConfigProvider
       locale={ruRU}
       theme={{
         token: {
-          colorPrimary: '#42A5F5',
+          colorPrimary: "#42A5F5",
         },
       }}
     >
