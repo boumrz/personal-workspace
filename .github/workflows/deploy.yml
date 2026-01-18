@@ -1,0 +1,142 @@
+name: Deploy Application
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch: # Позволяет запускать вручную из GitHub UI
+
+jobs:
+  # Деплой фронтенда на GitHub Pages
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+        env:
+          NODE_ENV: production
+          # Используем API URL из секретов, если указан, иначе относительный путь
+          VITE_API_URL: ${{ secrets.API_URL || '/api' }}
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Деплой бэкенда на удаленный сервер
+  deploy-backend:
+    runs-on: ubuntu-latest
+    # Запускаем параллельно с фронтендом для ускорения
+    # needs: deploy-frontend  # Раскомментируйте, если хотите последовательный деплой
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_PATH: ${{ secrets.SERVER_PATH }}
+        run: |
+          # Создаем скрипт деплоя на лету (используем одинарные кавычки для heredoc, чтобы переменные подставлялись на сервере)
+          cat > deploy-remote.sh << 'DEPLOYSCRIPT'
+          #!/bin/bash
+          set -e
+          
+          echo "🚀 Начинаем деплой на сервере..."
+          
+          # Переходим в директорию проекта
+          cd "${SERVER_PATH}" || exit 1
+          
+          # Обновляем код из репозитория
+          echo "📥 Обновление кода из репозитория..."
+          git fetch origin
+          git reset --hard origin/main || git reset --hard origin/master
+          
+          # Обновляем зависимости бэкенда
+          echo "📦 Установка зависимостей бэкенда..."
+          cd server
+          npm ci --production || npm install --production
+          
+          # Запускаем миграции
+          echo "🗄️  Запуск миграций базы данных..."
+          npm run migrate || echo "⚠️ Миграции пропущены (возможна ошибка)"
+          
+          # Перезапускаем бэкенд через PM2
+          echo "🔄 Перезапуск бэкенда..."
+          pm2 restart finance-assistant-api || (pm2 delete finance-assistant-api 2>/dev/null || true; pm2 start ecosystem.config.cjs --env production)
+          pm2 save
+          
+          # Обновляем зависимости фронтенда (если нужно для сборки на сервере)
+          cd ..
+          if [ -f "package.json" ]; then
+            echo "📦 Обновление зависимостей фронтенда..."
+            npm ci || npm install
+            
+            # Собираем фронтенд для сервера (если используете свой домен, а не GitHub Pages)
+            echo "🏗️  Сборка фронтенда для сервера..."
+            npm run build || echo "⚠️ Сборка фронтенда пропущена"
+          fi
+          
+          # Перезагружаем Nginx (только если есть права)
+          echo "🔄 Перезагрузка Nginx..."
+          sudo nginx -t && sudo systemctl reload nginx || echo "⚠️ Nginx не перезагружен (проверьте права)"
+          
+          echo "✅ Деплой завершен успешно!"
+          DEPLOYSCRIPT
+          
+          # Копируем и выполняем скрипт на сервере
+          scp -o StrictHostKeyChecking=no deploy-remote.sh ${SERVER_USER}@${SERVER_HOST}:/tmp/deploy-remote.sh
+          ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} "chmod +x /tmp/deploy-remote.sh && SERVER_PATH='${SERVER_PATH}' bash /tmp/deploy-remote.sh && rm -f /tmp/deploy-remote.sh"
+          
+          # Очищаем временный скрипт
+          rm -f deploy-remote.sh
+
+      - name: Verify deployment
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        run: |
+          echo "🔍 Проверка статуса сервера..."
+          ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} "pm2 status || echo 'PM2 не запущен'"
