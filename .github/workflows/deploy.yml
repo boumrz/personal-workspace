@@ -86,6 +86,30 @@ jobs:
           
           echo "🚀 Начинаем деплой на сервере..."
           
+          # Загружаем переменные окружения для Node.js (если используется nvm)
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" || true
+          
+          # Или загружаем из стандартных путей
+          export PATH="$PATH:/usr/bin:/usr/local/bin:$HOME/.local/bin"
+          
+          # Проверяем доступность npm
+          if ! command -v npm &> /dev/null; then
+            echo "⚠️ npm не найден, пытаемся найти в стандартных местах..."
+            # Попробуем найти npm
+            NPM_PATH=$(which npm 2>/dev/null || find /usr -name npm 2>/dev/null | head -1 || find /usr/local -name npm 2>/dev/null | head -1)
+            if [ -n "$NPM_PATH" ]; then
+              export PATH="$(dirname $NPM_PATH):$PATH"
+              echo "✅ npm найден: $NPM_PATH"
+            else
+              echo "❌ npm не установлен. Установите Node.js на сервере."
+              exit 1
+            fi
+          fi
+          
+          echo "📋 Версия Node.js: $(node --version 2>/dev/null || echo 'не найдена')"
+          echo "📋 Версия npm: $(npm --version 2>/dev/null || echo 'не найдена')"
+          
           # Переходим в директорию проекта
           cd "${SERVER_PATH}" || exit 1
           
