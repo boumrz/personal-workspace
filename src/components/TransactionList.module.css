@@ -148,7 +148,7 @@
   .list {
     gap: 12px;
     padding: 0 16px;
-    padding-bottom: 80px; /* Отступ снизу для нижней навигации и кнопки */
+    padding-bottom: 30px; /* Отступ снизу для нижней навигации и кнопки */
     background: #ffffff;
   }
 

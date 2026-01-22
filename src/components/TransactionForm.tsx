@@ -91,17 +91,6 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Блокировка скролла страницы при открытии drawer
-  useEffect(() => {
-    if (open && isMobile) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open, isMobile]);
 
   // Сброс введенной суммы при открытии/закрытии формы
   useEffect(() => {
@@ -447,34 +436,10 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       {isMobile ? (
         <Drawer
           title={type === "planned" ? "Планируемая трата" : "Новая операция"}
-          placement="bottom"
+          placement="right"
           open={open}
           onClose={handleCancel}
-          className={styles.drawer}
-          styles={{
-            body: {
-              padding: 24,
-              overflow: "auto",
-              maxHeight: "calc(85vh - 55px)",
-              WebkitOverflowScrolling: "touch",
-            },
-            header: {
-              position: "sticky",
-              top: 0,
-              zIndex: 1,
-              background: "#fff",
-              borderRadius: "16px 16px 0 0",
-              paddingBottom: 16,
-            },
-            content: {
-              borderRadius: "16px 16px 0 0",
-              height: "85vh",
-            },
-            wrapper: {
-              borderRadius: "16px 16px 0 0",
-              height: "85vh",
-            },
-          }}
+          width={400}
           mask={true}
           footer={
             <div style={{ display: "flex", gap: 12, padding: "16px 24px" }}>

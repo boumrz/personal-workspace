@@ -15,17 +15,6 @@ const GoalAddDrawer: React.FC<GoalAddDrawerProps> = ({
   onClose,
   onSave,
 }) => {
-  // Блокировка скролла страницы при открытии drawer
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open]);
   const handleSubmit = async (goal: Omit<Goal, "id" | "createdAt" | "updatedAt">) => {
     try {
       await onSave(goal);
@@ -38,36 +27,12 @@ const GoalAddDrawer: React.FC<GoalAddDrawerProps> = ({
   return (
     <Drawer
       title="Добавление цели"
-      placement="bottom"
+      placement="right"
       open={open}
       onClose={onClose}
-      className={styles.drawer}
-      styles={{
-        body: { 
-          padding: 16, 
-          overflow: "auto",
-          maxHeight: "calc(85vh - 55px)",
-          WebkitOverflowScrolling: "touch",
-        },
-        content: { 
-          borderRadius: "16px 16px 0 0",
-          height: "85vh",
-        },
-        wrapper: { 
-          borderRadius: "16px 16px 0 0",
-          height: "85vh",
-        },
-        header: { 
-          borderRadius: "16px 16px 0 0",
-          position: "sticky",
-          top: 0,
-          zIndex: 1,
-          background: "#fff",
-        },
-      }}
+      width={400}
       mask={true}
       closable={true}
-      getContainer={false}
     >
       <GoalForm
         onSave={handleSubmit}

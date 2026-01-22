@@ -13,8 +13,6 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose }) => {
   const { addSaving } = useFinance();
   const [form] = Form.useForm();
   const [isMobile, setIsMobile] = useState(false);
-  const [drawerHeight, setDrawerHeight] = useState<number>(80);
-  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -25,70 +23,7 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose }) => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Блокировка скролла страницы при открытии drawer
-  useEffect(() => {
-    if (open && isMobile) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open, isMobile]);
 
-  // Сброс высоты Drawer при закрытии формы
-  useEffect(() => {
-    if (!open) {
-      setDrawerHeight(80);
-    }
-  }, [open]);
-
-  // Обработка перетаскивания Drawer
-  useEffect(() => {
-    if (!isMobile || !open) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      const windowHeight = window.innerHeight;
-      const touchY = e.clientY;
-      const newHeight = ((windowHeight - touchY) / windowHeight) * 100;
-      const clampedHeight = Math.max(30, Math.min(95, newHeight));
-      setDrawerHeight(clampedHeight);
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isDragging) return;
-      e.preventDefault();
-      const windowHeight = window.innerHeight;
-      const touchY = e.touches[0].clientY;
-      const newHeight = ((windowHeight - touchY) / windowHeight) * 100;
-      const clampedHeight = Math.max(30, Math.min(95, newHeight));
-      setDrawerHeight(clampedHeight);
-    };
-
-    const handleTouchEnd = () => {
-      setIsDragging(false);
-    };
-
-    if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-      document.addEventListener("touchmove", handleTouchMove, { passive: false });
-      document.addEventListener("touchend", handleTouchEnd);
-    }
-
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.removeEventListener("touchmove", handleTouchMove);
-      document.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, [isDragging, isMobile, open]);
 
   const handleSubmit = async () => {
     try {
@@ -194,47 +129,11 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose }) => {
     return (
       <Drawer
         title="Добавить накопление"
-        placement="bottom"
+        placement="right"
         onClose={handleCancel}
         open={open}
-        className={styles.drawer}
-        styles={{
-          body: {
-            padding: 24,
-            overflow: "auto",
-            maxHeight: "calc(85vh - 55px)",
-            WebkitOverflowScrolling: "touch",
-          },
-          header: {
-            position: "sticky",
-            top: 0,
-            zIndex: 1,
-            background: "#fff",
-            borderRadius: "16px 16px 0 0",
-            paddingBottom: 16,
-          },
-          content: {
-            borderRadius: "16px 16px 0 0",
-            height: "85vh",
-          },
-          wrapper: {
-            borderRadius: "16px 16px 0 0",
-            height: "85vh",
-          },
-        }}
-        extra={
-          <div
-            className={styles.drawerHandle}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              setIsDragging(true);
-            }}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              setIsDragging(true);
-            }}
-          />
-        }
+        width={400}
+        mask={true}
       >
         {formContent}
       </Drawer>

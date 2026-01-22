@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Drawer, Modal, Form, Input, InputNumber, Button, Space, Divider, Empty, Progress, Card, Popconfirm } from "antd";
 import { UserOutlined, EditOutlined, DeleteOutlined, PlusOutlined, MinusOutlined } from "@ant-design/icons";
 import { apiService, Profile, Goal } from "../services/api";
@@ -19,10 +19,6 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [profileForm] = Form.useForm();
-  const [drawerHeight, setDrawerHeight] = useState(80);
-  const [isDragging, setIsDragging] = useState(false);
-  const startY = useRef(0);
-  const startHeight = useRef(80);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -33,22 +29,10 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Блокировка скролла страницы при открытии drawer
-  useEffect(() => {
-    if (open && isMobile) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open, isMobile]);
 
   useEffect(() => {
     if (open) {
       loadData();
-      setDrawerHeight(80);
     } else {
       setEditingProfile(false);
       setShowGoalForm(false);
@@ -124,32 +108,6 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
     await handleGoalUpdate(goal.id, { currentAmount: newAmount });
   };
 
-  // Swipeable drawer handlers для мобилки
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (!isMobile) return;
-    startY.current = e.touches[0].clientY;
-    startHeight.current = drawerHeight;
-    setIsDragging(true);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isMobile || !isDragging) return;
-    const deltaY = startY.current - e.touches[0].clientY;
-    const newHeight = Math.min(95, Math.max(30, startHeight.current + (deltaY / window.innerHeight) * 100));
-    setDrawerHeight(newHeight);
-  };
-
-  const handleTouchEnd = () => {
-    if (!isMobile) return;
-    setIsDragging(false);
-    if (drawerHeight < 50) {
-      onClose();
-    } else if (drawerHeight > 80) {
-      setDrawerHeight(95);
-    } else {
-      setDrawerHeight(80);
-    }
-  };
 
   const content = (
     <div className={styles.content}>
@@ -320,42 +278,13 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
     return (
       <Drawer
         title="Профиль"
-        placement="bottom"
+        placement="right"
         open={open}
         onClose={onClose}
-        className={styles.drawer}
-        styles={{
-          body: {
-            padding: 16,
-            overflow: "auto",
-            maxHeight: "calc(85vh - 55px)",
-            WebkitOverflowScrolling: "touch",
-          },
-          content: {
-            borderRadius: "16px 16px 0 0",
-            height: "85vh",
-          },
-          wrapper: {
-            borderRadius: "16px 16px 0 0",
-            height: "85vh",
-          },
-          header: {
-            borderRadius: "16px 16px 0 0",
-            position: "sticky",
-            top: 0,
-            zIndex: 1,
-            background: "#fff",
-          },
-        }}
-        mask={false}
+        width={400}
+        mask={true}
         closable={true}
       >
-        <div
-          className={styles.swipeHandle}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        />
         {content}
       </Drawer>
     );

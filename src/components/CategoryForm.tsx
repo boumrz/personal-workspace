@@ -142,17 +142,11 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
       {isMobile ? (
         <Drawer
           title="Создать категорию"
-          placement="bottom"
-          size="auto"
+          placement="right"
           open={open}
           onClose={handleCancel}
-          className={styles.drawer}
-          styles={{
-            body: { padding: 24 },
-            content: { borderRadius: "8px 8px 0 0" },
-            wrapper: { borderRadius: "8px 8px 0 0" },
-            header: { borderRadius: "8px 8px 0 0" },
-          }}
+          width={400}
+          mask={true}
           footer={
             <div style={{ display: "flex", gap: 12, padding: "16px 24px" }}>
               <Button block onClick={handleCancel}>
