@@ -81,12 +81,48 @@
 }
 
 @media (max-width: 767px) {
+  .savingsCard {
+    margin-top: 0;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .monthSelector {
+    padding: 16px;
+    padding-bottom: 12px;
+    margin-bottom: 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .monthTitle {
+    font-size: 16px;
+  }
+
+  .savingsList {
+    padding: 0 16px;
+    padding-bottom: 20px; /* Отступ снизу для нижней навигации */
+  }
+
+  .savingItem {
+    padding: 16px 0;
+  }
+
   .savingHeader {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .savingAmount {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .savingDate {
+    font-size: 13px;
+  }
+
+  .savingDescription {
     font-size: 14px;
   }
 }

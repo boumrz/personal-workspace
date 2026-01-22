@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Tabs } from "antd";
 import DashboardPage from "./DashboardPage";
@@ -9,6 +9,16 @@ import * as styles from "./FinancePage.module.css";
 const FinancePage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Определяем активный таб на основе текущего роута
   const activeTab = useMemo(() => {
@@ -51,12 +61,14 @@ const FinancePage: React.FC = () => {
 
   return (
     <div className={styles.financePage}>
-      <Tabs
-        activeKey={activeTab}
-        onChange={handleTabChange}
-        items={tabItems}
-        className={styles.tabs}
-      />
+      {!isMobile && (
+        <Tabs
+          activeKey={activeTab}
+          onChange={handleTabChange}
+          items={tabItems}
+          className={styles.tabs}
+        />
+      )}
       <Routes>
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="transactions" element={<TransactionsPage />} />

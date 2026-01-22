@@ -169,9 +169,10 @@ const Header: React.FC<HeaderProps> = () => {
           />
         </div>
       )}
-      <AntHeader className={styles.header} ref={containerRef}>
+      <AntHeader className={`${styles.header} ${isMobile ? styles.mobileHeader : ""}`} ref={containerRef}>
         <div className={styles.headerContent}>
-          <div className={styles.logo}>💼 Рабочее пространство</div>
+          {!isMobile && <div className={styles.logo}>💼 Рабочее пространство</div>}
+          {isMobile && <div className={styles.mobileLogo}>💼</div>}
           <div className={styles.menuContainer}>
             {/* Меню разделов - показываем только если помещается (для десктопа) */}
             {!isMobile && !showBurger && (
@@ -212,15 +213,7 @@ const Header: React.FC<HeaderProps> = () => {
                 {!isMobile && (user?.name || user?.email)}
               </Button>
             </Dropdown>
-            {/* Бургер для мобильного (справа) */}
-            {isMobile && (
-              <Button
-                type="text"
-                icon={<MenuOutlined />}
-                onClick={() => setDrawerVisible(true)}
-                className={styles.mobileBurgerButton}
-              />
-            )}
+            {/* Бургер для мобильного (справа) - убираем, так как навигация теперь внизу */}
             {/* Бургер для десктопа (справа, если не помещается) */}
             {!isMobile && showBurger && (
               <Dropdown
@@ -239,29 +232,7 @@ const Header: React.FC<HeaderProps> = () => {
         </div>
       </AntHeader>
 
-      {/* Drawer для мобильного */}
-      <Drawer
-        title="Разделы"
-        placement="bottom"
-        size="50vh"
-        open={drawerVisible}
-        onClose={() => setDrawerVisible(false)}
-        className={styles.drawer}
-        styles={{
-          body: { padding: 0 },
-          content: { borderRadius: "8px 8px 0 0" },
-          wrapper: { borderRadius: "8px 8px 0 0" },
-          header: { borderRadius: "8px 8px 0 0" },
-        }}
-      >
-        <Menu
-          mode="vertical"
-          selectedKeys={[selectedKey]}
-          items={menuItems}
-          onClick={handleSectionClick}
-          className={styles.drawerMenu}
-        />
-      </Drawer>
+      {/* Drawer для мобильного - убираем, так как навигация теперь внизу */}
     </>
   );
 };

@@ -1,12 +1,20 @@
 .profilePage {
   min-height: 100%;
   background: #f5f5f5;
-  padding: 24px;
 }
 
 .container {
   max-width: 800px;
   margin: 0 auto;
+  padding: 24px;
+  padding-top: 24px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+    padding-top: 16px;
+  }
 }
 
 .loading {
@@ -31,7 +39,7 @@
 
 .sectionHeader h2 {
   margin: 0;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -45,14 +53,28 @@
 }
 
 .profileField {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 16px;
   font-size: 16px;
   line-height: 1.6;
+  align-items: start;
 }
 
-.profileField strong {
-  margin-right: 8px;
+.profileLabel {
   color: #666;
   font-weight: 500;
+}
+
+.profileValue {
+  color: #1a1a1a;
+}
+
+@media (max-width: 768px) {
+  .profileField {
+    grid-template-columns: 120px 1fr;
+    gap: 12px;
+  }
 }
 
 .goalsList {
@@ -107,16 +129,81 @@
   flex: 1;
 }
 
+.logoutSection {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e8e8e8;
+}
+
+.logoutButton {
+  height: auto;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
 @media (max-width: 768px) {
   .profilePage {
-    padding: 16px;
+    padding: 0;
+    padding-bottom: 24px; /* Отступ снизу для нижней навигации */
+    background: #f5f5f5;
+    min-height: 100%;
+  }
+
+  .container {
+    max-width: 100%;
+  }
+
+  .section {
+    margin-bottom: 24px;
+  }
+
+  .sectionHeader {
+    margin-bottom: 12px;
   }
 
   .sectionHeader h2 {
-    font-size: 20px;
+    font-size: 18px;
+  }
+
+  .sectionHeader :global(.ant-btn) {
+    padding: 8px;
+    width: auto;
+    min-width: auto;
+  }
+
+  .sectionHeader :global(.ant-btn) :global(.anticon) {
+    margin-right: 0;
+  }
+
+  .sectionHeader :global(.ant-btn) {
+    padding: 4px 12px;
+    height: auto;
+  }
+
+  .section :global(.ant-card) {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
 
   .goalHeader h3 {
     font-size: 16px;
+  }
+
+  .goalCard {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .logoutSection {
+    margin-top: 24px;
+    padding-top: 20px;
+    margin-bottom: 24px;
+  }
+
+  .logoutButton {
+    padding: 14px 24px;
+    font-size: 16px;
+    border-radius: 12px;
   }
 }

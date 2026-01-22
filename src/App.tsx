@@ -236,6 +236,7 @@ const App: React.FC = () => {
       theme={{
         token: {
           colorPrimary: "#42A5F5",
+          fontFamily: '"Helvetica", "Helvetica Neue", Arial, sans-serif',
         },
       }}
     >

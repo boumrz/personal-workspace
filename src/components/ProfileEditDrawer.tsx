@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
-import { Drawer, Form, Input, InputNumber, Button, Space } from "antd";
+import { Drawer, Form, Input, Button, Space, DatePicker } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 import { Profile } from "../services/api";
+import dayjs from "dayjs";
 import * as styles from "./ProfileEditDrawer.module.css";
 
 interface ProfileEditDrawerProps {
@@ -25,7 +26,9 @@ const ProfileEditDrawer: React.FC<ProfileEditDrawerProps> = ({
         lastName: profile.lastName || "",
         firstName: profile.firstName || "",
         middleName: profile.middleName || "",
-        age: profile.age || undefined,
+        dateOfBirth: profile.dateOfBirth
+          ? dayjs(profile.dateOfBirth)
+          : undefined,
       });
     }
   }, [open, profile, form]);
@@ -33,7 +36,13 @@ const ProfileEditDrawer: React.FC<ProfileEditDrawerProps> = ({
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      await onSave(values);
+      const submitValues = {
+        ...values,
+        dateOfBirth: values.dateOfBirth
+          ? values.dateOfBirth.format("YYYY-MM-DD")
+          : undefined,
+      };
+      await onSave(submitValues);
       onClose();
     } catch (error) {
       console.error("Form validation error:", error);
@@ -85,14 +94,13 @@ const ProfileEditDrawer: React.FC<ProfileEditDrawerProps> = ({
           <Input placeholder="Введите отчество" />
         </Form.Item>
         <Form.Item
-          name="age"
-          label="Возраст"
+          name="dateOfBirth"
+          label="Дата рождения"
         >
-          <InputNumber
-            min={0}
-            max={150}
-            placeholder="Введите возраст"
+          <DatePicker
+            placeholder="Выберите дату рождения"
             style={{ width: "100%" }}
+            format="DD.MM.YYYY"
           />
         </Form.Item>
         <Space style={{ width: "100%", justifyContent: "flex-end", marginTop: 16 }}>

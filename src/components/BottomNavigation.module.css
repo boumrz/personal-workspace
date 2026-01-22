@@ -1,0 +1,81 @@
+.bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: #ffffff;
+  border-top: 1px solid #e8e8e8;
+  padding: 8px 0;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 1000;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+  height: 64px;
+}
+
+.navItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 16px;
+  flex: 1;
+  transition: all 0.2s ease;
+  color: #8c8c8c;
+  min-width: 0;
+}
+
+.navItem:active {
+  transform: scale(0.95);
+}
+
+.navIcon {
+  font-size: 22px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navLabel {
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.navItem.active {
+  color: #42A5F5;
+}
+
+.navItem.active .navIcon {
+  transform: scale(1.1);
+}
+
+.navItem.active .navLabel {
+  font-weight: 600;
+}
+
+/* Адаптация для очень маленьких экранов */
+@media (max-width: 360px) {
+  .navLabel {
+    font-size: 10px;
+  }
+  
+  .navIcon {
+    font-size: 20px;
+  }
+  
+  .navItem {
+    padding: 8px 12px;
+  }
+}

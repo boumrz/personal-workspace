@@ -3,6 +3,7 @@ import { Card, Row, Col, Statistic } from "antd";
 import { useFinance } from "../context/FinanceContext";
 import ExpensesByCategoryChart from "../components/charts/ExpensesByCategoryChart";
 import BalanceHistoryChart from "../components/charts/BalanceHistoryChart";
+import PageHeader from "../components/PageHeader";
 import * as styles from "./DashboardPage.module.css";
 import dayjs from "dayjs";
 
@@ -74,6 +75,7 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className={styles.dashboardPage}>
+      <PageHeader title="Дашборд" />
       {/* Статистика */}
       <Row gutter={[16, 16]} className={styles.statsRow}>
         <Col xs={24} sm={12} lg={8}>

@@ -58,6 +58,7 @@
   gap: 12px;
   flex: 1;
   min-width: 0;
+  align-self: stretch;
 }
 
 .categoryBadge {
@@ -68,10 +69,16 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  align-self: center;
 }
 
 .categoryIcon {
   font-size: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  vertical-align: middle;
 }
 
 .transactionInfo {
@@ -105,7 +112,7 @@
 }
 
 .plannedProgress.overLimit {
-  color: #F44336;
+  color: #f44336;
   font-weight: 600;
 }
 
@@ -122,15 +129,15 @@
 }
 
 .transactionAmount.income {
-  color: #66BB6A;
+  color: #66bb6a;
 }
 
 .transactionAmount.expense {
-  color: #FF7043;
+  color: #ff7043;
 }
 
 .transactionAmount.overLimit {
-  color: #F44336;
+  color: #f44336;
 }
 
 .deleteButton {
@@ -138,45 +145,78 @@
 }
 
 @media (max-width: 768px) {
+  .list {
+    gap: 12px;
+    padding: 0 16px;
+    padding-bottom: 20px; /* Отступ снизу для нижней навигации */
+    background: #ffffff;
+  }
+
   .transaction {
-    padding: 12px;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: 0;
   }
 
   .transactionLeft {
-    gap: 8px;
+    gap: 12px;
   }
 
   .categoryBadge {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
   }
 
   .categoryIcon {
-    font-size: 20px;
+    font-size: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    vertical-align: middle;
   }
 
   .transactionDescription {
-    font-size: 14px;
+    font-size: 15px;
+    font-weight: 500;
   }
 
   .transactionAmount {
-    font-size: 16px;
+    font-size: 17px;
+    font-weight: 600;
   }
 
   .transactionRight {
     gap: 8px;
-    flex-direction: column;
-    align-items: flex-end;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .deleteButton {
+    padding: 4px 8px;
   }
 
   .monthLabel {
     min-width: 120px;
-    font-size: 14px;
+    font-size: 15px;
+    font-weight: 600;
   }
 
   .monthSelector {
-    padding: 8px;
-    gap: 12px;
+    padding: 12px 16px;
+    gap: 16px;
+    margin: 0;
+    margin-bottom: 16px;
+    border-radius: 0;
+    box-shadow: none;
+    background: #ffffff;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .monthButton {
+    padding: 4px 8px;
   }
 }
 
@@ -196,6 +236,11 @@
 
   .categoryIcon {
     font-size: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    vertical-align: middle;
   }
 
   .transactionDescription {

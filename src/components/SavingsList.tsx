@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Button, Empty } from "antd";
+import { Card, Button, Empty, Modal } from "antd";
 import { DeleteOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import { Saving } from "../context/FinanceContext";
@@ -21,12 +21,21 @@ const SavingsList: React.FC<SavingsListProps> = ({
 }) => {
   const { deleteSaving } = useFinance();
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteSaving(id);
-    } catch (error) {
-      console.error("Error deleting saving:", error);
-    }
+  const handleDelete = (id: string) => {
+    Modal.confirm({
+      title: "Удалить накопление?",
+      content: "Это действие нельзя отменить.",
+      okText: "Удалить",
+      okType: "danger",
+      cancelText: "Отмена",
+      onOk: async () => {
+        try {
+          await deleteSaving(id);
+        } catch (error) {
+          console.error("Error deleting saving:", error);
+        }
+      },
+    });
   };
 
   const currentMonthIndex = months.indexOf(selectedMonth);
@@ -45,7 +54,19 @@ const SavingsList: React.FC<SavingsListProps> = ({
     }
   };
 
-  if (savings.length === 0) {
+  // Фильтруем накопления по выбранному месяцу
+  const filteredSavings = selectedMonth
+    ? savings.filter((saving) => {
+        const savingDate = new Date(saving.date);
+        const savingMonthKey = savingDate.toLocaleDateString("ru-RU", {
+          month: "long",
+          year: "numeric",
+        });
+        return savingMonthKey === selectedMonth;
+      })
+    : savings;
+
+  if (filteredSavings.length === 0) {
     return (
       <Card>
         <Empty description="Нет накоплений за этот месяц" />
@@ -72,7 +93,7 @@ const SavingsList: React.FC<SavingsListProps> = ({
       </div>
 
       <div className={styles.savingsList}>
-        {savings.map((saving) => (
+        {filteredSavings.map((saving) => (
           <div key={saving.id} className={styles.savingItem}>
             <div className={styles.savingContent}>
               <div className={styles.savingHeader}>

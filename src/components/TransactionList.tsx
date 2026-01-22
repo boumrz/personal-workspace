@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Card, Empty, Tag, Button } from "antd";
+import { Card, Empty, Tag, Button, Modal } from "antd";
 import { DeleteOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import { Transaction } from "../context/FinanceContext";
@@ -236,7 +236,16 @@ const TransactionList: React.FC<TransactionListProps> = ({
                       type="text"
                       danger
                       icon={<DeleteOutlined />}
-                      onClick={() => deleteTransaction(transaction.id)}
+                      onClick={() => {
+                        Modal.confirm({
+                          title: "Удалить операцию?",
+                          content: "Это действие нельзя отменить.",
+                          okText: "Удалить",
+                          okType: "danger",
+                          cancelText: "Отмена",
+                          onOk: () => deleteTransaction(transaction.id),
+                        });
+                      }}
                       className={styles.deleteButton}
                     />
                   </div>

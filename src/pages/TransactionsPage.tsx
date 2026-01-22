@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { Tabs, FloatButton, Button } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
+import { Tabs, FloatButton, Button, Badge, Tag, Space } from "antd";
+import { PlusOutlined, FilterOutlined, CloseOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import TransactionList from "../components/TransactionList";
 import PlannedExpenses from "../components/PlannedExpenses";
 import TransactionForm from "../components/TransactionForm";
 import CategoryFilter from "../components/CategoryFilter";
+import PageHeader from "../components/PageHeader";
+import IconRenderer from "../components/IconRenderer";
 import * as styles from "./TransactionsPage.module.css";
 
 const TransactionsPage: React.FC = () => {
-  const { transactions, plannedExpenses } = useFinance();
+  const { transactions, plannedExpenses, categories } = useFinance();
   const [activeTab, setActiveTab] = useState<"actual" | "planned">("actual");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   // Определяем, мобильное ли устройство
   useEffect(() => {
@@ -25,9 +28,18 @@ const TransactionsPage: React.FC = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const filteredTransactions = selectedCategory
-    ? transactions.filter((t) => t.category.id === selectedCategory)
-    : transactions;
+  const filteredTransactions =
+    selectedCategories.length === 0 || selectedCategories.includes("all")
+      ? transactions
+      : transactions.filter((t) => selectedCategories.includes(t.category.id));
+
+  const handleRemoveCategory = (categoryId: string) => {
+    setSelectedCategories(selectedCategories.filter((id) => id !== categoryId));
+  };
+
+  const getCategoryById = (categoryId: string) => {
+    return categories.find((c) => c.id === categoryId);
+  };
 
   const tabItems = [
     {
@@ -36,7 +48,7 @@ const TransactionsPage: React.FC = () => {
       children: (
         <TransactionList
           transactions={filteredTransactions}
-          selectedCategory={selectedCategory}
+          selectedCategory={null}
           plannedExpenses={plannedExpenses}
         />
       ),
@@ -48,13 +60,53 @@ const TransactionsPage: React.FC = () => {
     },
   ];
 
+  const hasActiveFilters = selectedCategories.length > 0 && !selectedCategories.includes("all");
+
   return (
     <div className={styles.transactionsPage}>
+      <PageHeader
+        title="Все операции"
+        extra={
+          <Badge count={hasActiveFilters ? selectedCategories.length : 0} size="small">
+            <Button
+              type="text"
+              icon={<FilterOutlined />}
+              onClick={() => setFilterDrawerOpen(true)}
+              className={styles.filterButton}
+            />
+          </Badge>
+        }
+      />
+      {hasActiveFilters && (
+        <div className={styles.activeFilters}>
+          <Space size={[8, 8]} wrap>
+            {selectedCategories.map((categoryId) => {
+              const category = getCategoryById(categoryId);
+              if (!category) return null;
+              return (
+                <Tag
+                  key={categoryId}
+                  closable
+                  onClose={() => handleRemoveCategory(categoryId)}
+                  color={category.color}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    padding: "4px 8px",
+                    fontSize: "12px",
+                  }}
+                >
+                  <span style={{ marginRight: 4, display: "inline-flex", alignItems: "center" }}>
+                    <IconRenderer iconName={category.icon} size={12} />
+                  </span>
+                  {category.name}
+                </Tag>
+              );
+            })}
+          </Space>
+        </div>
+      )}
       <div className={styles.content}>
-        <CategoryFilter
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-        />
         <Tabs
           activeKey={activeTab}
           onChange={(key) => setActiveTab(key as "actual" | "planned")}
@@ -91,6 +143,13 @@ const TransactionsPage: React.FC = () => {
           type={activeTab === "planned" ? "planned" : "actual"}
         />
       )}
+
+      <CategoryFilter
+        selectedCategories={selectedCategories}
+        onSelectCategories={setSelectedCategories}
+        open={filterDrawerOpen}
+        onClose={() => setFilterDrawerOpen(false)}
+      />
     </div>
   );
 };

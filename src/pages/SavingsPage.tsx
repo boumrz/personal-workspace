@@ -4,6 +4,7 @@ import { PlusOutlined, WalletOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import SavingsList from "../components/SavingsList";
 import SavingsForm from "../components/SavingsForm";
+import PageHeader from "../components/PageHeader";
 import * as styles from "./SavingsPage.module.css";
 
 const SavingsPage: React.FC = () => {
@@ -141,6 +142,7 @@ const SavingsPage: React.FC = () => {
 
   return (
     <div className={styles.savingsPage}>
+      <PageHeader title="Накопления" />
       <div className={styles.content}>
         {/* Статистика */}
         <div className={styles.statsContainer}>
@@ -229,14 +231,14 @@ const SavingsPage: React.FC = () => {
           <Card className={styles.emptyCard}>
             <Empty description="Нет накоплений" />
           </Card>
-        ) : selectedMonth ? (
+        ) : (
           <SavingsList
-            savings={groupedSavings.grouped[selectedMonth] || []}
+            savings={savings}
             selectedMonth={selectedMonth}
             months={groupedSavings.sortedMonths}
             onMonthChange={setSelectedMonth}
           />
-        ) : null}
+        )}
       </div>
 
       {/* Кнопка добавления накопления */}

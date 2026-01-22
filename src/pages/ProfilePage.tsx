@@ -9,24 +9,32 @@ import {
   Empty,
   Progress,
   Card,
-  Popconfirm,
   Modal,
+  DatePicker,
 } from "antd";
+import dayjs from "dayjs";
 import {
   UserOutlined,
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
   MinusOutlined,
+  LogoutOutlined,
+  FileAddOutlined,
 } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 import { apiService, Profile, Goal } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import GoalForm from "../components/GoalForm";
 import ProfileEditDrawer from "../components/ProfileEditDrawer";
 import GoalEditDrawer from "../components/GoalEditDrawer";
 import GoalAddDrawer from "../components/GoalAddDrawer";
+import PageHeader from "../components/PageHeader";
 import * as styles from "./ProfilePage.module.css";
 
 const ProfilePage: React.FC = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(false);
@@ -67,7 +75,9 @@ const ProfilePage: React.FC = () => {
         lastName: profileData.lastName || "",
         firstName: profileData.firstName || "",
         middleName: profileData.middleName || "",
-        age: profileData.age || undefined,
+        dateOfBirth: profileData.dateOfBirth
+          ? dayjs(profileData.dateOfBirth)
+          : undefined,
       });
     } catch (error) {
       console.error("Error loading profile data:", error);
@@ -79,7 +89,13 @@ const ProfilePage: React.FC = () => {
   const handleProfileSubmit = async () => {
     try {
       const values = await profileForm.validateFields();
-      const updated = await apiService.updateProfile(values);
+      const submitValues = {
+        ...values,
+        dateOfBirth: values.dateOfBirth
+          ? values.dateOfBirth.format("YYYY-MM-DD")
+          : undefined,
+      };
+      const updated = await apiService.updateProfile(submitValues);
       setProfile(updated);
       setEditingProfile(false);
     } catch (error) {
@@ -111,13 +127,22 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleGoalDelete = async (id: string) => {
-    try {
-      await apiService.deleteGoal(id);
-      setGoals(goals.filter((g) => g.id !== id));
-    } catch (error) {
-      console.error("Error deleting goal:", error);
-    }
+  const handleGoalDelete = (id: string) => {
+    Modal.confirm({
+      title: "Удалить цель?",
+      content: "Это действие нельзя отменить.",
+      okText: "Удалить",
+      okType: "danger",
+      cancelText: "Отмена",
+      onOk: async () => {
+        try {
+          await apiService.deleteGoal(id);
+          setGoals(goals.filter((g) => g.id !== id));
+        } catch (error) {
+          console.error("Error deleting goal:", error);
+        }
+      },
+    });
   };
 
   const handleAmountButtonClick = (goal: Goal, type: "add" | "subtract") => {
@@ -155,6 +180,7 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div className={styles.profilePage}>
+      <PageHeader title="Мой профиль" />
       <div className={styles.container}>
         {/* Профиль */}
         <div className={styles.section}>
@@ -167,7 +193,7 @@ const ProfilePage: React.FC = () => {
               icon={<EditOutlined />}
               onClick={() => setEditingProfile(true)}
             >
-              Редактировать
+              {!isMobile && "Редактировать"}
             </Button>
           </div>
 
@@ -187,12 +213,11 @@ const ProfilePage: React.FC = () => {
                 <Form.Item name="middleName" label="Отчество">
                   <Input placeholder="Введите отчество" />
                 </Form.Item>
-                <Form.Item name="age" label="Возраст">
-                  <InputNumber
-                    min={0}
-                    max={150}
-                    placeholder="Введите возраст"
+                <Form.Item name="dateOfBirth" label="Дата рождения">
+                  <DatePicker
+                    placeholder="Выберите дату рождения"
                     style={{ width: "100%" }}
+                    format="DD.MM.YYYY"
                   />
                 </Form.Item>
                 <Space>
@@ -214,17 +239,30 @@ const ProfilePage: React.FC = () => {
             <Card>
               <div className={styles.profileInfo}>
                 <div className={styles.profileField}>
-                  <strong>Фамилия:</strong> {profile?.lastName || "Не указана"}
+                  <span className={styles.profileLabel}>Фамилия:</span>
+                  <span className={styles.profileValue}>
+                    {profile?.lastName || "Не указана"}
+                  </span>
                 </div>
                 <div className={styles.profileField}>
-                  <strong>Имя:</strong> {profile?.firstName || "Не указано"}
+                  <span className={styles.profileLabel}>Имя:</span>
+                  <span className={styles.profileValue}>
+                    {profile?.firstName || "Не указано"}
+                  </span>
                 </div>
                 <div className={styles.profileField}>
-                  <strong>Отчество:</strong>{" "}
-                  {profile?.middleName || "Не указано"}
+                  <span className={styles.profileLabel}>Отчество:</span>
+                  <span className={styles.profileValue}>
+                    {profile?.middleName || "Не указано"}
+                  </span>
                 </div>
                 <div className={styles.profileField}>
-                  <strong>Возраст:</strong> {profile?.age || "Не указан"}
+                  <span className={styles.profileLabel}>Дата рождения:</span>
+                  <span className={styles.profileValue}>
+                    {profile?.dateOfBirth
+                      ? dayjs(profile.dateOfBirth).format("DD.MM.YYYY")
+                      : "Не указана"}
+                  </span>
                 </div>
               </div>
             </Card>
@@ -239,10 +277,10 @@ const ProfilePage: React.FC = () => {
             <h2>Цели</h2>
             <Button
               type="primary"
-              icon={<PlusOutlined />}
+              icon={<FileAddOutlined />}
               onClick={() => setShowGoalForm(true)}
             >
-              Добавить цель
+              {!isMobile && "Добавить цель"}
             </Button>
           </div>
 
@@ -282,16 +320,12 @@ const ProfilePage: React.FC = () => {
                             icon={<EditOutlined />}
                             onClick={() => setEditingGoal(goal)}
                           />
-                          <Popconfirm
-                            title="Удалить цель?"
-                            onConfirm={() => handleGoalDelete(goal.id)}
-                          >
-                            <Button
-                              type="text"
-                              danger
-                              icon={<DeleteOutlined />}
-                            />
-                          </Popconfirm>
+                          <Button
+                            type="text"
+                            danger
+                            icon={<DeleteOutlined />}
+                            onClick={() => handleGoalDelete(goal.id)}
+                          />
                         </Space>
                       </div>
                       {goal.description && (
@@ -331,6 +365,23 @@ const ProfilePage: React.FC = () => {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Кнопка выхода */}
+        <div className={styles.logoutSection}>
+          <Button
+            danger
+            icon={<LogoutOutlined />}
+            onClick={() => {
+              logout();
+              navigate("/login");
+            }}
+            className={styles.logoutButton}
+            size={isMobile ? "large" : "middle"}
+            block={isMobile}
+          >
+            Выйти из аккаунта
+          </Button>
         </div>
       </div>
 
@@ -406,7 +457,7 @@ const ProfilePage: React.FC = () => {
               formatter={(value) =>
                 `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, " ")
               }
-              parser={(value) => value!.replace(/\s?/g, "")}
+              parser={(value) => parseFloat(value!.replace(/\s?/g, "")) || 0}
             />
           </Form.Item>
           {selectedGoalForAmount && (

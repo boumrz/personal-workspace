@@ -206,7 +206,21 @@ async function migrate() {
       }
       
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS age INTEGER`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS date_of_birth DATE`);
       console.log("Users table profile columns added");
+    } else {
+      // Check if date_of_birth column exists
+      const dateOfBirthColumnExists = await pool.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'users' AND column_name = 'date_of_birth'
+      `);
+      
+      if (dateOfBirthColumnExists.rows.length === 0) {
+        console.log("Adding date_of_birth column to users table...");
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS date_of_birth DATE`);
+        console.log("date_of_birth column added");
+      }
     }
     
     console.log("Users table created/verified");

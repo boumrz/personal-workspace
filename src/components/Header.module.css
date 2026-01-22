@@ -11,6 +11,20 @@
   line-height: 64px;
 }
 
+.mobileHeader {
+  height: 56px;
+  line-height: 56px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.mobileLogo {
+  font-size: 24px;
+  margin-right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .headerContent {
   display: flex;
   align-items: center;
@@ -153,11 +167,16 @@
 @media (max-width: 768px) {
   .headerContent {
     padding: 0 16px;
+    justify-content: space-between;
   }
 
   .logo {
     font-size: 16px;
     margin-right: 12px;
+  }
+
+  .mobileLogo {
+    font-size: 24px;
   }
 
   .menuContainer {
@@ -167,9 +186,10 @@
   .userButton {
     padding: 0 8px;
     font-size: 12px;
+    min-width: 40px;
   }
 
   .userButton :global(.anticon) {
-    font-size: 16px;
+    font-size: 20px;
   }
 }

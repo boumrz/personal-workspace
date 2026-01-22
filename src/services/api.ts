@@ -34,6 +34,7 @@ export interface Profile {
   firstName?: string;
   middleName?: string;
   age?: number;
+  dateOfBirth?: string;
 }
 
 export interface Goal {

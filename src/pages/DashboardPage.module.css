@@ -1,6 +1,15 @@
 .dashboardPage {
   width: 100%;
   max-width: 100%;
+  background: #f5f5f5;
+}
+
+@media (max-width: 768px) {
+  .dashboardPage {
+    padding: 0;
+    padding-bottom: 24px; /* Отступ снизу для нижней навигации */
+    min-height: 100%;
+  }
 }
 
 .pageTitle {
@@ -12,10 +21,22 @@
 
 .statsRow {
   margin-bottom: 24px;
+  padding: 24px;
 }
 
 .chartsRow {
   margin-bottom: 24px;
+  padding: 0 24px;
+}
+
+@media (min-width: 769px) {
+  .statsRow {
+    padding: 24px;
+  }
+
+  .chartsRow {
+    padding: 0 24px;
+  }
 }
 
 .chartCard {
@@ -31,21 +52,41 @@
 }
 
 @media (max-width: 768px) {
-  .pageTitle {
-    font-size: 20px;
-    margin-bottom: 12px;
+  .statsRow {
+    padding: 16px;
+    padding-top: 0;
+  }
+
+  .chartsRow {
+    padding: 0 16px;
   }
 
   .statsRow {
+    margin-top: 0;
     margin-bottom: 16px;
+  }
+
+  .statsRow :global(.ant-col) {
+    margin-bottom: 12px;
+  }
+
+  .statsRow :global(.ant-card) {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
 
   .chartsRow {
     margin-bottom: 16px;
   }
 
+  .chartsRow :global(.ant-col) {
+    margin-bottom: 16px;
+  }
+
   .chartCard {
     min-height: 250px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
 
   .chartCard :global(.ant-card-body) {
