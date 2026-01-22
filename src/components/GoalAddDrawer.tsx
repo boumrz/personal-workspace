@@ -25,15 +25,16 @@ const GoalAddDrawer: React.FC<GoalAddDrawerProps> = ({
   };
 
   return (
-    <Drawer
-      title="Добавление цели"
-      placement="right"
-      open={open}
-      onClose={onClose}
-      width={400}
-      mask={true}
-      closable={true}
-    >
+      <Drawer
+        title="Добавление цели"
+        placement="right"
+        open={open}
+        onClose={onClose}
+        width="100%"
+        mask={true}
+        closable={true}
+        styles={{ wrapper: { width: "100%", maxWidth: "100vw" } }}
+      >
       <GoalForm
         onSave={handleSubmit}
         onCancel={onClose}

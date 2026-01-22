@@ -69,9 +69,8 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
       open={open}
       width="100%"
       styles={{
-        body: {
-          padding: "16px",
-        },
+        body: { padding: "16px" },
+        wrapper: { width: "100%", maxWidth: "100vw" },
       }}
       footer={
         <div className={styles.drawerFooter}>

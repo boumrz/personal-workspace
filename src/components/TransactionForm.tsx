@@ -31,7 +31,14 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   onClose,
   type,
 }) => {
-  const { addTransaction, addPlannedExpense, categories, deleteCategory, transactions, plannedExpenses } = useFinance();
+  const {
+    addTransaction,
+    addPlannedExpense,
+    categories,
+    deleteCategory,
+    transactions,
+    plannedExpenses,
+  } = useFinance();
   const [form] = Form.useForm();
   const [transactionType, setTransactionType] = useState<"income" | "expense">(
     "expense"
@@ -57,7 +64,10 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     return defaultCategoryNames.includes(categoryName);
   };
 
-  const handleDeleteCategory = async (categoryId: string, e?: React.MouseEvent) => {
+  const handleDeleteCategory = async (
+    categoryId: string,
+    e?: React.MouseEvent
+  ) => {
     if (e) {
       e.stopPropagation();
     }
@@ -65,7 +75,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       await deleteCategory(categoryId);
       // Если удаленная категория была выбрана, сбрасываем выбор
       if (selectedCategory === categoryId) {
-        const remainingCategories = availableCategories.filter(c => c.id !== categoryId);
+        const remainingCategories = availableCategories.filter(
+          (c) => c.id !== categoryId
+        );
         if (remainingCategories.length > 0) {
           setSelectedCategory(remainingCategories[0].id);
         } else {
@@ -91,7 +103,6 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-
   // Сброс введенной суммы при открытии/закрытии формы
   useEffect(() => {
     if (!open) {
@@ -114,7 +125,11 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
 
   // Функция для расчета остатка бюджета по категории за текущий месяц
   const calculateBudgetRemaining = useMemo(() => {
-    if (type !== "actual" || transactionType !== "expense" || !selectedCategory) {
+    if (
+      type !== "actual" ||
+      transactionType !== "expense" ||
+      !selectedCategory
+    ) {
       return null;
     }
 
@@ -156,7 +171,14 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       remaining: remaining,
       willRemainAfter: enteredAmount ? remaining - enteredAmount : remaining,
     };
-  }, [type, transactionType, selectedCategory, plannedExpenses, transactions, enteredAmount]);
+  }, [
+    type,
+    transactionType,
+    selectedCategory,
+    plannedExpenses,
+    transactions,
+    enteredAmount,
+  ]);
 
   useEffect(() => {
     if (categories.length > 0 && !selectedCategory) {
@@ -290,45 +312,56 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       </Form.Item>
 
       {/* Отображение остатка бюджета */}
-      {type === "actual" && transactionType === "expense" && calculateBudgetRemaining && calculateBudgetRemaining.planned > 0 && (
-        <Form.Item>
-          <Alert
-            message={
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <div style={{ fontSize: 14, fontWeight: 500 }}>
-                  Остаток бюджета на месяц
-                </div>
-                <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                  Запланировано: {calculateBudgetRemaining.planned.toLocaleString("ru-RU")} ₽
-                  {" • "}
-                  Потрачено: {calculateBudgetRemaining.spent.toLocaleString("ru-RU")} ₽
-                </div>
+      {type === "actual" &&
+        transactionType === "expense" &&
+        calculateBudgetRemaining &&
+        calculateBudgetRemaining.planned > 0 && (
+          <Form.Item>
+            <Alert
+              message={
                 <div
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 600,
-                    color:
-                      calculateBudgetRemaining.willRemainAfter >= 0
-                        ? "var(--income)"
-                        : "var(--expense)",
-                  }}
+                  style={{ display: "flex", flexDirection: "column", gap: 4 }}
                 >
-                  {enteredAmount
-                    ? `Останется после операции: ${calculateBudgetRemaining.willRemainAfter.toLocaleString("ru-RU")} ₽`
-                    : `Осталось: ${calculateBudgetRemaining.remaining.toLocaleString("ru-RU")} ₽`}
+                  <div style={{ fontSize: 14, fontWeight: 500 }}>
+                    Остаток бюджета на месяц
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                    Запланировано:{" "}
+                    {calculateBudgetRemaining.planned.toLocaleString("ru-RU")} ₽
+                    {" • "}
+                    Потрачено:{" "}
+                    {calculateBudgetRemaining.spent.toLocaleString("ru-RU")} ₽
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color:
+                        calculateBudgetRemaining.willRemainAfter >= 0
+                          ? "var(--income)"
+                          : "var(--expense)",
+                    }}
+                  >
+                    {enteredAmount
+                      ? `Останется после операции: ${calculateBudgetRemaining.willRemainAfter.toLocaleString(
+                          "ru-RU"
+                        )} ₽`
+                      : `Осталось: ${calculateBudgetRemaining.remaining.toLocaleString(
+                          "ru-RU"
+                        )} ₽`}
+                  </div>
                 </div>
-              </div>
-            }
-            type={
-              calculateBudgetRemaining.willRemainAfter >= 0
-                ? "success"
-                : "warning"
-            }
-            showIcon
-            style={{ marginTop: 8 }}
-          />
-        </Form.Item>
-      )}
+              }
+              type={
+                calculateBudgetRemaining.willRemainAfter >= 0
+                  ? "success"
+                  : "warning"
+              }
+              showIcon
+              style={{ marginTop: 8 }}
+            />
+          </Form.Item>
+        )}
 
       <Form.Item label="Категория" required>
         <Space wrap size={12} className={styles.categoriesContainer}>
@@ -337,7 +370,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
             return (
               <div key={category.id} className={styles.categoryWrapper}>
                 <Button
-                  type={selectedCategory === category.id ? "primary" : "default"}
+                  type={
+                    selectedCategory === category.id ? "primary" : "default"
+                  }
                   onClick={() => {
                     setSelectedCategory(category.id);
                     setEnteredAmount(null);
@@ -437,10 +472,12 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         <Drawer
           title={type === "planned" ? "Планируемая трата" : "Новая операция"}
           placement="right"
+          className={styles.drawer}
           open={open}
           onClose={handleCancel}
-          width={400}
+          width="100%"
           mask={true}
+          styles={{ wrapper: { width: "100%", maxWidth: "100vw" } }}
           footer={
             <div
               style={{

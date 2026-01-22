@@ -59,9 +59,10 @@ const ProfileEditDrawer: React.FC<ProfileEditDrawerProps> = ({
       placement="right"
       open={open}
       onClose={onClose}
-      width={400}
+      width="100%"
       mask={true}
       closable={true}
+      styles={{ wrapper: { width: "100%", maxWidth: "100vw" } }}
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
         <Form.Item name="lastName" label="Фамилия">

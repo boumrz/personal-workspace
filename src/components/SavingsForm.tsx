@@ -132,8 +132,9 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose }) => {
         placement="right"
         onClose={handleCancel}
         open={open}
-        width={400}
+        width="100%"
         mask={true}
+        styles={{ wrapper: { width: "100%", maxWidth: "100vw" } }}
       >
         {formContent}
       </Drawer>

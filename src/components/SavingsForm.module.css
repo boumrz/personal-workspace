@@ -9,7 +9,6 @@
 .drawer :global(.ant-drawer-content-wrapper) {
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0 !important;
   overflow: hidden !important;
-  max-height: 95vh !important;
 }
 
 .drawer :global(.ant-drawer-content) {
