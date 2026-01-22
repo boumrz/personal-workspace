@@ -33,6 +33,18 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Блокировка скролла страницы при открытии drawer
+  useEffect(() => {
+    if (open && isMobile) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open, isMobile]);
+
   useEffect(() => {
     if (open) {
       loadData();
@@ -309,15 +321,31 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
       <Drawer
         title="Профиль"
         placement="bottom"
-        height={`${drawerHeight}vh`}
         open={open}
         onClose={onClose}
         className={styles.drawer}
         styles={{
-          body: { padding: 16, overflow: "auto" },
-          content: { borderRadius: "16px 16px 0 0" },
-          wrapper: { borderRadius: "16px 16px 0 0" },
-          header: { borderRadius: "16px 16px 0 0" },
+          body: {
+            padding: 16,
+            overflow: "auto",
+            maxHeight: "calc(85vh - 55px)",
+            WebkitOverflowScrolling: "touch",
+          },
+          content: {
+            borderRadius: "16px 16px 0 0",
+            height: "85vh",
+          },
+          wrapper: {
+            borderRadius: "16px 16px 0 0",
+            height: "85vh",
+          },
+          header: {
+            borderRadius: "16px 16px 0 0",
+            position: "sticky",
+            top: 0,
+            zIndex: 1,
+            background: "#fff",
+          },
         }}
         mask={false}
         closable={true}

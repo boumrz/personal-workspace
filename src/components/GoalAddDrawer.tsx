@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Drawer } from "antd";
 import { Goal } from "../services/api";
 import GoalForm from "./GoalForm";
@@ -15,6 +15,17 @@ const GoalAddDrawer: React.FC<GoalAddDrawerProps> = ({
   onClose,
   onSave,
 }) => {
+  // Блокировка скролла страницы при открытии drawer
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
   const handleSubmit = async (goal: Omit<Goal, "id" | "createdAt" | "updatedAt">) => {
     try {
       await onSave(goal);
@@ -28,18 +39,35 @@ const GoalAddDrawer: React.FC<GoalAddDrawerProps> = ({
     <Drawer
       title="Добавление цели"
       placement="bottom"
-      height="100vh"
       open={open}
       onClose={onClose}
       className={styles.drawer}
       styles={{
-        body: { padding: 16, overflow: "auto" },
-        content: { borderRadius: "16px 16px 0 0" },
-        wrapper: { borderRadius: "16px 16px 0 0" },
-        header: { borderRadius: "16px 16px 0 0" },
+        body: { 
+          padding: 16, 
+          overflow: "auto",
+          maxHeight: "calc(85vh - 55px)",
+          WebkitOverflowScrolling: "touch",
+        },
+        content: { 
+          borderRadius: "16px 16px 0 0",
+          height: "85vh",
+        },
+        wrapper: { 
+          borderRadius: "16px 16px 0 0",
+          height: "85vh",
+        },
+        header: { 
+          borderRadius: "16px 16px 0 0",
+          position: "sticky",
+          top: 0,
+          zIndex: 1,
+          background: "#fff",
+        },
       }}
       mask={true}
       closable={true}
+      getContainer={false}
     >
       <GoalForm
         onSave={handleSubmit}

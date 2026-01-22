@@ -1,13 +1,18 @@
 .pageHeader {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 100;
+  left: 0;
+  right: 0;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
   background-color: #ffffff;
   border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .title {
@@ -30,5 +35,16 @@
 
   .title {
     font-size: 20px;
+  }
+}
+
+/* Высота шапки для расчета отступов */
+.pageHeader {
+  height: 60px;
+}
+
+@media (max-width: 768px) {
+  .pageHeader {
+    height: 56px;
   }
 }

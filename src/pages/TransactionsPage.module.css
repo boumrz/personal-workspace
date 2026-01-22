@@ -1,6 +1,7 @@
 .transactionsPage {
   width: 100%;
   max-width: 100%;
+  padding-top: 60px; /* Отступ для фиксированной шапки */
 }
 
 .filterButton {
@@ -21,6 +22,9 @@
   padding: 12px 24px;
   background-color: #ffffff;
   border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 60px; /* Под фиксированной шапкой */
+  z-index: 999;
 }
 
 @media (max-width: 768px) {
@@ -62,9 +66,14 @@
 @media (max-width: 768px) {
   .transactionsPage {
     padding: 0;
+    padding-top: 56px; /* Отступ для фиксированной шапки на мобильных */
     background: #ffffff;
-    padding-bottom: 24px; /* Отступ снизу для нижней навигации */
+    padding-bottom: 100px; /* Отступ снизу для нижней навигации и кнопки */
     min-height: 100%;
+  }
+  
+  .activeFilters {
+    top: 56px; /* Под фиксированной шапкой на мобильных */
   }
 
   .content {

@@ -33,6 +33,18 @@ const ProfileEditDrawer: React.FC<ProfileEditDrawerProps> = ({
     }
   }, [open, profile, form]);
 
+  // Блокировка скролла страницы при открытии drawer
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
@@ -57,56 +69,57 @@ const ProfileEditDrawer: React.FC<ProfileEditDrawerProps> = ({
         </div>
       }
       placement="bottom"
-      height="100vh"
       open={open}
       onClose={onClose}
       className={styles.drawer}
       styles={{
-        body: { padding: 16, overflow: "auto" },
-        content: { borderRadius: "16px 16px 0 0" },
-        wrapper: { borderRadius: "16px 16px 0 0" },
-        header: { borderRadius: "16px 16px 0 0" },
+        body: {
+          padding: 16,
+          overflow: "auto",
+          maxHeight: "calc(85vh - 55px)",
+          WebkitOverflowScrolling: "touch",
+        },
+        content: {
+          borderRadius: "16px 16px 0 0",
+          height: "85vh",
+        },
+        wrapper: {
+          borderRadius: "16px 16px 0 0",
+          height: "85vh",
+        },
+        header: {
+          borderRadius: "16px 16px 0 0",
+          position: "sticky",
+          top: 0,
+          zIndex: 1,
+          background: "#fff",
+        },
       }}
       mask={true}
       closable={true}
+      getContainer={false}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleSubmit}
-      >
-        <Form.Item
-          name="lastName"
-          label="Фамилия"
-        >
+      <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        <Form.Item name="lastName" label="Фамилия">
           <Input placeholder="Введите фамилию" />
         </Form.Item>
-        <Form.Item
-          name="firstName"
-          label="Имя"
-        >
+        <Form.Item name="firstName" label="Имя">
           <Input placeholder="Введите имя" />
         </Form.Item>
-        <Form.Item
-          name="middleName"
-          label="Отчество"
-        >
+        <Form.Item name="middleName" label="Отчество">
           <Input placeholder="Введите отчество" />
         </Form.Item>
-        <Form.Item
-          name="dateOfBirth"
-          label="Дата рождения"
-        >
+        <Form.Item name="dateOfBirth" label="Дата рождения">
           <DatePicker
             placeholder="Выберите дату рождения"
             style={{ width: "100%" }}
             format="DD.MM.YYYY"
           />
         </Form.Item>
-        <Space style={{ width: "100%", justifyContent: "flex-end", marginTop: 16 }}>
-          <Button onClick={onClose}>
-            Отмена
-          </Button>
+        <Space
+          style={{ width: "100%", justifyContent: "flex-end", marginTop: 16 }}
+        >
+          <Button onClick={onClose}>Отмена</Button>
           <Button type="primary" htmlType="submit">
             Сохранить
           </Button>

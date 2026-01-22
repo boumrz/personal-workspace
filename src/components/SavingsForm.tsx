@@ -25,6 +25,18 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose }) => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Блокировка скролла страницы при открытии drawer
+  useEffect(() => {
+    if (open && isMobile) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open, isMobile]);
+
   // Сброс высоты Drawer при закрытии формы
   useEffect(() => {
     if (!open) {
@@ -183,15 +195,32 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose }) => {
       <Drawer
         title="Добавить накопление"
         placement="bottom"
-        height={`${drawerHeight}vh`}
         onClose={handleCancel}
         open={open}
         className={styles.drawer}
         styles={{
           body: {
-            padding: "24px",
+            padding: 24,
+            overflow: "auto",
+            maxHeight: "calc(85vh - 55px)",
+            WebkitOverflowScrolling: "touch",
           },
-          header: { position: "relative", paddingBottom: 16 },
+          header: {
+            position: "sticky",
+            top: 0,
+            zIndex: 1,
+            background: "#fff",
+            borderRadius: "16px 16px 0 0",
+            paddingBottom: 16,
+          },
+          content: {
+            borderRadius: "16px 16px 0 0",
+            height: "85vh",
+          },
+          wrapper: {
+            borderRadius: "16px 16px 0 0",
+            height: "85vh",
+          },
         }}
         extra={
           <div
