@@ -5,6 +5,7 @@ import {
   MenuOutlined,
   UserOutlined,
   LogoutOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -23,6 +24,8 @@ const Header: React.FC<HeaderProps> = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [showBurger, setShowBurger] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const closingFromClick = useRef(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const hiddenMenuRef = useRef<HTMLDivElement>(null);
@@ -62,13 +65,24 @@ const Header: React.FC<HeaderProps> = () => {
       // Используем скрытый элемент для измерения реальной ширины меню
       const menuWidth = hiddenMenuRef.current.scrollWidth;
       const containerWidth = containerRef.current.offsetWidth;
-      const logoWidth = containerRef.current.querySelector(`.${styles.logo}`)?.getBoundingClientRect().width || 200;
-      const userButton = containerRef.current.querySelector(`.${styles.userButton}`);
+      const logoWidth =
+        containerRef.current
+          .querySelector(`.${styles.logo}`)
+          ?.getBoundingClientRect().width || 200;
+      const userButton = containerRef.current.querySelector(
+        `.${styles.userButton}`
+      );
       const userButtonWidth = userButton?.getBoundingClientRect().width || 150;
       const burgerWidth = 48; // Ширина бургера
       const padding = 48; // Отступы
       const gap = 16; // Отступы между элементами
-      const availableWidth = containerWidth - logoWidth - userButtonWidth - burgerWidth - padding - gap * 2;
+      const availableWidth =
+        containerWidth -
+        logoWidth -
+        userButtonWidth -
+        burgerWidth -
+        padding -
+        gap * 2;
 
       setShowBurger(menuWidth > availableWidth);
     };
@@ -83,9 +97,16 @@ const Header: React.FC<HeaderProps> = () => {
   }, [isMobile]);
 
   const handleSectionClick = ({ key }: { key: string }) => {
+    closingFromClick.current = true;
+    setUserMenuOpen(false);
+
     if (key === "logout") {
       logout();
       navigate("/login");
+      return;
+    }
+    if (key === "profile") {
+      navigate("/profile");
       return;
     }
     navigate(key);
@@ -111,6 +132,14 @@ const Header: React.FC<HeaderProps> = () => {
         </div>
       ),
       disabled: true,
+    },
+    {
+      type: "divider" as const,
+    },
+    {
+      key: "profile",
+      label: "Профиль",
+      icon: <SettingOutlined />,
     },
     {
       type: "divider" as const,
@@ -158,8 +187,22 @@ const Header: React.FC<HeaderProps> = () => {
             )}
             {/* Меню пользователя */}
             <Dropdown
-              menu={{ items: userMenuItems, onClick: handleSectionClick }}
+              menu={{
+                items: userMenuItems,
+                onClick: handleSectionClick,
+              }}
               placement="bottomRight"
+              open={userMenuOpen}
+              onOpenChange={(open) => {
+                // Если закрытие было вызвано из handleSectionClick, игнорируем onOpenChange
+                if (closingFromClick.current && !open) {
+                  closingFromClick.current = false;
+                  return;
+                }
+                // В остальных случаях (клик вне меню, ESC и т.д.) разрешаем закрытие
+                setUserMenuOpen(open);
+              }}
+              trigger={["click"]}
             >
               <Button
                 type="text"

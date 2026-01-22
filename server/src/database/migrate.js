@@ -152,6 +152,63 @@ async function migrate() {
         console.log("Users table migration completed");
       }
     }
+    
+    // Check if profile columns exist (last_name, first_name, middle_name, age)
+    const lastNameColumnExists = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'users' AND column_name = 'last_name'
+    `);
+    
+    if (lastNameColumnExists.rows.length === 0) {
+      console.log("Adding profile columns to users table...");
+      
+      // Проверяем, есть ли старое поле full_name
+      const fullNameColumnExists = await pool.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'users' AND column_name = 'full_name'
+      `);
+      
+      if (fullNameColumnExists.rows.length > 0) {
+        // Миграция: разбиваем full_name на три поля
+        console.log("Migrating full_name to separate fields...");
+        // Сначала добавляем новые поля
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name VARCHAR(100)`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name VARCHAR(100)`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS middle_name VARCHAR(100)`);
+        
+        // Пытаемся разбить существующие full_name (если есть данные)
+        // Простая логика: берем первое слово как фамилию, второе как имя, остальное как отчество
+        await pool.query(`
+          UPDATE users 
+          SET 
+            last_name = SPLIT_PART(full_name, ' ', 1),
+            first_name = CASE 
+              WHEN SPLIT_PART(full_name, ' ', 2) != '' THEN SPLIT_PART(full_name, ' ', 2)
+              ELSE NULL
+            END,
+            middle_name = CASE 
+              WHEN array_length(string_to_array(full_name, ' '), 1) > 2 
+              THEN array_to_string((string_to_array(full_name, ' '))[3:], ' ')
+              ELSE NULL
+            END
+          WHERE full_name IS NOT NULL AND full_name != ''
+        `);
+        
+        // Удаляем старое поле (опционально, можно оставить для совместимости)
+        // await pool.query(`ALTER TABLE users DROP COLUMN IF EXISTS full_name`);
+      } else {
+        // Просто добавляем новые поля
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name VARCHAR(100)`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name VARCHAR(100)`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS middle_name VARCHAR(100)`);
+      }
+      
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS age INTEGER`);
+      console.log("Users table profile columns added");
+    }
+    
     console.log("Users table created/verified");
 
     // Check if categories table exists
@@ -386,6 +443,36 @@ async function migrate() {
     }
     console.log("Savings table created/verified");
 
+    // Check if goals table exists
+    const goalsTableExists = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'goals'
+      );
+    `);
+
+    if (!goalsTableExists.rows[0].exists) {
+      // Table doesn't exist, create it
+      console.log("Creating goals table...");
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS goals (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          title VARCHAR(255) NOT NULL,
+          target_amount DECIMAL(10, 2) NOT NULL,
+          current_amount DECIMAL(10, 2) DEFAULT 0,
+          description TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      console.log("Goals table created");
+    } else {
+      console.log("Goals table already exists");
+    }
+    console.log("Goals table created/verified");
+
     // Create indexes
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_login ON users(login) WHERE login IS NOT NULL`);
@@ -399,6 +486,7 @@ async function migrate() {
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_planned_expenses_category ON planned_expenses(category_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_savings_user ON savings(user_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_savings_date ON savings(date)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_goals_user ON goals(user_id)`);
 
     console.log("Indexes created/verified");
     console.log("Migration completed successfully");

@@ -9,6 +9,8 @@ import plannedExpensesRouter from "./routes/plannedExpenses.js";
 import categoriesRouter from "./routes/categories.js";
 import savingsRouter from "./routes/savings.js";
 import authRouter from "./routes/auth.js";
+import profileRouter from "./routes/profile.js";
+import goalsRouter from "./routes/goals.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import { handleDbError } from "./middleware/dbErrorHandler.js";
 
@@ -55,6 +57,8 @@ app.use("/api/transactions", transactionsRouter);
 app.use("/api/planned-expenses", plannedExpensesRouter);
 app.use("/api/categories", categoriesRouter);
 app.use("/api/savings", savingsRouter);
+app.use("/api/profile", profileRouter);
+app.use("/api/goals", goalsRouter);
 
 // Health check
 app.get("/api/health", (req, res) => {

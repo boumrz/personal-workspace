@@ -40,8 +40,6 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [enteredAmount, setEnteredAmount] = useState<number | null>(null);
-  const [drawerHeight, setDrawerHeight] = useState<number>(80);
-  const [isDragging, setIsDragging] = useState(false);
 
   // Базовые категории, которые нельзя удалить
   const defaultCategoryNames = [
@@ -97,55 +95,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   useEffect(() => {
     if (!open) {
       setEnteredAmount(null);
-      setDrawerHeight(80);
     }
   }, [open]);
-
-  // Обработка перетаскивания Drawer
-  useEffect(() => {
-    if (!isMobile || !open) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      const windowHeight = window.innerHeight;
-      const touchY = e.clientY;
-      const newHeight = ((windowHeight - touchY) / windowHeight) * 100;
-      const clampedHeight = Math.max(30, Math.min(95, newHeight));
-      setDrawerHeight(clampedHeight);
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isDragging) return;
-      e.preventDefault();
-      const windowHeight = window.innerHeight;
-      const touchY = e.touches[0].clientY;
-      const newHeight = ((windowHeight - touchY) / windowHeight) * 100;
-      const clampedHeight = Math.max(30, Math.min(95, newHeight));
-      setDrawerHeight(clampedHeight);
-    };
-
-    const handleTouchEnd = () => {
-      setIsDragging(false);
-    };
-
-    if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-      document.addEventListener("touchmove", handleTouchMove, { passive: false });
-      document.addEventListener("touchend", handleTouchEnd);
-    }
-
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.removeEventListener("touchmove", handleTouchMove);
-      document.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, [isDragging, isMobile, open]);
 
   const handleCategoryCreated = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -485,27 +436,17 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         <Drawer
           title={type === "planned" ? "Планируемая трата" : "Новая операция"}
           placement="bottom"
-          height={`${drawerHeight}vh`}
+          height="100vh"
           open={open}
           onClose={handleCancel}
           className={styles.drawer}
           styles={{
             body: { padding: 24 },
             header: { position: "relative", paddingBottom: 16 },
+            content: { borderRadius: "16px 16px 0 0" },
+            wrapper: { borderRadius: "16px 16px 0 0" },
           }}
-          extra={
-            <div
-              className={styles.drawerHandle}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                setIsDragging(true);
-              }}
-              onTouchStart={(e) => {
-                e.preventDefault();
-                setIsDragging(true);
-              }}
-            />
-          }
+          mask={true}
           footer={
             <div style={{ display: "flex", gap: 12, padding: "16px 24px" }}>
               <Button block onClick={handleCancel}>

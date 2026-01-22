@@ -1,0 +1,16 @@
+.drawer {
+  z-index: 1000;
+}
+
+.swipeHandle {
+  width: 40px;
+  height: 4px;
+  background: #d9d9d9;
+  border-radius: 2px;
+  margin: 0 auto 16px;
+  cursor: grab;
+}
+
+.swipeHandle:active {
+  cursor: grabbing;
+}

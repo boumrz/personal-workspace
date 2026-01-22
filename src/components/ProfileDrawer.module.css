@@ -1,0 +1,118 @@
+.content {
+  padding: 8px 0;
+}
+
+.section {
+  margin-bottom: 24px;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.sectionHeader h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.profileInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profileField {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.profileField strong {
+  margin-right: 8px;
+  color: #666;
+}
+
+.goalsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.goalCard {
+  border-radius: 8px;
+}
+
+.goalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.goalHeader h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.goalDescription {
+  margin: 8px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.goalProgress {
+  margin: 16px 0;
+}
+
+.goalAmounts {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.goalActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.goalActions button {
+  flex: 1;
+}
+
+.swipeHandle {
+  width: 40px;
+  height: 4px;
+  background: #d9d9d9;
+  border-radius: 2px;
+  margin: 0 auto 16px;
+  cursor: grab;
+}
+
+.swipeHandle:active {
+  cursor: grabbing;
+}
+
+.drawer {
+  z-index: 1000;
+}
+
+.modal {
+  z-index: 1000;
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 0;
+  }
+  
+  .section {
+    margin-bottom: 20px;
+  }
+}

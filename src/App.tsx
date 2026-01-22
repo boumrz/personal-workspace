@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/ru";
 import Layout from "./components/Layout";
 import FinancePage from "./pages/FinancePage";
+import ProfilePage from "./pages/ProfilePage";
 import Login from "./components/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
@@ -31,7 +32,6 @@ const AppContent: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Загружать данные только когда пользователь авторизован
   useEffect(() => {
     const loadData = async () => {
       if (!user || !token) {
@@ -213,6 +213,7 @@ const AppContent: React.FC = () => {
                 <Layout>
                   <Routes>
                     <Route path="/finance/*" element={<FinancePage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
                     <Route
                       path="/"
                       element={<Navigate to="/finance/transactions" replace />}

@@ -25,6 +25,27 @@ export interface Saving {
   date: string;
 }
 
+export interface Profile {
+  id: number;
+  login?: string;
+  email?: string;
+  name?: string;
+  lastName?: string;
+  firstName?: string;
+  middleName?: string;
+  age?: number;
+}
+
+export interface Goal {
+  id: string;
+  title: string;
+  targetAmount: number;
+  currentAmount: number;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 class ApiService {
   private getToken(): string | null {
     return localStorage.getItem("token");
@@ -142,6 +163,43 @@ class ApiService {
 
   async deleteSaving(id: string): Promise<void> {
     return this.request<void>(`/savings/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  // Profile
+  async getProfile(): Promise<Profile> {
+    return this.request<Profile>("/profile");
+  }
+
+  async updateProfile(profile: Partial<Profile>): Promise<Profile> {
+    return this.request<Profile>("/profile", {
+      method: "PUT",
+      body: JSON.stringify(profile),
+    });
+  }
+
+  // Goals
+  async getGoals(): Promise<Goal[]> {
+    return this.request<Goal[]>("/goals");
+  }
+
+  async createGoal(goal: Omit<Goal, "id" | "createdAt" | "updatedAt">): Promise<Goal> {
+    return this.request<Goal>("/goals", {
+      method: "POST",
+      body: JSON.stringify(goal),
+    });
+  }
+
+  async updateGoal(id: string, goal: Partial<Omit<Goal, "id" | "createdAt" | "updatedAt">>): Promise<Goal> {
+    return this.request<Goal>(`/goals/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(goal),
+    });
+  }
+
+  async deleteGoal(id: string): Promise<void> {
+    return this.request<void>(`/goals/${id}`, {
       method: "DELETE",
     });
   }

@@ -1,0 +1,122 @@
+.profilePage {
+  min-height: 100%;
+  background: #f5f5f5;
+  padding: 24px;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  font-size: 16px;
+  color: #666;
+}
+
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.sectionHeader h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profileInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profileField {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.profileField strong {
+  margin-right: 8px;
+  color: #666;
+  font-weight: 500;
+}
+
+.goalsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.goalCard {
+  border-radius: 8px;
+}
+
+.goalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.goalHeader h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.goalDescription {
+  margin: 12px 0;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.goalProgress {
+  margin: 20px 0;
+}
+
+.goalAmounts {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.goalActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.goalActions button {
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .profilePage {
+    padding: 16px;
+  }
+
+  .sectionHeader h2 {
+    font-size: 20px;
+  }
+
+  .goalHeader h3 {
+    font-size: 16px;
+  }
+}
