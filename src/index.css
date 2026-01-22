@@ -39,12 +39,18 @@ body {
 /* Исправление для drawers снизу на мобильных устройствах */
 @media (max-width: 768px) {
   :global(.ant-drawer-content-wrapper) {
+    width: 100% !important;
+    max-width: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
     height: 85vh !important;
     top: auto !important;
     bottom: 0 !important;
   }
 
   :global(.ant-drawer-content) {
+    width: 100% !important;
+    max-width: 100% !important;
     height: 85vh !important;
     overflow: hidden !important;
     border-radius: 16px 16px 0 0 !important;
