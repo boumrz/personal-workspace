@@ -93,10 +93,10 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
               fontSize: "14px",
               margin: 0,
               border: isAllSelected
-                ? "1px solid #1890ff"
-                : "1px solid #d9d9d9",
-              backgroundColor: isAllSelected ? "#1890ff" : "#ffffff",
-              color: isAllSelected ? "#ffffff" : "#1a1a1a",
+                ? "1px solid var(--accent)"
+                : "1px solid var(--border-strong)",
+              backgroundColor: isAllSelected ? "var(--accent)" : "var(--bg-card)",
+              color: isAllSelected ? "#fff" : "var(--text-primary)",
             }}
           >
             Все
@@ -113,11 +113,11 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
                 margin: 0,
                 border: isCategorySelected(category.id)
                   ? `1px solid ${category.color}`
-                  : "1px solid #d9d9d9",
+                  : "1px solid var(--border-strong)",
                 backgroundColor: isCategorySelected(category.id)
                   ? category.color
-                  : "#ffffff",
-                color: isCategorySelected(category.id) ? "#ffffff" : "#1a1a1a",
+                  : "var(--bg-card)",
+                color: isCategorySelected(category.id) ? "#fff" : "var(--text-primary)",
               }}
             >
               <span className={styles.categoryIcon}>

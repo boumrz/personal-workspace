@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Form, Input, InputNumber, Button, Space } from "antd";
+import { Form, Input, InputNumber, Button } from "antd";
 import { Goal } from "../services/api";
 
 interface GoalFormProps {
@@ -102,14 +102,20 @@ const GoalForm: React.FC<GoalFormProps> = ({ goal, onSave, onCancel }) => {
         />
       </Form.Item>
 
-      <Space>
-        <Button type="primary" htmlType="submit">
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          width: "100%",
+        }}
+      >
+        <Button style={{ flex: 1, minWidth: 0 }} type="primary" htmlType="submit">
           {goal ? "Сохранить" : "Создать"}
         </Button>
-        <Button onClick={onCancel}>
+        <Button style={{ flex: 1, minWidth: 0 }} onClick={onCancel}>
           Отмена
         </Button>
-      </Space>
+      </div>
     </Form>
   );
 };

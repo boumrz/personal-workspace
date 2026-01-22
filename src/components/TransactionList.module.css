@@ -11,15 +11,15 @@
   gap: 16px;
   margin-bottom: 16px;
   padding: 12px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .monthLabel {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   min-width: 150px;
   text-align: center;
 }
@@ -38,9 +38,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -64,7 +64,7 @@
 .categoryBadge {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -92,7 +92,7 @@
 .transactionDescription {
   font-size: 16px;
   font-weight: 500;
-  color: #1f2937;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -107,12 +107,12 @@
 
 .plannedProgress {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .plannedProgress.overLimit {
-  color: #f44336;
+  color: var(--expense);
   font-weight: 600;
 }
 
@@ -129,15 +129,15 @@
 }
 
 .transactionAmount.income {
-  color: #66bb6a;
+  color: var(--income);
 }
 
 .transactionAmount.expense {
-  color: #ff7043;
+  color: var(--warning);
 }
 
 .transactionAmount.overLimit {
-  color: #f44336;
+  color: var(--expense);
 }
 
 .deleteButton {
@@ -149,12 +149,12 @@
     gap: 12px;
     padding: 0 16px;
     padding-bottom: 30px; /* Отступ снизу для нижней навигации и кнопки */
-    background: #ffffff;
+    background: var(--bg-card);
   }
 
   .transaction {
     padding: 16px;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     margin-bottom: 0;
   }
@@ -166,7 +166,7 @@
   .categoryBadge {
     width: 44px;
     height: 44px;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
   }
 
   .categoryIcon {
@@ -195,7 +195,7 @@
   }
 
   .deleteButton {
-    padding: 4px 8px;
+    /* размер задаётся глобально .ant-btn-icon-only */
   }
 
   .monthLabel {
@@ -211,12 +211,12 @@
     margin-bottom: 16px;
     border-radius: 0;
     box-shadow: none;
-    background: #ffffff;
-    border-bottom: 1px solid #f0f0f0;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
   }
 
   .monthButton {
-    padding: 4px 8px;
+    /* размер задаётся глобально .ant-btn-icon-only */
   }
 }
 
@@ -226,12 +226,13 @@
   }
 
   .transaction:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   .categoryBadge {
     width: 56px;
     height: 56px;
+    border-radius: var(--radius-lg);
   }
 
   .categoryIcon {

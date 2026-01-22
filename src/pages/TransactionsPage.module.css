@@ -6,22 +6,23 @@
 
 .filterButton {
   font-size: 20px;
-  color: #1a1a1a;
+  color: var(--text-primary);
   padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: var(--radius-md);
 }
 
 .filterButton:hover {
-  color: #42A5F5;
-  background-color: #f0f0f0;
+  color: var(--accent);
+  background-color: var(--bg-elevated);
 }
 
 .activeFilters {
   padding: 12px 24px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 60px; /* Под фиксированной шапкой */
   z-index: 999;
@@ -36,15 +37,15 @@
 .pageTitle {
   font-size: 28px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-primary);
   margin-bottom: 24px;
 }
 
 .content {
-  background-color: #ffffff;
-  border-radius: 12px;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   margin: 0 24px;
 }
 
@@ -67,7 +68,7 @@
   .transactionsPage {
     padding: 0;
     padding-top: 56px; /* Отступ для фиксированной шапки на мобильных */
-    background: #ffffff;
+    background: var(--bg-card);
     padding-bottom: 40px; /* Отступ снизу для нижней навигации и кнопки */
     min-height: 100%;
   }
@@ -79,12 +80,12 @@
   .content {
     border-radius: 0;
     box-shadow: none;
-    background: #ffffff;
+    background: var(--bg-card);
   }
 
   .content :global(.ant-tabs-nav) {
     padding: 0 16px;
-    background: #ffffff;
+    background: var(--bg-card);
     margin: 0;
   }
 
@@ -96,6 +97,7 @@
     padding: 12px 16px;
     font-size: 15px;
     font-weight: 500;
+    border-radius: var(--radius-md);
   }
 
   .content :global(.ant-tabs-tab-active) {
@@ -120,7 +122,7 @@
     right: 0;
     background: linear-gradient(
       to top,
-      #ffffff 0%,
+      var(--bg-card) 0%,
       rgba(255, 255, 255, 0) 100%
     );
     z-index: 10;
@@ -136,12 +138,12 @@
     font-size: 18px;
     font-weight: 600;
     padding: 0 32px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(66, 165, 245, 0.3);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 12px rgba(10, 132, 255, 0.35);
   }
 
   .addButtonDesktop:hover {
-    box-shadow: 0 6px 16px rgba(66, 165, 245, 0.4);
+    box-shadow: 0 6px 16px rgba(10, 132, 255, 0.45);
     transform: translateY(-2px);
   }
 }
@@ -156,7 +158,8 @@
   width: 56px !important;
   height: 56px !important;
   font-size: 24px !important;
-  box-shadow: 0 4px 12px rgba(66, 165, 245, 0.4) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: 0 4px 12px rgba(10, 132, 255, 0.4) !important;
   z-index: 999 !important; /* Ниже нижней навигации */
   display: flex !important;
   align-items: center !important;
@@ -172,6 +175,6 @@
 }
 
 .addButtonMobile:hover {
-  box-shadow: 0 6px 16px rgba(66, 165, 245, 0.5) !important;
+  box-shadow: 0 6px 16px rgba(10, 132, 255, 0.5) !important;
   transform: translateX(-50%) translateY(-2px) !important;
 }

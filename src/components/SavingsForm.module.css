@@ -1,5 +1,5 @@
 .modal :global(.ant-modal-content) {
-  border-radius: 12px;
+  border-radius: var(--radius-lg) !important;
 }
 
 .drawer {
@@ -7,20 +7,20 @@
 }
 
 .drawer :global(.ant-drawer-content-wrapper) {
-  border-radius: 8px 8px 0 0 !important;
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0 !important;
   overflow: hidden !important;
   max-height: 95vh !important;
 }
 
 .drawer :global(.ant-drawer-content) {
-  border-radius: 8px 8px 0 0 !important;
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0 !important;
   overflow: hidden !important;
 }
 
 .drawer :global(.ant-drawer-header) {
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border);
   padding: 16px 24px 8px 24px;
-  border-radius: 8px 8px 0 0 !important;
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0 !important;
   position: relative;
 }
 
@@ -31,8 +31,8 @@
   transform: translateX(-50%);
   width: 40px;
   height: 4px;
-  background-color: #d9d9d9;
-  border-radius: 2px;
+  background-color: var(--border-strong);
+  border-radius: var(--radius-handle);
   cursor: grab;
   transition: background-color 0.2s;
   touch-action: none;
@@ -43,12 +43,12 @@
 }
 
 .drawerHandle:hover {
-  background-color: #bfbfbf;
+  background-color: var(--text-tertiary);
 }
 
 .drawerHandle:active {
   cursor: grabbing;
-  background-color: #999;
+  background-color: var(--text-secondary);
 }
 
 .form {
@@ -64,17 +64,19 @@
   margin-bottom: 12px;
   height: 48px;
   font-size: 16px;
-  background: #42a5f5;
-  border: none;
+  border-radius: var(--radius-md);
+  background: var(--accent) !important;
+  border: none !important;
 }
 
 .submitButton:hover {
-  background: #5c9bd5;
+  background: var(--accent-hover) !important;
 }
 
 .cancelButton {
   height: 48px;
   font-size: 16px;
+  border-radius: var(--radius-md);
 }
 
 @media (max-width: 767px) {

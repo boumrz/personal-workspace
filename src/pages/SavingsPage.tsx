@@ -154,7 +154,7 @@ const SavingsPage: React.FC = () => {
               suffix="₽"
               styles={{
                 content: {
-                  color: totalBalance >= 0 ? "#52c41a" : "#ff4d4f",
+                  color: totalBalance >= 0 ? "var(--income)" : "var(--expense)",
                   fontSize: "16px",
                 },
               }}
@@ -168,7 +168,7 @@ const SavingsPage: React.FC = () => {
               suffix="₽"
               styles={{
                 content: {
-                  color: "#1890ff",
+                  color: "var(--accent)",
                   fontSize: "16px",
                 },
               }}
@@ -182,7 +182,7 @@ const SavingsPage: React.FC = () => {
               suffix="₽"
               styles={{
                 content: {
-                  color: "#52c41a",
+                  color: "var(--income)",
                   fontSize: "16px",
                 },
               }}
@@ -196,7 +196,7 @@ const SavingsPage: React.FC = () => {
               suffix="%"
               styles={{
                 content: {
-                  color: "#1890ff",
+                  color: "var(--accent)",
                   fontSize: "16px",
                 },
               }}
@@ -216,7 +216,7 @@ const SavingsPage: React.FC = () => {
                   suffix="₽"
                   styles={{
                     content: {
-                      color: "#52c41a",
+                      color: "var(--income)",
                       fontSize: "16px",
                     },
                   }}

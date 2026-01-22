@@ -3,15 +3,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--bg-base);
   padding: 20px;
 }
 
 .loginCard {
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-2xl);
+  background: var(--bg-card);
 }
 
 .title {
@@ -19,7 +20,7 @@
   font-size: 28px;
   font-weight: 700;
   margin-bottom: 24px;
-  color: #1a1a1a;
+  color: var(--text-primary);
 }
 
 .loginCard :global(.ant-tabs-tab) {
@@ -32,29 +33,29 @@
 }
 
 .loginCard :global(.ant-input-affix-wrapper) {
-  border-radius: 8px;
+  border-radius: var(--radius-md) !important;
 }
 
 .loginCard :global(.ant-btn-primary) {
-  border-radius: 8px;
+  border-radius: var(--radius-md) !important;
   height: 44px;
   font-size: 16px;
   font-weight: 500;
 }
 
 .googleButton {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   height: 44px;
   font-size: 16px;
   font-weight: 500;
-  border-color: #db4437;
-  color: #db4437;
+  border-color: var(--border-strong);
+  color: var(--text-primary);
 }
 
 .googleButton:hover {
-  border-color: #c23321;
-  color: #c23321;
-  background-color: #fff;
+  border-color: var(--text-tertiary);
+  color: var(--text-primary);
+  background-color: var(--bg-elevated);
 }
 
 .loginCard :global(.ant-divider) {

@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Drawer, Form, Input, Button, Space, DatePicker } from "antd";
+import { Drawer, Form, Input, Button, DatePicker } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 import { Profile } from "../services/api";
 import dayjs from "dayjs";
@@ -80,14 +80,25 @@ const ProfileEditDrawer: React.FC<ProfileEditDrawerProps> = ({
             format="DD.MM.YYYY"
           />
         </Form.Item>
-        <Space
-          style={{ width: "100%", justifyContent: "flex-end", marginTop: 16 }}
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            width: "100%",
+            marginTop: 16,
+          }}
         >
-          <Button onClick={onClose}>Отмена</Button>
-          <Button type="primary" htmlType="submit">
+          <Button style={{ flex: 1, minWidth: 0 }} onClick={onClose}>
+            Отмена
+          </Button>
+          <Button
+            style={{ flex: 1, minWidth: 0 }}
+            type="primary"
+            htmlType="submit"
+          >
             Сохранить
           </Button>
-        </Space>
+        </div>
       </Form>
     </Drawer>
   );

@@ -126,7 +126,7 @@ const Header: React.FC<HeaderProps> = () => {
       label: (
         <div style={{ padding: "8px 0" }}>
           <div style={{ fontWeight: 500 }}>{user?.name || user?.email}</div>
-          <div style={{ fontSize: "12px", color: "#8c8c8c" }}>
+          <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
             {user?.email}
           </div>
         </div>

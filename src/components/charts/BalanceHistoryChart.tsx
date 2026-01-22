@@ -36,7 +36,7 @@ interface BalanceHistoryChartProps {
 const BalanceHistoryChart: React.FC<BalanceHistoryChartProps> = ({ data }) => {
   if (data.length === 0) {
     return (
-      <div style={{ textAlign: "center", padding: "40px", color: "#9ca3af" }}>
+      <div style={{ textAlign: "center", padding: "40px", color: "var(--text-secondary)" }}>
         Нет данных о балансе
       </div>
     );
@@ -59,13 +59,13 @@ const BalanceHistoryChart: React.FC<BalanceHistoryChartProps> = ({ data }) => {
       {
         label: "Баланс",
         data: sortedDates.map((date) => dailyBalance.get(date) || 0),
-        borderColor: "#42A5F5",
-        backgroundColor: "rgba(66, 165, 245, 0.1)",
+        borderColor: "#0A84FF",
+        backgroundColor: "rgba(10, 132, 255, 0.12)",
         fill: true,
         tension: 0.4,
         pointRadius: 4,
         pointHoverRadius: 6,
-        pointBackgroundColor: "#42A5F5",
+        pointBackgroundColor: "#0A84FF",
         pointBorderColor: "#ffffff",
         pointBorderWidth: 2,
       },

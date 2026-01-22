@@ -1,7 +1,7 @@
 .dashboardPage {
   width: 100%;
   max-width: 100%;
-  background: #f5f5f5;
+  background: var(--bg-base);
   padding-top: 60px; /* Отступ для фиксированной шапки */
 }
 
@@ -17,7 +17,7 @@
 .pageTitle {
   font-size: 28px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-primary);
   margin-bottom: 24px;
 }
 
@@ -73,7 +73,7 @@
   }
 
   .statsRow :global(.ant-card) {
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
 
@@ -87,7 +87,7 @@
 
   .chartCard {
     min-height: 250px;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
 

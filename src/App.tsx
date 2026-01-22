@@ -164,7 +164,7 @@ const AppContent: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
+      <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-base)" }}>
         <div
           style={{
             display: "flex",
@@ -235,7 +235,18 @@ const App: React.FC = () => {
       locale={ruRU}
       theme={{
         token: {
-          colorPrimary: "#42A5F5",
+          colorPrimary: "#0A84FF",
+          colorSuccess: "#34C759",
+          colorError: "#FF3B30",
+          colorWarning: "#FF9500",
+          colorText: "#2c2c2e",
+          colorTextSecondary: "#6c6c70",
+          colorBorder: "#dcdce1",
+          colorBgContainer: "#f2f2f6",
+          colorBgLayout: "#e8e8ed",
+          borderRadius: 10,
+          borderRadiusLG: 12,
+          borderRadiusSM: 8,
           fontFamily: '"Helvetica", "Helvetica Neue", Arial, sans-serif',
         },
       }}

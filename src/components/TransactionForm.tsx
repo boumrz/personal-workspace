@@ -298,7 +298,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                 <div style={{ fontSize: 14, fontWeight: 500 }}>
                   Остаток бюджета на месяц
                 </div>
-                <div style={{ fontSize: 12, color: "#666" }}>
+                <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
                   Запланировано: {calculateBudgetRemaining.planned.toLocaleString("ru-RU")} ₽
                   {" • "}
                   Потрачено: {calculateBudgetRemaining.spent.toLocaleString("ru-RU")} ₽
@@ -309,8 +309,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                     fontWeight: 600,
                     color:
                       calculateBudgetRemaining.willRemainAfter >= 0
-                        ? "#52c41a"
-                        : "#ff4d4f",
+                        ? "var(--income)"
+                        : "var(--expense)",
                   }}
                 >
                   {enteredAmount
@@ -442,11 +442,23 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           width={400}
           mask={true}
           footer={
-            <div style={{ display: "flex", gap: 12, padding: "16px 24px" }}>
-              <Button block onClick={handleCancel}>
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                padding: "16px 24px",
+                width: "100%",
+                boxSizing: "border-box",
+              }}
+            >
+              <Button style={{ flex: 1, minWidth: 0 }} onClick={handleCancel}>
                 Отмена
               </Button>
-              <Button block type="primary" onClick={handleSubmit}>
+              <Button
+                style={{ flex: 1, minWidth: 0 }}
+                type="primary"
+                onClick={handleSubmit}
+              >
                 Добавить
               </Button>
             </div>

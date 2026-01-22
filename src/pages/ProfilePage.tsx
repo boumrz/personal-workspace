@@ -192,9 +192,10 @@ const ProfilePage: React.FC = () => {
               type="primary"
               icon={<EditOutlined />}
               onClick={() => setEditingProfile(true)}
-            >
-              {!isMobile && "Редактировать"}
-            </Button>
+              className="circle-icon-btn"
+              title="Редактировать"
+              aria-label="Редактировать"
+            />
           </div>
 
           {editingProfile && !isMobile ? (
@@ -220,11 +221,22 @@ const ProfilePage: React.FC = () => {
                     format="DD.MM.YYYY"
                   />
                 </Form.Item>
-                <Space>
-                  <Button type="primary" htmlType="submit">
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    width: "100%",
+                  }}
+                >
+                  <Button
+                    style={{ flex: 1, minWidth: 0 }}
+                    type="primary"
+                    htmlType="submit"
+                  >
                     Сохранить
                   </Button>
                   <Button
+                    style={{ flex: 1, minWidth: 0 }}
                     onClick={() => {
                       setEditingProfile(false);
                       profileForm.resetFields();
@@ -232,7 +244,7 @@ const ProfilePage: React.FC = () => {
                   >
                     Отмена
                   </Button>
-                </Space>
+                </div>
               </Form>
             </Card>
           ) : (
@@ -279,9 +291,10 @@ const ProfilePage: React.FC = () => {
               type="primary"
               icon={<FileAddOutlined />}
               onClick={() => setShowGoalForm(true)}
-            >
-              {!isMobile && "Добавить цель"}
-            </Button>
+              className="circle-icon-btn"
+              title="Добавить цель"
+              aria-label="Добавить цель"
+            />
           </div>
 
           {showGoalForm && !isMobile && (
@@ -461,7 +474,13 @@ const ProfilePage: React.FC = () => {
             />
           </Form.Item>
           {selectedGoalForAmount && (
-            <div style={{ marginTop: 8, color: "#666", fontSize: 14 }}>
+            <div
+              style={{
+                marginTop: 8,
+                color: "var(--text-secondary)",
+                fontSize: 14,
+              }}
+            >
               Текущая сумма:{" "}
               {selectedGoalForAmount.currentAmount.toLocaleString()} ₽
               <br />

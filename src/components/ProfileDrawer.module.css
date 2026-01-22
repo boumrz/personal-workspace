@@ -32,7 +32,7 @@
 
 .profileField strong {
   margin-right: 8px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .goalsList {
@@ -42,7 +42,7 @@
 }
 
 .goalCard {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .goalHeader {
@@ -60,7 +60,7 @@
 
 .goalDescription {
   margin: 8px 0;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -73,7 +73,7 @@
   justify-content: space-between;
   margin-top: 8px;
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .goalActions {
@@ -89,8 +89,8 @@
 .swipeHandle {
   width: 40px;
   height: 4px;
-  background: #d9d9d9;
-  border-radius: 2px;
+  background: var(--border-strong);
+  border-radius: var(--radius-handle);
   margin: 0 auto 16px;
   cursor: grab;
 }

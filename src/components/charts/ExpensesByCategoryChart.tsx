@@ -26,7 +26,7 @@ const ExpensesByCategoryChart: React.FC<ExpensesByCategoryChartProps> = ({
 }) => {
   if (data.length === 0) {
     return (
-      <div style={{ textAlign: "center", padding: "40px", color: "#9ca3af" }}>
+      <div style={{ textAlign: "center", padding: "40px", color: "var(--text-secondary)" }}>
         Нет данных о расходах
       </div>
     );

@@ -8,7 +8,7 @@
   justify-content: space-between;
   margin-bottom: 16px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border);
 }
 
 .monthTitle {
@@ -34,7 +34,7 @@
   justify-content: space-between;
   align-items: flex-start;
   padding: 16px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border);
   gap: 12px;
 }
 
@@ -62,16 +62,16 @@
 .savingAmount {
   font-size: 16px;
   font-weight: 600;
-  color: #52c41a;
+  color: var(--income);
 }
 
 .savingDate {
   font-size: 14px;
-  color: #8c8c8c;
+  color: var(--text-secondary);
 }
 
 .savingDescription {
-  color: #595959;
+  color: var(--text-tertiary);
   font-size: 14px;
   margin-top: 4px;
 }
@@ -83,7 +83,7 @@
 @media (max-width: 767px) {
   .savingsCard {
     margin-top: 0;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
 
@@ -91,7 +91,7 @@
     padding: 16px;
     padding-bottom: 12px;
     margin-bottom: 0;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border);
   }
 
   .monthTitle {

@@ -1,3 +1,5 @@
+@import "./styles/tokens.css";
+
 * {
   margin: 0;
   padding: 0;
@@ -15,8 +17,8 @@ body {
   font-family: "Helvetica", "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f5f5;
-  color: #1a1a1a;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
   position: relative;
 }
 
@@ -36,7 +38,87 @@ body {
   display: none; /* Chrome, Safari, Opera */
 }
 
-/* Исправление для drawers снизу на мобильных устройствах */
+/* Ant Design global overrides — Expend palette + Apple radius */
+:global(.ant-btn-primary) {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+:global(.ant-btn-primary:hover) {
+  background: var(--accent-hover) !important;
+  border-color: var(--accent-hover) !important;
+}
+:global(.ant-input-affix-wrapper),
+:global(.ant-input),
+:global(.ant-select-selector),
+:global(.ant-picker) {
+  border-radius: var(--radius-md) !important;
+}
+:global(.ant-card) {
+  border-radius: var(--radius-lg) !important;
+}
+:global(.ant-tag) {
+  border-radius: var(--radius-sm) !important;
+}
+:global(.ant-modal-content) {
+  border-radius: var(--radius-2xl) !important;
+}
+:global(.ant-float-btn-circle) {
+  border-radius: var(--radius-xl) !important;
+}
+
+/* Кнопки — единые высота и ширина где применимо */
+:global(.ant-btn) {
+  min-height: var(--btn-height) !important;
+  height: auto !important;
+  padding: 6px 16px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+:global(.ant-btn-lg) {
+  min-height: var(--btn-height-lg) !important;
+  padding: 8px 20px !important;
+}
+:global(.ant-btn-icon-only) {
+  width: var(--btn-icon-size) !important;
+  min-width: var(--btn-icon-size) !important;
+  height: var(--btn-icon-size) !important;
+  min-height: var(--btn-icon-size) !important;
+  padding: 0 !important;
+}
+/* Круглые кнопки «как плюсики» (Редактировать, Добавить цель) */
+:global(.ant-btn.circle-icon-btn) {
+  border-radius: 50% !important;
+  width: var(--btn-icon-size) !important;
+  min-width: var(--btn-icon-size) !important;
+  height: var(--btn-icon-size) !important;
+  min-height: var(--btn-icon-size) !important;
+  padding: 0 !important;
+}
+:global(.ant-btn-sm) {
+  min-height: 32px !important;
+  padding: 2px 8px !important;
+}
+
+/* Пары кнопок в футерах — одинаковая ширина */
+:global(.ant-modal-footer) {
+  display: flex !important;
+  gap: 8px !important;
+}
+:global(.ant-modal-footer .ant-btn) {
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+:global(.ant-drawer-footer) {
+  display: flex !important;
+  gap: 8px !important;
+}
+:global(.ant-drawer-footer .ant-btn) {
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+/* Исправление для drawers снизу на мобильных устройствах — Apple-style sheet radius */
 @media (max-width: 768px) {
   :global(.ant-drawer-content-wrapper) {
     width: 100% !important;
@@ -53,7 +135,7 @@ body {
     max-width: 100% !important;
     height: 85vh !important;
     overflow: hidden !important;
-    border-radius: 16px 16px 0 0 !important;
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0 !important;
   }
 
   :global(.ant-drawer-body) {
@@ -67,7 +149,7 @@ body {
     position: sticky !important;
     top: 0 !important;
     z-index: 1 !important;
-    background: #fff !important;
-    border-radius: 16px 16px 0 0 !important;
+    background: var(--bg-card) !important;
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0 !important;
   }
 }

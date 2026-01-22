@@ -119,12 +119,13 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
           </h3>
           {!editingProfile && (
             <Button
-              type="text"
+              type="primary"
               icon={<EditOutlined />}
               onClick={() => setEditingProfile(true)}
-            >
-              Редактировать
-            </Button>
+              className="circle-icon-btn"
+              title="Редактировать"
+              aria-label="Редактировать"
+            />
           )}
         </div>
 
@@ -151,17 +152,30 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
                 style={{ width: "100%" }}
               />
             </Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit">
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                width: "100%",
+              }}
+            >
+              <Button
+                style={{ flex: 1, minWidth: 0 }}
+                type="primary"
+                htmlType="submit"
+              >
                 Сохранить
               </Button>
-              <Button onClick={() => {
-                setEditingProfile(false);
-                profileForm.resetFields();
-              }}>
+              <Button
+                style={{ flex: 1, minWidth: 0 }}
+                onClick={() => {
+                  setEditingProfile(false);
+                  profileForm.resetFields();
+                }}
+              >
                 Отмена
               </Button>
-            </Space>
+            </div>
           </Form>
         ) : (
           <div className={styles.profileInfo}>
@@ -186,9 +200,10 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
               type="primary"
               icon={<PlusOutlined />}
               onClick={() => setShowGoalForm(true)}
-            >
-              Добавить цель
-            </Button>
+              className="circle-icon-btn"
+              title="Добавить цель"
+              aria-label="Добавить цель"
+            />
           )}
         </div>
 

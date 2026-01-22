@@ -148,11 +148,23 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
           width={400}
           mask={true}
           footer={
-            <div style={{ display: "flex", gap: 12, padding: "16px 24px" }}>
-              <Button block onClick={handleCancel}>
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                padding: "16px 24px",
+                width: "100%",
+                boxSizing: "border-box",
+              }}
+            >
+              <Button style={{ flex: 1, minWidth: 0 }} onClick={handleCancel}>
                 Отмена
               </Button>
-              <Button block type="primary" onClick={handleSubmit}>
+              <Button
+                style={{ flex: 1, minWidth: 0 }}
+                type="primary"
+                onClick={handleSubmit}
+              >
                 Создать
               </Button>
             </div>

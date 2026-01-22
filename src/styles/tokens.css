@@ -1,0 +1,48 @@
+/* Design tokens: Expend-style (gray base + bright accents) + Apple HIG radius */
+
+:root {
+  /* Backgrounds — приглушённая сероватая база */
+  --bg-base: #e8e8ed;
+  --bg-card: #f2f2f6;
+  --bg-surface: #dedee3;
+  --bg-elevated: #ececf0;
+
+  /* Text */
+  --text-primary: #2c2c2e;
+  --text-secondary: #6c6c70;
+  --text-tertiary: #8e8e93;
+
+  /* Borders */
+  --border: #dcdce1;
+  --border-strong: #ceced3;
+
+  /* Accents — яркие на действиях и важных моментах */
+  --accent: #0a84ff;
+  --accent-hover: #409cff;
+  --accent-light: rgba(10, 132, 255, 0.12);
+  --income: #34c759;
+  --income-light: rgba(52, 199, 89, 0.12);
+  --expense: #ff3b30;
+  --expense-light: rgba(255, 59, 48, 0.12);
+  --warning: #ff9500;
+  --warning-light: rgba(255, 149, 0, 0.12);
+  /* Мягкие акценты для тёмного фона (заголовки, градиенты) */
+  --income-soft: #a5e0a5;
+  --expense-soft: #ffab91;
+
+  /* Apple-style border radius (HIG mobile) */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
+  --radius-2xl: 16px;
+  --radius-3xl: 20px;
+  --radius-sheet: 20px;
+  --radius-handle: 4px;
+
+  /* Кнопки — единые размеры */
+  --btn-height: 40px;
+  --btn-height-lg: 44px;
+  --btn-icon-size: 40px;
+}
