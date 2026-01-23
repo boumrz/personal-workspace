@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Card, Statistic, Tabs, FloatButton, Button } from "antd";
+import { Card, Tabs, FloatButton, Button } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import TransactionList from "./TransactionList";
@@ -26,16 +26,25 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const totalIncome = useMemo(
-    () => transactions.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0),
+    () =>
+      transactions
+        .filter((t) => t.type === "income")
+        .reduce((sum, t) => sum + t.amount, 0),
     [transactions]
   );
 
   const totalExpenses = useMemo(
-    () => transactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + t.amount, 0),
+    () =>
+      transactions
+        .filter((t) => t.type === "expense")
+        .reduce((sum, t) => sum + t.amount, 0),
     [transactions]
   );
 
-  const balance = useMemo(() => totalIncome - totalExpenses, [totalIncome, totalExpenses]);
+  const balance = useMemo(
+    () => totalIncome - totalExpenses,
+    [totalIncome, totalExpenses]
+  );
 
   const filteredTransactions = useMemo(
     () =>
@@ -71,52 +80,34 @@ const Dashboard: React.FC = () => {
     <div className={styles.dashboard}>
       <header className={styles.header}>
         <h1 className={styles.title}>Финансовый помощник</h1>
-        <Card className={styles.balanceCard} bordered={false}>
-          <Statistic
-            title="Баланс"
-            value={balance}
-            precision={0}
-            valueStyle={{
-              color: balance >= 0 ? "#fff" : "var(--expense-soft)",
-              fontSize: "32px",
-              fontWeight: 700,
-            }}
-            suffix="₽"
-            formatter={(value) => value?.toLocaleString("ru-RU")}
-          />
+        <Card className={styles.summaryCard} bordered={false}>
+          <div className={styles.balanceRow}>
+            <span className={styles.balanceLabel}>Баланс</span>
+            <span
+              className={styles.balanceValue}
+              style={{ color: balance >= 0 ? "#fff" : "var(--expense-soft)" }}
+            >
+              {balance.toLocaleString("ru-RU")} ₽
+            </span>
+          </div>
+          <div className={styles.statsRow}>
+            <div className={styles.statItem}>
+              <span className={styles.statLabel}>Доходы</span>
+              <span className={styles.statValue} style={{ color: "#A5D6A7" }}>
+                +{totalIncome.toLocaleString("ru-RU")} ₽
+              </span>
+            </div>
+            <div className={styles.statItem}>
+              <span className={styles.statLabel}>Расходы</span>
+              <span
+                className={styles.statValue}
+                style={{ color: "var(--expense-soft)" }}
+              >
+                -{totalExpenses.toLocaleString("ru-RU")} ₽
+              </span>
+            </div>
+          </div>
         </Card>
-        <div className={styles.summary}>
-          <Card className={styles.summaryItem} bordered={false}>
-            <Statistic
-              title="Доходы"
-              value={totalIncome}
-              precision={0}
-              valueStyle={{
-                color: "#A5D6A7",
-                fontSize: "18px",
-                fontWeight: 600,
-              }}
-              prefix="+"
-              suffix="₽"
-              formatter={(value) => value?.toLocaleString("ru-RU")}
-            />
-          </Card>
-          <Card className={styles.summaryItem} bordered={false}>
-            <Statistic
-              title="Расходы"
-              value={totalExpenses}
-              precision={0}
-              valueStyle={{
-                color: "var(--expense-soft)",
-                fontSize: "18px",
-                fontWeight: 600,
-              }}
-              prefix="-"
-              suffix="₽"
-              formatter={(value) => value?.toLocaleString("ru-RU")}
-            />
-          </Card>
-        </div>
       </header>
 
       <div className={styles.content}>

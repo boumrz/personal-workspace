@@ -23,44 +23,55 @@
   color: white;
 }
 
-.balanceCard {
+.summaryCard {
   background-color: rgba(255, 255, 255, 0.2) !important;
   backdrop-filter: blur(10px);
   border-radius: var(--radius-2xl);
-  margin-bottom: 16px;
 }
 
-.balanceCard :global(.ant-card-body) {
-  padding: 20px !important;
-  text-align: center;
+.summaryCard :global(.ant-card-body) {
+  padding: 16px !important;
 }
 
-.balanceCard :global(.ant-statistic-title) {
-  color: rgba(255, 255, 255, 0.9) !important;
-  font-size: 14px;
-  margin-bottom: 8px;
-}
-
-.summary {
+.balanceRow {
   display: flex;
-  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.summaryItem {
-  flex: 1;
-  background-color: rgba(255, 255, 255, 0.2) !important;
-  backdrop-filter: blur(10px);
-  border-radius: var(--radius-lg);
+.balanceLabel {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
 }
 
-.summaryItem :global(.ant-card-body) {
-  padding: 12px !important;
+.balanceValue {
+  font-size: 24px;
+  font-weight: 700;
 }
 
-.summaryItem :global(.ant-statistic-title) {
-  color: rgba(255, 255, 255, 0.9) !important;
+.statsRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.statLabel {
+  color: rgba(255, 255, 255, 0.9);
   font-size: 12px;
-  margin-bottom: 4px;
+}
+
+.statValue {
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .content {
@@ -107,20 +118,16 @@
     margin-bottom: 24px;
   }
 
-  .balanceCard :global(.ant-card-body) {
-    padding: 24px !important;
+  .summaryCard :global(.ant-card-body) {
+    padding: 20px !important;
   }
 
-  .balanceCard :global(.ant-statistic-content) {
-    font-size: 40px !important;
+  .balanceValue {
+    font-size: 28px;
   }
 
-  .summaryItem :global(.ant-card-body) {
-    padding: 16px !important;
-  }
-
-  .summaryItem :global(.ant-statistic-content) {
-    font-size: 22px !important;
+  .statValue {
+    font-size: 18px;
   }
 
   .content {

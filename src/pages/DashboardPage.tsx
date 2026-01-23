@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Card, Row, Col, Statistic } from "antd";
+import { Card, Row, Col } from "antd";
 import { useFinance } from "../context/FinanceContext";
 import ExpensesByCategoryChart from "../components/charts/ExpensesByCategoryChart";
 import BalanceHistoryChart from "../components/charts/BalanceHistoryChart";
@@ -77,56 +77,41 @@ const DashboardPage: React.FC = () => {
     <div className={styles.dashboardPage}>
       <PageHeader title="Дашборд" />
       {/* Статистика */}
-      <Row gutter={[16, 16]} className={styles.statsRow}>
-        <Col xs={24} sm={12} lg={8}>
-          <Card>
-            <Statistic
-              title="Баланс"
-              value={balance}
-              precision={0}
-              valueStyle={{
+      <div className={styles.statsRow}>
+        <Card className={styles.summaryCard}>
+          <div className={styles.balanceRow}>
+            <span className={styles.balanceLabel}>Баланс</span>
+            <span
+              className={styles.balanceValue}
+              style={{
                 color: balance >= 0 ? "var(--income)" : "var(--expense)",
-                fontSize: "28px",
-                fontWeight: 700,
               }}
-              suffix="₽"
-              formatter={(value) => value?.toLocaleString("ru-RU")}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={8}>
-          <Card>
-            <Statistic
-              title="Доходы"
-              value={totalIncome}
-              precision={0}
-              valueStyle={{
-                color: "var(--income)",
-                fontSize: "24px",
-                fontWeight: 600,
-              }}
-              suffix="₽"
-              formatter={(value) => value?.toLocaleString("ru-RU")}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={8}>
-          <Card>
-            <Statistic
-              title="Расходы"
-              value={totalExpenses}
-              precision={0}
-              valueStyle={{
-                color: "var(--expense)",
-                fontSize: "24px",
-                fontWeight: 600,
-              }}
-              suffix="₽"
-              formatter={(value) => value?.toLocaleString("ru-RU")}
-            />
-          </Card>
-        </Col>
-      </Row>
+            >
+              {balance.toLocaleString("ru-RU")} ₽
+            </span>
+          </div>
+          <div className={styles.statsItems}>
+            <div className={styles.statItem}>
+              <span className={styles.statLabel}>Доходы</span>
+              <span
+                className={styles.statValue}
+                style={{ color: "var(--income)" }}
+              >
+                +{totalIncome.toLocaleString("ru-RU")} ₽
+              </span>
+            </div>
+            <div className={styles.statItem}>
+              <span className={styles.statLabel}>Расходы</span>
+              <span
+                className={styles.statValue}
+                style={{ color: "var(--expense)" }}
+              >
+                -{totalExpenses.toLocaleString("ru-RU")} ₽
+              </span>
+            </div>
+          </div>
+        </Card>
+      </div>
 
       {/* Графики */}
       <Row gutter={[16, 16]} className={styles.chartsRow}>

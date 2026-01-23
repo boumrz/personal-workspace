@@ -209,13 +209,13 @@
     padding: 0;
     padding-top: 56px; /* Отступ для фиксированной шапки на мобильных */
     background: var(--bg-base);
-    padding-bottom: 100px; /* Отступ снизу для нижней навигации и кнопки */
+    padding-bottom: 50px; /* Отступ снизу для нижней навигации и кнопки */
     min-height: 100%;
   }
 
   .content {
     padding: 16px;
-    padding-top: 0;
+    padding-top: 16px;
   }
 
   .statsContainer {

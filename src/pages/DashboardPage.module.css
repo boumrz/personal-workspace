@@ -14,7 +14,7 @@
   .dashboardPage {
     padding: 0;
     padding-top: 56px; /* Отступ для фиксированной шапки на мобильных */
-    padding-bottom: 100px; /* Отступ снизу для нижней навигации */
+    padding-bottom: 50px; /* Отступ снизу для нижней навигации */
     min-height: 100%;
   }
 }
@@ -29,6 +29,55 @@
 .statsRow {
   margin-bottom: 24px;
   padding: 24px;
+}
+
+.summaryCard {
+  border-radius: var(--radius-xl);
+}
+
+.summaryCard :global(.ant-card-body) {
+  padding: 20px;
+}
+
+.balanceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.balanceLabel {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.balanceValue {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.statsItems {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.statValue {
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .chartsRow {
@@ -61,25 +110,35 @@
 @media (max-width: 768px) {
   .statsRow {
     padding: 16px;
-    padding-top: 0;
+    padding-top: 16px;
+    margin-top: 0;
+    margin-bottom: 16px;
   }
 
   .chartsRow {
     padding: 0 16px;
   }
 
-  .statsRow {
-    margin-top: 0;
-    margin-bottom: 16px;
-  }
-
-  .statsRow :global(.ant-col) {
-    margin-bottom: 12px;
-  }
-
-  .statsRow :global(.ant-card) {
+  .summaryCard {
     border-radius: var(--radius-lg);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .summaryCard :global(.ant-card-body) {
+    padding: 16px;
+  }
+
+  .balanceRow {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+  }
+
+  .balanceValue {
+    font-size: 24px;
+  }
+
+  .statValue {
+    font-size: 16px;
   }
 
   .chartsRow {
