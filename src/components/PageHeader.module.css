@@ -35,6 +35,13 @@
   color: var(--text-primary);
 }
 
+.subtitle {
+  font-size: 14px;
+  font-weight: 400;
+  margin: 4px 0 0 0;
+  color: var(--text-secondary);
+}
+
 .extra {
   display: flex;
   align-items: center;

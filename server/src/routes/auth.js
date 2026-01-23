@@ -132,6 +132,12 @@ router.post(
       return res.status(401).json({ error: "Invalid login or password" });
     }
 
+    // Update last login and login count
+    await pool.query(
+      "UPDATE users SET last_login_at = CURRENT_TIMESTAMP, login_count = COALESCE(login_count, 0) + 1 WHERE id = $1",
+      [user.id]
+    );
+
     // Generate JWT token
     const token = jwt.sign({ userId: user.id, login: user.login }, config.jwtSecret, {
       expiresIn: "7d",

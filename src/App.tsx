@@ -7,9 +7,11 @@ import "dayjs/locale/ru";
 import Layout from "./components/Layout";
 import FinancePage from "./pages/FinancePage";
 import ProfilePage from "./pages/ProfilePage";
+import AdminPage from "./pages/AdminPage";
 import Login from "./components/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
+import AdminRoute from "./components/AdminRoute";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import {
   FinanceContext,
@@ -214,6 +216,14 @@ const AppContent: React.FC = () => {
                   <Routes>
                     <Route path="/finance/*" element={<FinancePage />} />
                     <Route path="/profile" element={<ProfilePage />} />
+                    <Route
+                      path="/admin"
+                      element={
+                        <AdminRoute>
+                          <AdminPage />
+                        </AdminRoute>
+                      }
+                    />
                     <Route
                       path="/"
                       element={<Navigate to="/finance/transactions" replace />}

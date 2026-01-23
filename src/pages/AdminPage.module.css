@@ -1,0 +1,51 @@
+.adminPage {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  background-color: var(--bg-base);
+  min-height: 100vh;
+}
+
+.tableContainer {
+  margin-top: 24px;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.editForm {
+  margin-top: 24px;
+}
+
+/* Стили для таблицы */
+.tableContainer :global(.ant-table) {
+  background-color: transparent;
+}
+
+.tableContainer :global(.ant-table-thead > tr > th) {
+  background-color: var(--bg-elevated);
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border);
+}
+
+.tableContainer :global(.ant-table-tbody > tr > td) {
+  border-bottom: 1px solid var(--border);
+}
+
+.tableContainer :global(.ant-table-tbody > tr:hover > td) {
+  background-color: var(--bg-elevated);
+}
+
+.tableContainer :global(.ant-pagination) {
+  margin-top: 16px;
+}
+
+/* Адаптивность только для десктопа */
+@media (max-width: 768px) {
+  .adminPage {
+    display: none;
+  }
+}

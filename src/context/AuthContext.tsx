@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { getApiBaseUrl } from "../utils/apiConfig";
-import { useLoginMutation, useRegisterMutation, User } from "../store/api";
+import { useLoginMutation, useRegisterMutation, User, api } from "../store/api";
+import { store } from "../store";
 
 export type { User };
 
@@ -49,6 +50,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (loginValue: string, password: string) => {
     try {
+      // Очищаем кэш RTK Query перед входом, чтобы получить свежие данные нового пользователя
+      store.dispatch(api.util.resetApiState());
+      
       const result = await loginMutation({ login: loginValue, password }).unwrap();
       setToken(result.token);
       setUser(result.user);
@@ -62,6 +66,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (fullName: string, loginValue: string, password: string) => {
     try {
+      // Очищаем кэш RTK Query перед регистрацией
+      store.dispatch(api.util.resetApiState());
+      
       const result = await registerMutation({ fullName, login: loginValue, password }).unwrap();
       setToken(result.token);
       setUser(result.user);
@@ -103,6 +110,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (event.data.type === "GOOGLE_AUTH_SUCCESS") {
           const { token, user } = event.data;
+          
+          // Очищаем кэш RTK Query перед входом через Google
+          store.dispatch(api.util.resetApiState());
+          
           setToken(token);
           setUser(user);
           localStorage.setItem("token", token);
@@ -131,6 +142,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
+    // Очищаем кэш RTK Query при выходе, чтобы данные не остались от предыдущего пользователя
+    store.dispatch(api.util.resetApiState());
+    
     setToken(null);
     setUser(null);
     localStorage.removeItem("token");

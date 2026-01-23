@@ -55,6 +55,22 @@ export interface User {
   name?: string;
 }
 
+export interface AdminUser {
+  id: number;
+  login?: string;
+  email?: string;
+  name?: string;
+  last_name?: string;
+  first_name?: string;
+  middle_name?: string;
+  age?: number;
+  date_of_birth?: string;
+  created_at: string;
+  last_login_at?: string;
+  login_count?: number;
+  google_id?: string;
+}
+
 export interface LoginRequest {
   login: string;
   password: string;
@@ -157,6 +173,7 @@ export const api = createApi({
     "Saving",
     "Profile",
     "Goal",
+    "AdminUser",
   ],
   endpoints: (builder) => ({
     // Auth endpoints
@@ -313,6 +330,31 @@ export const api = createApi({
       }),
       invalidatesTags: ["Goal"],
     }),
+
+    // Admin endpoints
+    getAdminUsers: builder.query<AdminUser[], void>({
+      query: () => "/admin/users",
+      transformResponse: (response: { users: AdminUser[] }) => response.users,
+      providesTags: ["AdminUser"],
+    }),
+    updateAdminUser: builder.mutation<
+      AdminUser,
+      { id: number; user: Partial<AdminUser & { password?: string }> }
+    >({
+      query: ({ id, user }) => ({
+        url: `/admin/users/${id}`,
+        method: "PUT",
+        body: user,
+      }),
+      invalidatesTags: ["AdminUser"],
+    }),
+    deleteAdminUser: builder.mutation<void, number>({
+      query: (id) => ({
+        url: `/admin/users/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["AdminUser"],
+    }),
   }),
 });
 
@@ -337,4 +379,7 @@ export const {
   useCreateGoalMutation,
   useUpdateGoalMutation,
   useDeleteGoalMutation,
+  useGetAdminUsersQuery,
+  useUpdateAdminUserMutation,
+  useDeleteAdminUserMutation,
 } = api;

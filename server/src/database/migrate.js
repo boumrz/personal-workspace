@@ -223,6 +223,20 @@ async function migrate() {
       }
     }
     
+    // Check if login tracking columns exist (last_login_at, login_count)
+    const lastLoginColumnExists = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'users' AND column_name = 'last_login_at'
+    `);
+    
+    if (lastLoginColumnExists.rows.length === 0) {
+      console.log("Adding login tracking columns to users table...");
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS login_count INTEGER DEFAULT 0`);
+      console.log("Login tracking columns added");
+    }
+    
     console.log("Users table created/verified");
 
     // Check if categories table exists

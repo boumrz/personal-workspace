@@ -6,6 +6,7 @@ import {
   UserOutlined,
   LogoutOutlined,
   SettingOutlined,
+  SafetyOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -36,6 +37,15 @@ const Header: React.FC<HeaderProps> = () => {
       icon: <WalletOutlined />,
       label: "Финансы",
     },
+    ...(user?.login === "boumrz"
+      ? [
+          {
+            key: "/admin",
+            icon: <SafetyOutlined />,
+            label: "Админка",
+          },
+        ]
+      : []),
   ];
 
   // Определяем, мобильное ли устройство
@@ -118,6 +128,8 @@ const Header: React.FC<HeaderProps> = () => {
   const selectedKey =
     location.pathname === "/" || location.pathname.startsWith("/finance")
       ? "/finance"
+      : location.pathname.startsWith("/admin")
+      ? "/admin"
       : location.pathname;
 
   const userMenuItems = [
