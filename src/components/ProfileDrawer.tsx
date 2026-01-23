@@ -1,7 +1,34 @@
 import React, { useState, useEffect } from "react";
-import { Drawer, Modal, Form, Input, InputNumber, Button, Space, Divider, Empty, Progress, Card, Popconfirm } from "antd";
-import { UserOutlined, EditOutlined, DeleteOutlined, PlusOutlined, MinusOutlined } from "@ant-design/icons";
-import { apiService, Profile, Goal } from "../services/api";
+import {
+  Drawer,
+  Modal,
+  Form,
+  Input,
+  InputNumber,
+  Button,
+  Space,
+  Divider,
+  Empty,
+  Progress,
+  Card,
+  Popconfirm,
+} from "antd";
+import {
+  UserOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+  MinusOutlined,
+} from "@ant-design/icons";
+import { Profile, Goal } from "../store/api";
+import {
+  useGetProfileQuery,
+  useGetGoalsQuery,
+  useUpdateProfileMutation,
+  useCreateGoalMutation,
+  useUpdateGoalMutation,
+  useDeleteGoalMutation,
+} from "../store/api";
 import GoalForm from "./GoalForm";
 import * as styles from "./ProfileDrawer.module.css";
 
@@ -12,13 +39,30 @@ interface ProfileDrawerProps {
 
 const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
   const [isMobile, setIsMobile] = useState(false);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [loading, setLoading] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [profileForm] = Form.useForm();
+
+  // RTK Query хуки
+  const {
+    data: profileData,
+    isLoading: profileLoading,
+    refetch: refetchProfile,
+  } = useGetProfileQuery(undefined, { skip: !open });
+  const {
+    data: goalsData = [],
+    isLoading: goalsLoading,
+    refetch: refetchGoals,
+  } = useGetGoalsQuery(undefined, { skip: !open });
+  const [updateProfile] = useUpdateProfileMutation();
+  const [createGoal] = useCreateGoalMutation();
+  const [updateGoal] = useUpdateGoalMutation();
+  const [deleteGoal] = useDeleteGoalMutation();
+
+  const profile = profileData || null;
+  const goals = goalsData;
+  const loading = profileLoading || goalsLoading;
 
   useEffect(() => {
     const checkMobile = () => {
@@ -29,66 +73,53 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-
   useEffect(() => {
-    if (open) {
-      loadData();
+    if (open && profile) {
+      profileForm.setFieldsValue({
+        fullName: profile.name || "",
+        age: profile.age || undefined,
+      });
     } else {
       setEditingProfile(false);
       setShowGoalForm(false);
       setEditingGoal(null);
       profileForm.resetFields();
     }
-  }, [open]);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [profileData, goalsData] = await Promise.all([
-        apiService.getProfile(),
-        apiService.getGoals(),
-      ]);
-      setProfile(profileData);
-      setGoals(goalsData);
-      profileForm.setFieldsValue({
-        fullName: profileData.fullName || "",
-        age: profileData.age || undefined,
-      });
-    } catch (error) {
-      console.error("Error loading profile data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [open, profile, profileForm]);
 
   const handleProfileSubmit = async () => {
     try {
       const values = await profileForm.validateFields();
-      const updated = await apiService.updateProfile(values);
-      setProfile(updated);
+      await updateProfile(values).unwrap();
       setEditingProfile(false);
+      refetchProfile();
     } catch (error) {
       console.error("Error updating profile:", error);
     }
   };
 
-  const handleGoalAdd = async (goal: Omit<Goal, "id" | "createdAt" | "updatedAt">) => {
+  const handleGoalAdd = async (
+    goal: Omit<Goal, "id" | "createdAt" | "updatedAt">
+  ) => {
     try {
-      const newGoal = await apiService.createGoal(goal);
-      setGoals([newGoal, ...goals]);
+      await createGoal(goal).unwrap();
       setShowGoalForm(false);
       setEditingGoal(null);
+      refetchGoals();
     } catch (error) {
       console.error("Error creating goal:", error);
       throw error;
     }
   };
 
-  const handleGoalUpdate = async (id: string, updates: Partial<Goal>) => {
+  const handleGoalUpdate = async (
+    id: string,
+    updates: Partial<Omit<Goal, "id" | "createdAt" | "updatedAt">>
+  ) => {
     try {
-      const updated = await apiService.updateGoal(id, updates);
-      setGoals(goals.map(g => g.id === id ? updated : g));
+      await updateGoal({ id, goal: updates }).unwrap();
       setEditingGoal(null);
+      refetchGoals();
     } catch (error) {
       console.error("Error updating goal:", error);
     }
@@ -96,8 +127,8 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
 
   const handleGoalDelete = async (id: string) => {
     try {
-      await apiService.deleteGoal(id);
-      setGoals(goals.filter(g => g.id !== id));
+      await deleteGoal(id).unwrap();
+      refetchGoals();
     } catch (error) {
       console.error("Error deleting goal:", error);
     }
@@ -107,7 +138,6 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
     const newAmount = Math.max(0, goal.currentAmount + delta);
     await handleGoalUpdate(goal.id, { currentAmount: newAmount });
   };
-
 
   const content = (
     <div className={styles.content}>
@@ -135,16 +165,10 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
             layout="vertical"
             onFinish={handleProfileSubmit}
           >
-            <Form.Item
-              name="fullName"
-              label="ФИО"
-            >
+            <Form.Item name="fullName" label="ФИО">
               <Input placeholder="Введите ФИО" />
             </Form.Item>
-            <Form.Item
-              name="age"
-              label="Возраст"
-            >
+            <Form.Item name="age" label="Возраст">
               <InputNumber
                 min={0}
                 max={150}
@@ -180,7 +204,7 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
         ) : (
           <div className={styles.profileInfo}>
             <div className={styles.profileField}>
-              <strong>ФИО:</strong> {profile?.fullName || "Не указано"}
+              <strong>ФИО:</strong> {profile?.name || "Не указано"}
             </div>
             <div className={styles.profileField}>
               <strong>Возраст:</strong> {profile?.age || "Не указан"}
@@ -252,11 +276,16 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
                       </Space>
                     </div>
                     {goal.description && (
-                      <p className={styles.goalDescription}>{goal.description}</p>
+                      <p className={styles.goalDescription}>
+                        {goal.description}
+                      </p>
                     )}
                     <div className={styles.goalProgress}>
                       <Progress
-                        percent={Math.min(100, (goal.currentAmount / goal.targetAmount) * 100)}
+                        percent={Math.min(
+                          100,
+                          (goal.currentAmount / goal.targetAmount) * 100
+                        )}
                         format={(percent) => `${Math.round(percent || 0)}%`}
                       />
                       <div className={styles.goalAmounts}>

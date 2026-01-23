@@ -17,7 +17,20 @@ import {
   Category,
   Saving,
 } from "./context/FinanceContext";
-import { apiService } from "./services/api";
+import {
+  useGetCategoriesQuery,
+  useGetTransactionsQuery,
+  useGetPlannedExpensesQuery,
+  useGetSavingsQuery,
+  useCreateTransactionMutation,
+  useCreatePlannedExpenseMutation,
+  useCreateSavingMutation,
+  useDeleteTransactionMutation,
+  useDeletePlannedExpenseMutation,
+  useDeleteSavingMutation,
+  useCreateCategoryMutation,
+  useDeleteCategoryMutation,
+} from "./store/api";
 import * as styles from "./App.module.css";
 
 dayjs.locale("ru");
@@ -26,63 +39,50 @@ dayjs.locale("ru");
 const AppContent: React.FC = () => {
   console.log("Проверка автодеплоя");
   const { user, token } = useAuth();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [plannedExpenses, setPlannedExpenses] = useState<Transaction[]>([]);
-  const [savings, setSavings] = useState<Saving[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  // RTK Query хуки
+  const {
+    data: categoriesData = [],
+    isLoading: categoriesLoading,
+  } = useGetCategoriesQuery(undefined, { skip: !user || !token });
+  
+  const {
+    data: transactionsData = [],
+    isLoading: transactionsLoading,
+  } = useGetTransactionsQuery(undefined, { skip: !user || !token });
+  
+  const {
+    data: plannedExpensesData = [],
+    isLoading: plannedExpensesLoading,
+  } = useGetPlannedExpensesQuery(undefined, { skip: !user || !token });
+  
+  const {
+    data: savingsData = [],
+    isLoading: savingsLoading,
+  } = useGetSavingsQuery(undefined, { skip: !user || !token });
 
-  useEffect(() => {
-    const loadData = async () => {
-      if (!user || !token) {
-        // Если пользователь не авторизован, очистить данные
-        setTransactions([]);
-        setPlannedExpenses([]);
-        setSavings([]);
-        setCategories([]);
-        setLoading(false);
-        return;
-      }
+  // Mutations
+  const [createTransaction] = useCreateTransactionMutation();
+  const [createPlannedExpense] = useCreatePlannedExpenseMutation();
+  const [createSaving] = useCreateSavingMutation();
+  const [deleteTransaction] = useDeleteTransactionMutation();
+  const [deletePlannedExpense] = useDeletePlannedExpenseMutation();
+  const [deleteSaving] = useDeleteSavingMutation();
+  const [createCategory] = useCreateCategoryMutation();
+  const [deleteCategory] = useDeleteCategoryMutation();
 
-      try {
-        setLoading(true);
-        const [categoriesData, transactionsData, plannedData, savingsData] =
-          await Promise.all([
-            apiService.getCategories(),
-            apiService.getTransactions(),
-            apiService.getPlannedExpenses(),
-            apiService.getSavings(),
-          ]);
+  const loading = categoriesLoading || transactionsLoading || plannedExpensesLoading || savingsLoading;
 
-        setCategories(categoriesData);
-        setTransactions(transactionsData);
-        setPlannedExpenses(plannedData);
-        setSavings(savingsData);
-      } catch (error) {
-        console.error("Error loading data:", error);
-        // Fallback to default categories if API fails
-        setCategories([
-          { id: "1", name: "Продукты", color: "#FF8A65", icon: "Utensils" },
-          { id: "2", name: "Транспорт", color: "#64B5F6", icon: "Car" },
-          { id: "3", name: "Развлечения", color: "#BA68C8", icon: "Film" },
-          { id: "4", name: "Здоровье", color: "#81C784", icon: "Hospital" },
-          { id: "5", name: "Одежда", color: "#FFB74D", icon: "Shirt" },
-          { id: "6", name: "Жилье", color: "#90CAF9", icon: "Home" },
-          { id: "7", name: "Зарплата", color: "#66BB6A", icon: "Wallet" },
-          { id: "8", name: "Другое", color: "#90A4AE", icon: "Package" },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [user, token]);
+  // Преобразуем данные из API в формат для контекста
+  const categories: Category[] = categoriesData;
+  const transactions: Transaction[] = transactionsData;
+  const plannedExpenses: Transaction[] = plannedExpensesData;
+  const savings: Saving[] = savingsData;
 
   const addTransaction = async (transaction: Omit<Transaction, "id">) => {
     try {
-      const newTransaction = await apiService.createTransaction(transaction);
-      setTransactions([newTransaction, ...transactions]);
+      await createTransaction(transaction).unwrap();
+      // RTK Query автоматически обновит кэш через invalidatesTags
     } catch (error) {
       console.error("Error adding transaction:", error);
       throw error;
@@ -91,8 +91,8 @@ const AppContent: React.FC = () => {
 
   const addPlannedExpense = async (expense: Omit<Transaction, "id">) => {
     try {
-      const newExpense = await apiService.createPlannedExpense(expense);
-      setPlannedExpenses([newExpense, ...plannedExpenses]);
+      await createPlannedExpense(expense).unwrap();
+      // RTK Query автоматически обновит кэш через invalidatesTags
     } catch (error) {
       console.error("Error adding planned expense:", error);
       throw error;
@@ -101,50 +101,50 @@ const AppContent: React.FC = () => {
 
   const addSaving = async (saving: Omit<Saving, "id">) => {
     try {
-      const newSaving = await apiService.createSaving(saving);
-      setSavings([newSaving, ...savings]);
+      await createSaving(saving).unwrap();
+      // RTK Query автоматически обновит кэш через invalidatesTags
     } catch (error) {
       console.error("Error adding saving:", error);
       throw error;
     }
   };
 
-  const deleteTransaction = async (id: string) => {
+  const deleteTransactionHandler = async (id: string) => {
     try {
-      await apiService.deleteTransaction(id);
-      setTransactions(transactions.filter((t) => t.id !== id));
+      await deleteTransaction(id).unwrap();
+      // RTK Query автоматически обновит кэш через invalidatesTags
     } catch (error) {
       console.error("Error deleting transaction:", error);
       throw error;
     }
   };
 
-  const deletePlannedExpense = async (id: string) => {
+  const deletePlannedExpenseHandler = async (id: string) => {
     try {
-      await apiService.deletePlannedExpense(id);
-      setPlannedExpenses(plannedExpenses.filter((e) => e.id !== id));
+      await deletePlannedExpense(id).unwrap();
+      // RTK Query автоматически обновит кэш через invalidatesTags
     } catch (error) {
       console.error("Error deleting planned expense:", error);
       throw error;
     }
   };
 
-  const deleteSaving = async (id: string) => {
+  const deleteSavingHandler = async (id: string) => {
     try {
-      await apiService.deleteSaving(id);
-      setSavings(savings.filter((s) => s.id !== id));
+      await deleteSaving(id).unwrap();
+      // RTK Query автоматически обновит кэш через invalidatesTags
     } catch (error) {
       console.error("Error deleting saving:", error);
       throw error;
     }
   };
 
-  const addCategory = async (
+  const addCategoryHandler = async (
     category: Omit<Category, "id">
   ): Promise<Category> => {
     try {
-      const newCategory = await apiService.createCategory(category);
-      setCategories([...categories, newCategory]);
+      const newCategory = await createCategory(category).unwrap();
+      // RTK Query автоматически обновит кэш через invalidatesTags
       return newCategory;
     } catch (error) {
       console.error("Error adding category:", error);
@@ -152,10 +152,10 @@ const AppContent: React.FC = () => {
     }
   };
 
-  const deleteCategory = async (id: string) => {
+  const deleteCategoryHandler = async (id: string) => {
     try {
-      await apiService.deleteCategory(id);
-      setCategories(categories.filter((c) => c.id !== id));
+      await deleteCategory(id).unwrap();
+      // RTK Query автоматически обновит кэш через invalidatesTags
     } catch (error) {
       console.error("Error deleting category:", error);
       throw error;
@@ -203,11 +203,11 @@ const AppContent: React.FC = () => {
                   addTransaction,
                   addPlannedExpense,
                   addSaving,
-                  deleteTransaction,
-                  deletePlannedExpense,
-                  deleteSaving,
-                  addCategory,
-                  deleteCategory,
+                  deleteTransaction: deleteTransactionHandler,
+                  deletePlannedExpense: deletePlannedExpenseHandler,
+                  deleteSaving: deleteSavingHandler,
+                  addCategory: addCategoryHandler,
+                  deleteCategory: deleteCategoryHandler,
                 }}
               >
                 <Layout>

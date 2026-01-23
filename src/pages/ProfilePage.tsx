@@ -23,8 +23,16 @@ import {
   FileAddOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { apiService, Profile, Goal } from "../services/api";
+import { Profile, Goal } from "../store/api";
 import { useAuth } from "../context/AuthContext";
+import {
+  useGetProfileQuery,
+  useGetGoalsQuery,
+  useUpdateProfileMutation,
+  useCreateGoalMutation,
+  useUpdateGoalMutation,
+  useDeleteGoalMutation,
+} from "../store/api";
 import GoalForm from "../components/GoalForm";
 import ProfileEditDrawer from "../components/ProfileEditDrawer";
 import GoalEditDrawer from "../components/GoalEditDrawer";
@@ -35,9 +43,27 @@ import * as styles from "./ProfilePage.module.css";
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [loading, setLoading] = useState(false);
+
+  // RTK Query хуки
+  const {
+    data: profileData,
+    isLoading: profileLoading,
+    refetch: refetchProfile,
+  } = useGetProfileQuery();
+  const {
+    data: goalsData = [],
+    isLoading: goalsLoading,
+    refetch: refetchGoals,
+  } = useGetGoalsQuery();
+  const [updateProfile] = useUpdateProfileMutation();
+  const [createGoal] = useCreateGoalMutation();
+  const [updateGoal] = useUpdateGoalMutation();
+  const [deleteGoal] = useDeleteGoalMutation();
+
+  const profile = profileData || null;
+  const goals = goalsData;
+  const loading = profileLoading || goalsLoading;
+
   const [editingProfile, setEditingProfile] = useState(false);
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
@@ -50,8 +76,17 @@ const ProfilePage: React.FC = () => {
   const [amountForm] = Form.useForm();
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (profile) {
+      profileForm.setFieldsValue({
+        lastName: profile.lastName || "",
+        firstName: profile.firstName || "",
+        middleName: profile.middleName || "",
+        dateOfBirth: profile.dateOfBirth
+          ? dayjs(profile.dateOfBirth)
+          : undefined,
+      });
+    }
+  }, [profile, profileForm]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -62,30 +97,6 @@ const ProfilePage: React.FC = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [profileData, goalsData] = await Promise.all([
-        apiService.getProfile(),
-        apiService.getGoals(),
-      ]);
-      setProfile(profileData);
-      setGoals(goalsData);
-      profileForm.setFieldsValue({
-        lastName: profileData.lastName || "",
-        firstName: profileData.firstName || "",
-        middleName: profileData.middleName || "",
-        dateOfBirth: profileData.dateOfBirth
-          ? dayjs(profileData.dateOfBirth)
-          : undefined,
-      });
-    } catch (error) {
-      console.error("Error loading profile data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleProfileSubmit = async () => {
     try {
       const values = await profileForm.validateFields();
@@ -95,9 +106,9 @@ const ProfilePage: React.FC = () => {
           ? values.dateOfBirth.format("YYYY-MM-DD")
           : undefined,
       };
-      const updated = await apiService.updateProfile(submitValues);
-      setProfile(updated);
+      await updateProfile(submitValues).unwrap();
       setEditingProfile(false);
+      refetchProfile();
     } catch (error) {
       console.error("Error updating profile:", error);
     }
@@ -107,21 +118,24 @@ const ProfilePage: React.FC = () => {
     goal: Omit<Goal, "id" | "createdAt" | "updatedAt">
   ) => {
     try {
-      const newGoal = await apiService.createGoal(goal);
-      setGoals([newGoal, ...goals]);
+      await createGoal(goal).unwrap();
       setShowGoalForm(false);
       setEditingGoal(null);
+      refetchGoals();
     } catch (error) {
       console.error("Error creating goal:", error);
       throw error;
     }
   };
 
-  const handleGoalUpdate = async (id: string, updates: Partial<Goal>) => {
+  const handleGoalUpdate = async (
+    id: string,
+    updates: Partial<Omit<Goal, "id" | "createdAt" | "updatedAt">>
+  ) => {
     try {
-      const updated = await apiService.updateGoal(id, updates);
-      setGoals(goals.map((g) => (g.id === id ? updated : g)));
+      await updateGoal({ id, goal: updates }).unwrap();
       setEditingGoal(null);
+      refetchGoals();
     } catch (error) {
       console.error("Error updating goal:", error);
     }
@@ -136,8 +150,8 @@ const ProfilePage: React.FC = () => {
       cancelText: "Отмена",
       onOk: async () => {
         try {
-          await apiService.deleteGoal(id);
-          setGoals(goals.filter((g) => g.id !== id));
+          await deleteGoal(id).unwrap();
+          refetchGoals();
         } catch (error) {
           console.error("Error deleting goal:", error);
         }
@@ -408,9 +422,9 @@ const ProfilePage: React.FC = () => {
           }}
           profile={profile}
           onSave={async (values) => {
-            const updated = await apiService.updateProfile(values);
-            setProfile(updated);
+            await updateProfile(values).unwrap();
             setEditingProfile(false);
+            refetchProfile();
           }}
         />
       )}

@@ -1,12 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { getApiBaseUrl } from "../utils/apiConfig";
+import { useLoginMutation, useRegisterMutation, User } from "../store/api";
 
-export interface User {
-  id: number;
-  email?: string;
-  login?: string;
-  name?: string;
-}
+export type { User };
 
 interface AuthContextType {
   user: User | null;
@@ -36,6 +32,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loginMutation] = useLoginMutation();
+  const [registerMutation] = useRegisterMutation();
 
   useEffect(() => {
     // Check for stored token on mount
@@ -49,48 +47,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (login: string, password: string) => {
-    const apiBaseUrl = getApiBaseUrl();
-    const response = await fetch(`${apiBaseUrl}/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ login, password }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Login failed");
+  const login = async (loginValue: string, password: string) => {
+    try {
+      const result = await loginMutation({ login: loginValue, password }).unwrap();
+      setToken(result.token);
+      setUser(result.user);
+      localStorage.setItem("token", result.token);
+      localStorage.setItem("user", JSON.stringify(result.user));
+    } catch (error: any) {
+      // Ошибка уже обработана в интерцепторе, но можем пробросить дальше
+      throw new Error(error?.data?.error || error?.error || "Login failed");
     }
-
-    const data = await response.json();
-    setToken(data.token);
-    setUser(data.user);
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
   };
 
-  const register = async (fullName: string, login: string, password: string) => {
-    const apiBaseUrl = getApiBaseUrl();
-    const response = await fetch(`${apiBaseUrl}/auth/register`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ fullName, login, password }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Registration failed");
+  const register = async (fullName: string, loginValue: string, password: string) => {
+    try {
+      const result = await registerMutation({ fullName, login: loginValue, password }).unwrap();
+      setToken(result.token);
+      setUser(result.user);
+      localStorage.setItem("token", result.token);
+      localStorage.setItem("user", JSON.stringify(result.user));
+    } catch (error: any) {
+      // Ошибка уже обработана в интерцепторе, но можем пробросить дальше
+      throw new Error(error?.data?.error || error?.error || "Registration failed");
     }
-
-    const data = await response.json();
-    setToken(data.token);
-    setUser(data.user);
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
   };
 
   const loginWithGoogle = async () => {

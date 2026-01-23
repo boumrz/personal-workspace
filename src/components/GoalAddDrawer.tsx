@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Drawer } from "antd";
-import { Goal } from "../services/api";
+import { Goal } from "../store/api";
 import GoalForm from "./GoalForm";
 import * as styles from "./GoalAddDrawer.module.css";
 

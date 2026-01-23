@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Drawer, Form, Input, Button, DatePicker } from "antd";
 import { UserOutlined } from "@ant-design/icons";
-import { Profile } from "../services/api";
+import { Profile } from "../store/api";
 import dayjs from "dayjs";
 import * as styles from "./ProfileEditDrawer.module.css";
 

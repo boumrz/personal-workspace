@@ -185,14 +185,19 @@ class ApiService {
     return this.request<Goal[]>("/goals");
   }
 
-  async createGoal(goal: Omit<Goal, "id" | "createdAt" | "updatedAt">): Promise<Goal> {
+  async createGoal(
+    goal: Omit<Goal, "id" | "createdAt" | "updatedAt">
+  ): Promise<Goal> {
     return this.request<Goal>("/goals", {
       method: "POST",
       body: JSON.stringify(goal),
     });
   }
 
-  async updateGoal(id: string, goal: Partial<Omit<Goal, "id" | "createdAt" | "updatedAt">>): Promise<Goal> {
+  async updateGoal(
+    id: string,
+    goal: Partial<Omit<Goal, "id" | "createdAt" | "updatedAt">>
+  ): Promise<Goal> {
     return this.request<Goal>(`/goals/${id}`, {
       method: "PUT",
       body: JSON.stringify(goal),

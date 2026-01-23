@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Form, Input, InputNumber, Button } from "antd";
-import { Goal } from "../services/api";
+import { Goal } from "../store/api";
 
 interface GoalFormProps {
   goal?: Goal;
