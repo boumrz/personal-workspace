@@ -54,7 +54,9 @@ const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
   // Устанавливаем последний месяц по умолчанию (самый новый)
   useEffect(() => {
     if (expensesByMonth.sortedMonths.length > 0 && !selectedMonth) {
-      setSelectedMonth(expensesByMonth.sortedMonths[expensesByMonth.sortedMonths.length - 1]);
+      setSelectedMonth(
+        expensesByMonth.sortedMonths[expensesByMonth.sortedMonths.length - 1]
+      );
     }
   }, [expensesByMonth.sortedMonths, selectedMonth]);
 
@@ -67,9 +69,11 @@ const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
     );
   }
 
-  const currentMonthExpenses =
-    expensesByMonth.grouped[selectedMonth] || [];
-  const totalPlanned = currentMonthExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const currentMonthExpenses = expensesByMonth.grouped[selectedMonth] || [];
+  const totalPlanned = currentMonthExpenses.reduce(
+    (sum, e) => sum + e.amount,
+    0
+  );
 
   const currentMonthIndex = expensesByMonth.sortedMonths.indexOf(selectedMonth);
   const canGoPrev = currentMonthIndex > 0;
@@ -88,7 +92,7 @@ const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
   };
 
   return (
-    <div className={styles.planned}>
+    <div className={styles.wrapper}>
       <div className={styles.monthSelector}>
         <Button
           icon={<LeftOutlined />}
@@ -108,7 +112,9 @@ const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
       </div>
       <Card className={styles.plannedTotal} bordered={false}>
         <Statistic
-          title={`Запланировано за ${selectedMonth.charAt(0).toUpperCase() + selectedMonth.slice(1)}`}
+          title={`Запланировано за ${
+            selectedMonth.charAt(0).toUpperCase() + selectedMonth.slice(1)
+          }`}
           value={totalPlanned}
           precision={0}
           suffix="₽"
@@ -117,9 +123,9 @@ const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
       </Card>
       <div className={styles.planned}>
         {currentMonthExpenses.map((expense) => {
-          const category = categories.find(
-            (c) => c.id === expense.category.id
-          ) || expense.category;
+          const category =
+            categories.find((c) => c.id === expense.category.id) ||
+            expense.category;
 
           return (
             <div key={expense.id} className={styles.listItem}>
@@ -130,7 +136,11 @@ const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
                     style={{ backgroundColor: category.color + "20" }}
                   >
                     <span className={styles.categoryIcon}>
-                      <IconRenderer iconName={category.icon} size={24} color={category.color} />
+                      <IconRenderer
+                        iconName={category.icon}
+                        size={24}
+                        color={category.color}
+                      />
                     </span>
                   </div>
                   <div className={styles.expenseInfo}>

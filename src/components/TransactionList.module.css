@@ -1,4 +1,5 @@
-.list {
+.list,
+.wrapper {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -145,10 +146,16 @@
 }
 
 @media (max-width: 768px) {
-  .list {
+  .wrapper {
     gap: 12px;
     padding: 0 16px;
-    padding-bottom: 30px; /* Отступ снизу для нижней навигации и кнопки */
+    padding-bottom: 30px;
+    background: var(--bg-card);
+  }
+
+  .list {
+    gap: 12px;
+    padding-bottom: 30px;
     background: var(--bg-card);
   }
 

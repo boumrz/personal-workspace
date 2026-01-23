@@ -22,20 +22,19 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
   // Группировка по месяцам
   const groupedTransactions = useMemo(() => {
-    const grouped = transactions
-      .reduce((groups, transaction) => {
-        const date = new Date(transaction.date);
-        const monthKey = date.toLocaleDateString("ru-RU", {
-          month: "long",
-          year: "numeric",
-        });
+    const grouped = transactions.reduce((groups, transaction) => {
+      const date = new Date(transaction.date);
+      const monthKey = date.toLocaleDateString("ru-RU", {
+        month: "long",
+        year: "numeric",
+      });
 
-        if (!groups[monthKey]) {
-          groups[monthKey] = [];
-        }
-        groups[monthKey].push(transaction);
-        return groups;
-      }, {} as Record<string, Transaction[]>);
+      if (!groups[monthKey]) {
+        groups[monthKey] = [];
+      }
+      groups[monthKey].push(transaction);
+      return groups;
+    }, {} as Record<string, Transaction[]>);
 
     // Сортируем транзакции внутри каждого месяца (сначала старые)
     Object.keys(grouped).forEach((monthKey) => {
@@ -46,8 +45,12 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
     // Сортируем месяцы (сначала старые)
     const sortedMonths = Object.keys(grouped).sort((a, b) => {
-      const dateA = new Date(grouped[a][0].date.substring(0, 7) + "-01").getTime();
-      const dateB = new Date(grouped[b][0].date.substring(0, 7) + "-01").getTime();
+      const dateA = new Date(
+        grouped[a][0].date.substring(0, 7) + "-01"
+      ).getTime();
+      const dateB = new Date(
+        grouped[b][0].date.substring(0, 7) + "-01"
+      ).getTime();
       return dateA - dateB;
     });
 
@@ -57,7 +60,11 @@ const TransactionList: React.FC<TransactionListProps> = ({
   // Устанавливаем последний месяц по умолчанию (самый новый)
   useEffect(() => {
     if (groupedTransactions.sortedMonths.length > 0 && !selectedMonth) {
-      setSelectedMonth(groupedTransactions.sortedMonths[groupedTransactions.sortedMonths.length - 1]);
+      setSelectedMonth(
+        groupedTransactions.sortedMonths[
+          groupedTransactions.sortedMonths.length - 1
+        ]
+      );
     }
   }, [groupedTransactions.sortedMonths, selectedMonth]);
 
@@ -106,19 +113,20 @@ const TransactionList: React.FC<TransactionListProps> = ({
     return (
       <Empty
         description={
-          selectedCategory
-            ? "Нет операций в этой категории"
-            : "Нет операций"
+          selectedCategory ? "Нет операций в этой категории" : "Нет операций"
         }
         image={Empty.PRESENTED_IMAGE_SIMPLE}
       />
     );
   }
 
-  const currentMonthTransactions = groupedTransactions.grouped[selectedMonth] || [];
-  const currentMonthIndex = groupedTransactions.sortedMonths.indexOf(selectedMonth);
+  const currentMonthTransactions =
+    groupedTransactions.grouped[selectedMonth] || [];
+  const currentMonthIndex =
+    groupedTransactions.sortedMonths.indexOf(selectedMonth);
   const canGoPrev = currentMonthIndex > 0;
-  const canGoNext = currentMonthIndex < groupedTransactions.sortedMonths.length - 1;
+  const canGoNext =
+    currentMonthIndex < groupedTransactions.sortedMonths.length - 1;
 
   const handlePrevMonth = () => {
     if (canGoPrev) {
@@ -133,7 +141,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
   };
 
   return (
-    <div className={styles.list}>
+    <div className={styles.wrapper}>
       <div className={styles.monthSelector}>
         <Button
           icon={<LeftOutlined />}
@@ -163,9 +171,9 @@ const TransactionList: React.FC<TransactionListProps> = ({
       ) : (
         <div className={styles.list}>
           {currentMonthTransactions.map((transaction) => {
-            const category = categories.find(
-              (c) => c.id === transaction.category.id
-            ) || transaction.category;
+            const category =
+              categories.find((c) => c.id === transaction.category.id) ||
+              transaction.category;
 
             // Получаем планируемую сумму и потраченную сумму для расхода
             const plannedAmount =
@@ -198,7 +206,11 @@ const TransactionList: React.FC<TransactionListProps> = ({
                       style={{ backgroundColor: category.color + "20" }}
                     >
                       <span className={styles.categoryIcon}>
-                        <IconRenderer iconName={category.icon} size={24} color={category.color} />
+                        <IconRenderer
+                          iconName={category.icon}
+                          size={24}
+                          color={category.color}
+                        />
                       </span>
                     </div>
                     <div className={styles.transactionInfo}>
