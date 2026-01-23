@@ -120,9 +120,20 @@ body {
 
 /* Общие стили для всех drawers */
 :global(.ant-drawer-content-wrapper) {
-  width: 100% !important;
-  max-width: 100vw !important;
   box-shadow: none !important;
+  z-index: 1002 !important; /* Выше Header (1001) */
+}
+
+:global(.ant-drawer-mask) {
+  z-index: 1001 !important; /* Выше Header (1001), но ниже drawer content */
+}
+
+/* Стили для drawers на десктопе — четверть экрана */
+@media (min-width: 769px) {
+  :global(.ant-drawer-content-wrapper) {
+    width: 25vw !important;
+    max-width: 400px !important;
+  }
 }
 
 /* Исправление для drawers снизу на мобильных устройствах — на весь экран, Apple-style radius */

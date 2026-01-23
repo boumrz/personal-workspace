@@ -95,6 +95,22 @@ const BalanceHistoryChart: React.FC<BalanceHistoryChartProps> = ({ data }) => {
           callback: function (value: any) {
             return value.toLocaleString("ru-RU") + " ₽";
           },
+          stepSize: (() => {
+            // Вычисляем разницу между максимальным и минимальным значением
+            const values = sortedDates.map((date) => dailyBalance.get(date) || 0);
+            const max = Math.max(...values);
+            const min = Math.min(...values);
+            const range = max - min;
+            
+            // Если диапазон меньше 1000, шаг 100
+            if (range < 1000) return 100;
+            // Если диапазон меньше 10000, шаг 1000
+            if (range < 10000) return 1000;
+            // Если диапазон меньше 100000, шаг 10000
+            if (range < 100000) return 10000;
+            // Иначе шаг 50000
+            return 50000;
+          })(),
         },
         grid: {
           color: "rgba(0, 0, 0, 0.05)",
@@ -109,7 +125,7 @@ const BalanceHistoryChart: React.FC<BalanceHistoryChartProps> = ({ data }) => {
   };
 
   return (
-    <div style={{ height: "350px", position: "relative" }}>
+    <div style={{ height: "500px", position: "relative" }}>
       <Line data={chartData} options={options} />
     </div>
   );

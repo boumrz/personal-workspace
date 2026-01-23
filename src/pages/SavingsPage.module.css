@@ -3,7 +3,12 @@
   max-width: 100%;
   min-height: 100vh;
   background-color: var(--bg-base);
-  padding-top: 60px; /* Отступ для фиксированной шапки */
+}
+
+@media (min-width: 769px) {
+  .savingsPage {
+    padding-top: 0; /* PageHeader больше не fixed, отступ не нужен */
+  }
 }
 
 /* Глобальные стили для переопределения Ant Design */

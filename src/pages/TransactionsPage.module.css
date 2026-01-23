@@ -1,7 +1,12 @@
 .transactionsPage {
   width: 100%;
   max-width: 100%;
-  padding-top: 60px; /* Отступ для фиксированной шапки */
+}
+
+@media (min-width: 769px) {
+  .transactionsPage {
+    padding-top: 0; /* PageHeader больше не fixed, отступ не нужен */
+  }
 }
 
 .filterButton {
@@ -19,13 +24,32 @@
   background-color: var(--bg-elevated);
 }
 
+.filterButtonDesktop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+}
+
+.filterButtonDesktop:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .activeFilters {
   padding: 12px 24px;
   background-color: var(--bg-card);
   border-bottom: 1px solid var(--border);
   position: sticky;
-  top: 60px; /* Под фиксированной шапкой */
-  z-index: 999;
+  z-index: 998;
+}
+
+@media (min-width: 769px) {
+  .activeFilters {
+    top: 64px; /* Под Header (64px) на десктопе, PageHeader не fixed */
+  }
 }
 
 @media (max-width: 768px) {

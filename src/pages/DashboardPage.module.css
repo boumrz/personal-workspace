@@ -2,7 +2,12 @@
   width: 100%;
   max-width: 100%;
   background: var(--bg-base);
-  padding-top: 60px; /* Отступ для фиксированной шапки */
+}
+
+@media (min-width: 769px) {
+  .dashboardPage {
+    padding-top: 0; /* PageHeader больше не fixed, отступ не нужен */
+  }
 }
 
 @media (max-width: 768px) {

@@ -353,7 +353,7 @@
 }
 
 .drawer {
-  z-index: 1001;
+  z-index: 1002;
 }
 
 .drawer :global(.ant-drawer-content-wrapper) {

@@ -1,20 +1,27 @@
 .profilePage {
   min-height: 100%;
   background: var(--bg-base);
-  padding-top: 60px; /* Отступ для фиксированной шапки */
 }
 
 .container {
   max-width: 800px;
   margin: 0 auto;
   padding: 24px;
-  padding-top: 24px;
+}
+
+@media (min-width: 769px) {
+  .profilePage {
+    padding-top: 0; /* PageHeader больше не fixed, отступ не нужен */
+  }
+  
+  .container {
+    padding: 24px;
+  }
 }
 
 @media (max-width: 768px) {
   .container {
     padding: 16px;
-    padding-top: 16px;
   }
 }
 

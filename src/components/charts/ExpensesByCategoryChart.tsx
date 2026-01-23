@@ -51,13 +51,15 @@ const ExpensesByCategoryChart: React.FC<ExpensesByCategoryChartProps> = ({
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: "right" as const,
+        position: "bottom" as const,
         labels: {
-          padding: 15,
+          padding: 12,
           usePointStyle: true,
           font: {
-            size: 12,
+            size: 11,
           },
+          boxWidth: 12,
+          boxHeight: 12,
           generateLabels: (chart: any) => {
             const original = ChartJS.defaults.plugins.legend.labels.generateLabels;
             const labels = original(chart);
@@ -86,7 +88,7 @@ const ExpensesByCategoryChart: React.FC<ExpensesByCategoryChartProps> = ({
   };
 
   return (
-    <div style={{ height: "350px", position: "relative" }}>
+    <div style={{ height: "500px", position: "relative" }}>
       <Doughnut data={chartData} options={options} />
     </div>
   );

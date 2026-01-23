@@ -4,20 +4,28 @@
   height: 100%;
 }
 
+.navTabs {
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  margin: 0 -24px 0 -24px; /* Компенсируем padding Layout.content */
+  width: calc(100% + 48px);
+}
+
 .tabs {
   width: 100%;
 }
 
 .tabs :global(.ant-tabs-nav) {
-  margin-bottom: 24px;
+  margin: 0;
 }
 
 .tabs :global(.ant-tabs-content-holder) {
-  padding: 0;
+  display: none; /* Скрываем контент табов, так как используем Routes */
 }
 
 @media (max-width: 768px) {
-  .tabs :global(.ant-tabs-nav) {
-    margin-bottom: 16px;
+  .navTabs {
+    display: none;
   }
 }

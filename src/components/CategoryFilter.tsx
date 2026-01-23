@@ -61,16 +61,27 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
   const isAllSelected = tempSelectedCategories.includes("all");
   const isCategorySelected = (categoryId: string) => tempSelectedCategories.includes(categoryId);
 
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   return (
     <Drawer
       title="Фильтр по категориям"
       placement="right"
       onClose={onClose}
       open={open}
-      width="100%"
+      width={isMobile ? "100%" : undefined}
       styles={{
         body: { padding: "16px" },
-        wrapper: { width: "100%", maxWidth: "100vw" },
+        wrapper: isMobile ? { width: "100%", maxWidth: "100vw" } : undefined,
       }}
       footer={
         <div className={styles.drawerFooter}>

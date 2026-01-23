@@ -28,10 +28,17 @@ const TransactionsPage: React.FC = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Фильтрация для актуальных операций
   const filteredTransactions =
     selectedCategories.length === 0 || selectedCategories.includes("all")
       ? transactions
       : transactions.filter((t) => selectedCategories.includes(t.category.id));
+
+  // Фильтрация для планируемых операций
+  const filteredPlannedExpenses =
+    selectedCategories.length === 0 || selectedCategories.includes("all")
+      ? plannedExpenses
+      : plannedExpenses.filter((e) => selectedCategories.includes(e.category.id));
 
   const handleRemoveCategory = (categoryId: string) => {
     setSelectedCategories(selectedCategories.filter((id) => id !== categoryId));
@@ -56,7 +63,7 @@ const TransactionsPage: React.FC = () => {
     {
       key: "planned",
       label: "Планируемые",
-      children: <PlannedExpenses expenses={plannedExpenses} />,
+      children: <PlannedExpenses expenses={filteredPlannedExpenses} />,
     },
   ];
 
@@ -68,12 +75,23 @@ const TransactionsPage: React.FC = () => {
         title="Все операции"
         extra={
           <Badge count={hasActiveFilters ? selectedCategories.length : 0} size="small">
-            <Button
-              type="text"
-              icon={<FilterOutlined />}
-              onClick={() => setFilterDrawerOpen(true)}
-              className={styles.filterButton}
-            />
+            {isMobile ? (
+              <Button
+                type="text"
+                icon={<FilterOutlined />}
+                onClick={() => setFilterDrawerOpen(true)}
+                className={styles.filterButton}
+              />
+            ) : (
+              <Button
+                type="default"
+                icon={<FilterOutlined />}
+                onClick={() => setFilterDrawerOpen(true)}
+                className={styles.filterButtonDesktop}
+              >
+                Фильтр
+              </Button>
+            )}
           </Badge>
         }
       />

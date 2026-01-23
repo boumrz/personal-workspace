@@ -62,12 +62,14 @@ const FinancePage: React.FC = () => {
   return (
     <div className={styles.financePage}>
       {!isMobile && (
-        <Tabs
-          activeKey={activeTab}
-          onChange={handleTabChange}
-          items={tabItems}
-          className={styles.tabs}
-        />
+        <div className={styles.navTabs}>
+          <Tabs
+            activeKey={activeTab}
+            onChange={handleTabChange}
+            items={tabItems}
+            className={styles.tabs}
+          />
+        </div>
       )}
       <Routes>
         <Route path="dashboard" element={<DashboardPage />} />
