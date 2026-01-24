@@ -299,15 +299,86 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       <Form.Item
         label="Сумма (₽)"
         name="amount"
-        rules={[{ required: true, message: "Введите сумму" }]}
+        rules={[
+          { required: true, message: "Введите сумму" },
+          {
+            validator: (_, value) => {
+              if (value !== null && value !== undefined && value <= 0) {
+                return Promise.reject(new Error("Сумма должна быть больше 0"));
+              }
+              return Promise.resolve();
+            },
+          },
+        ]}
       >
         <InputNumber
           style={{ width: "100%" }}
-          min={0}
+          min={0.01}
+          max={99999999.99}
           step={0.01}
           precision={2}
           placeholder="0"
+          controls={false}
+          keyboard={false}
           onChange={(value) => setEnteredAmount(value)}
+          onKeyDown={(e) => {
+            const input = e.target as HTMLInputElement;
+            const value = input.value;
+            const selectionStart = input.selectionStart || 0;
+            const selectionEnd = input.selectionEnd || 0;
+            const hasSelection = selectionStart !== selectionEnd;
+            
+            // Служебные клавиши всегда разрешены
+            const controlKeys = [
+              'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+              'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+              'Home', 'End'
+            ];
+            if (controlKeys.includes(e.key) || e.ctrlKey || e.metaKey) {
+              return;
+            }
+            
+            // Блокируем всё кроме цифр и разделителей
+            const isNumber = /^[0-9]$/.test(e.key);
+            const isDecimalSeparator = e.key === '.' || e.key === ',';
+            
+            if (!isNumber && !isDecimalSeparator) {
+              e.preventDefault();
+              return;
+            }
+            
+            // Проверяем точку/запятую — только одна разрешена
+            if (isDecimalSeparator) {
+              if (value.includes('.') || value.includes(',')) {
+                e.preventDefault();
+                return;
+              }
+              return;
+            }
+            
+            // Проверяем ограничение длины для цифр
+            // DECIMAL(10,2): максимум 8 цифр до точки, 2 после
+            const normalizedValue = value.replace(',', '.');
+            const parts = normalizedValue.split('.');
+            const integerPart = parts[0] || '';
+            const decimalPart = parts[1] || '';
+            
+            // Определяем, куда пользователь вводит (до или после точки)
+            const dotIndex = value.indexOf('.') !== -1 ? value.indexOf('.') : value.indexOf(',');
+            const isBeforeDecimal = dotIndex === -1 || selectionStart <= dotIndex;
+            
+            if (isBeforeDecimal) {
+              // Ввод в целую часть: максимум 8 цифр
+              if (integerPart.length >= 8 && !hasSelection) {
+                e.preventDefault();
+              }
+            } else {
+              // Ввод в дробную часть: максимум 2 цифры
+              if (decimalPart.length >= 2 && !hasSelection) {
+                e.preventDefault();
+              }
+            }
+          }}
         />
       </Form.Item>
 

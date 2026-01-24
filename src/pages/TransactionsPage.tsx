@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Input, FloatButton, Button, Badge } from "antd";
+import { Input, FloatButton, Button, Badge, Popconfirm } from "antd";
 import {
   PlusOutlined,
   FilterOutlined,
   SearchOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import TransactionForm from "../components/TransactionForm";
@@ -205,21 +206,36 @@ const TransactionsPage: React.FC = () => {
                         </div>
 
                         <div className={styles.transactionRight}>
-                          <span
-                            className={`${styles.transactionAmount} ${
-                              transaction.type === "income"
-                                ? styles.amountIncome
-                                : styles.amountExpense
-                            }`}
+                          <div className={styles.transactionAmountWrapper}>
+                            <span
+                              className={`${styles.transactionAmount} ${
+                                transaction.type === "income"
+                                  ? styles.amountIncome
+                                  : styles.amountExpense
+                              }`}
+                            >
+                              {transaction.type === "income" ? "+ " : "- "}₽
+                              {transaction.amount.toLocaleString("ru-RU", {
+                                minimumFractionDigits: 2,
+                              })}
+                            </span>
+                            <span className={styles.transactionTime}>
+                              {formatTime(transaction.date)}
+                            </span>
+                          </div>
+                          <Popconfirm
+                            title="Удалить операцию?"
+                            description="Это действие нельзя отменить."
+                            onConfirm={() => deleteTransaction(transaction.id)}
+                            okText="Удалить"
+                            okType="danger"
+                            cancelText="Отмена"
+                            placement="left"
                           >
-                            {transaction.type === "income" ? "+ " : "- "}₽
-                            {transaction.amount.toLocaleString("ru-RU", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </span>
-                          <span className={styles.transactionTime}>
-                            {formatTime(transaction.date)}
-                          </span>
+                            <button className={styles.deleteBtn}>
+                              <DeleteOutlined />
+                            </button>
+                          </Popconfirm>
                         </div>
                       </div>
                     );
