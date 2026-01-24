@@ -151,7 +151,6 @@
   border-radius: var(--radius-lg);
   background-color: var(--bg-card);
   cursor: pointer;
-  transition: all 0.2s;
 }
 
 .categoryButton.active {
@@ -194,6 +193,14 @@
   display: inline-block;
 }
 
+.categoryWrapper :global(.ant-wave) {
+  display: none !important;
+}
+
+.categoryWrapper :global(.ant-btn)::after {
+  display: none !important;
+}
+
 .categoryButton {
   padding: 8px 24px !important;
   height: auto !important;
@@ -203,11 +210,57 @@
   gap: 8px;
   white-space: nowrap !important;
   flex-wrap: nowrap !important;
+  transition: none !important;
+  transform: none !important;
 }
+
+.categoryButton:hover,
+.categoryButton:focus,
+.categoryButton:active,
+.categoryButton:focus-visible {
+  transform: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.categoryButton:global(.ant-btn),
+.categoryButton:global(.ant-btn):hover,
+.categoryButton:global(.ant-btn):active,
+.categoryButton:global(.ant-btn):focus,
+.categoryButton:global(.ant-btn):focus-visible,
+.categoryButton:global(.ant-btn):not(:disabled):not(.ant-btn-disabled):active {
+  transform: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+.categoryButton:global(.ant-btn-default),
+.categoryButton:global(.ant-btn-default):hover,
+.categoryButton:global(.ant-btn-default):active,
+.categoryButton:global(.ant-btn-default):focus,
+.categoryButton:global(.ant-btn-default):focus-visible,
+.categoryButton:global(.ant-btn-default):not(:disabled):not(.ant-btn-disabled):active {
+  border-color: var(--border) !important;
+}
+
 
 .categoryButton > * {
   white-space: nowrap !important;
   flex-shrink: 0;
+}
+
+.categoryButton:global(.ant-btn) {
+  transition: none !important;
+}
+
+.categoryButton:global(.ant-btn)::after {
+  display: none !important;
+}
+
+.categoryButton:global(.ant-wave) {
+  display: none !important;
 }
 
 .deleteCategoryButton {

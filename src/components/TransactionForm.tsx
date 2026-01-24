@@ -312,11 +312,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       </Form.Item>
 
       {/* Отображение остатка бюджета */}
-      {type === "actual" &&
-        transactionType === "expense" &&
-        calculateBudgetRemaining &&
-        calculateBudgetRemaining.planned > 0 && (
-          <Form.Item>
+      {type === "actual" && transactionType === "expense" && (
+        <Form.Item>
+          {calculateBudgetRemaining && calculateBudgetRemaining.planned > 0 ? (
             <Alert
               message={
                 <div
@@ -360,8 +358,36 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               showIcon
               style={{ marginTop: 8 }}
             />
-          </Form.Item>
-        )}
+          ) : (
+            <Alert
+              message={
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                >
+                  <div style={{ fontSize: 14, fontWeight: 500 }}>
+                    Бюджет на месяц
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                    Сумма не запланирована для этой категории
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: "var(--text-tertiary)",
+                    }}
+                  >
+                    —
+                  </div>
+                </div>
+              }
+              type="info"
+              showIcon
+              style={{ marginTop: 8 }}
+            />
+          )}
+        </Form.Item>
+      )}
 
       <Form.Item label="Категория" required>
         <Space wrap size={12} className={styles.categoriesContainer}>
