@@ -5,7 +5,7 @@ export const AVAILABLE_ICONS = [
   "GraduationCap", "Pill", "Gift", "CreditCard", "Dumbbell", "Palette", "BookOpen", "Music",
   "Cake", "Salad", "Wine", "Bus", "Train", "Bike", "Fuel", "ShoppingCart",
   "Wrench", "Lightbulb", "Thermometer", "Tv", "Plug",
-  "Briefcase", "BarChart3", "TrendingUp", "DollarSign", "Yen", "Euro", "PoundSterling", "Coins",
+  "Briefcase", "BarChart3", "TrendingUp",
   "Heart", "Star", "Tag", "Bookmark", "Bell", "Calendar", "Clock", "Settings",
   "User", "Users", "Mail", "Phone", "MessageSquare", "Camera", "Image", "File",
   "Folder", "Download", "Upload", "Share", "Edit", "Trash2", "Plus", "Minus",

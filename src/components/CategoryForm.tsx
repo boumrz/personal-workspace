@@ -13,11 +13,18 @@ interface CategoryFormProps {
 }
 
 const COLOR_PALETTE = [
-  "#FF8A65", "#64B5F6", "#BA68C8", "#81C784", "#FFB74D", "#90CAF9",
-  "#66BB6A", "#90A4AE", "#F06292", "#4DB6AC", "#FFA726", "#7986CB",
-  "#AED581", "#FFD54F", "#FF8A80", "#80CBC4", "#CE93D8", "#A5D6A7",
-  "#FFCC80", "#B39DDB", "#C5E1A5", "#FFE082", "#EF9A9A", "#90CAF9",
-  "#FFAB91", "#81C784", "#FFD54F", "#BA68C8", "#64B5F6", "#FF8A65"
+  // Красные / Розовые
+  "#FF6B6B", "#E91E63", "#F06292", "#FF8A80",
+  // Оранжевые / Жёлтые
+  "#FF9800", "#FFB74D", "#FFC107", "#FFEB3B",
+  // Зелёные
+  "#4CAF50", "#66BB6A", "#81C784", "#00BFA5",
+  // Голубые / Синие
+  "#03A9F4", "#2196F3", "#5C6BC0", "#3F51B5",
+  // Фиолетовые
+  "#9C27B0", "#BA68C8", "#7C4DFF", "#673AB7",
+  // Бирюзовые / Серые
+  "#00BCD4", "#26A69A", "#78909C", "#607D8B",
 ];
 
 const CategoryForm: React.FC<CategoryFormProps> = ({
