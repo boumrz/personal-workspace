@@ -35,10 +35,10 @@ interface BalanceHistoryChartProps {
 }
 
 const BalanceHistoryChart: React.FC<BalanceHistoryChartProps> = ({ data }) => {
-  const { resolvedTheme } = useTheme();
-  const tickColor = resolvedTheme === "dark" ? "#aeaeb2" : "#6c6c70";
-  const gridColor = resolvedTheme === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)";
-  const pointBorderColor = resolvedTheme === "dark" ? "#1c1c1e" : "#ffffff";
+  const { theme } = useTheme();
+  const tickColor = theme === "dark" ? "#aeaeb2" : "#6c6c70";
+  const gridColor = theme === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)";
+  const pointBorderColor = theme === "dark" ? "#1c1c1e" : "#ffffff";
 
   if (data.length === 0) {
     return (

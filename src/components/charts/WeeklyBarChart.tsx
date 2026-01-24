@@ -37,8 +37,8 @@ const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({
   selectedWeek,
   onWeekSelect,
 }) => {
-  const { resolvedTheme } = useTheme();
-  const tickColor = resolvedTheme === "dark" ? "#aeaeb2" : "#6c6c70";
+  const { theme } = useTheme();
+  const tickColor = theme === "dark" ? "#aeaeb2" : "#6c6c70";
 
   if (data.length === 0) {
     return (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ConfigProvider, theme } from "antd";
+import { ConfigProvider, theme as antdTheme } from "antd";
 import ruRU from "antd/locale/ru_RU";
 import dayjs from "dayjs";
 import "dayjs/locale/ru";
@@ -242,10 +242,10 @@ const AppContent: React.FC = () => {
 
 // Компонент-обертка для ConfigProvider с поддержкой темы
 const ThemedApp: React.FC = () => {
-  const { resolvedTheme } = useTheme();
+  const { theme } = useTheme();
   
   // Динамические цвета в зависимости от темы
-  const themeTokens = resolvedTheme === "dark" ? {
+  const themeTokens = theme === "dark" ? {
     colorPrimary: "#5AA8DB",
     colorSuccess: "#30D158",
     colorError: "#FF6961",
@@ -295,7 +295,7 @@ const ThemedApp: React.FC = () => {
     <ConfigProvider
       locale={ruRU}
       theme={{
-        algorithm: resolvedTheme === "dark" ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        algorithm: theme === "dark" ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
         token: themeTokens,
       }}
     >

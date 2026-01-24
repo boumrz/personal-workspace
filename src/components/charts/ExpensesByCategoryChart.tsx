@@ -24,8 +24,8 @@ interface ExpensesByCategoryChartProps {
 const ExpensesByCategoryChart: React.FC<ExpensesByCategoryChartProps> = ({
   data,
 }) => {
-  const { resolvedTheme } = useTheme();
-  const borderColor = resolvedTheme === "dark" ? "#1c1c1e" : "#ffffff";
+  const { theme } = useTheme();
+  const borderColor = theme === "dark" ? "#1c1c1e" : "#ffffff";
 
   if (data.length === 0) {
     return (

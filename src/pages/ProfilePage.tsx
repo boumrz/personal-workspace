@@ -47,7 +47,7 @@ const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { transactions } = useFinance();
-  const { theme, resolvedTheme, setTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
 
   // RTK Query хуки
   const {
@@ -364,28 +364,15 @@ const ProfilePage: React.FC = () => {
             </button>
             <button
               className={styles.settingsItem}
-              onClick={() => {
-                // Cycle through themes: light -> dark -> system -> light
-                if (theme === "light") {
-                  setTheme("dark");
-                } else if (theme === "dark") {
-                  setTheme("system");
-                } else {
-                  setTheme("light");
-                }
-              }}
+              onClick={toggleTheme}
             >
               <div className={styles.settingsItemIcon}>
-                {resolvedTheme === "dark" ? <BulbFilled /> : <BulbOutlined />}
+                {theme === "dark" ? <BulbFilled /> : <BulbOutlined />}
               </div>
               <div className={styles.settingsItemContent}>
                 <span className={styles.settingsItemTitle}>Тема оформления</span>
                 <span className={styles.settingsItemSubtitle}>
-                  {theme === "dark"
-                    ? "Тёмная"
-                    : theme === "light"
-                    ? "Светлая"
-                    : "Системная"}
+                  {theme === "dark" ? "Тёмная" : "Светлая"}
                 </span>
               </div>
               <RightOutlined className={styles.settingsItemArrow} />
