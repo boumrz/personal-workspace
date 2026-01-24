@@ -22,13 +22,13 @@
   --accent-light: rgba(10, 132, 255, 0.12);
   --income: #34c759;
   --income-light: rgba(52, 199, 89, 0.12);
-  --expense: #ff3b30;
-  --expense-light: rgba(255, 59, 48, 0.12);
+  --expense: #d96560;
+  --expense-light: rgba(217, 101, 96, 0.12);
   --warning: #ff9500;
   --warning-light: rgba(255, 149, 0, 0.12);
   /* Мягкие акценты для тёмного фона (заголовки, градиенты) */
   --income-soft: #a5e0a5;
-  --expense-soft: #ffab91;
+  --expense-soft: #e8a8a4;
 
   /* Apple-style border radius (HIG mobile) */
   --radius-xs: 6px;
