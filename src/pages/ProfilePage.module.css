@@ -1,6 +1,15 @@
 .profilePage {
   min-height: 100%;
   background: var(--bg-base);
+
+  /* Приглушённая палитра для профиля */
+  --accent: #4a9ed6;
+  --accent-hover: #6ab0de;
+  --accent-light: rgba(74, 158, 214, 0.12);
+  --income: #5bb87a;
+  --income-light: rgba(91, 184, 122, 0.12);
+  --expense: #d96560;
+  --expense-light: rgba(217, 101, 96, 0.12);
 }
 
 .container {
@@ -93,17 +102,24 @@
   align-items: center !important;
   justify-content: center !important;
   border-radius: 50% !important;
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+.addBtn:hover {
+  background: var(--accent-hover) !important;
+  border-color: var(--accent-hover) !important;
 }
 
 /* Карточка баланса */
 .balanceCard {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  background: linear-gradient(135deg, #4ba872 0%, #3d8f5a 100%);
   border-radius: var(--radius-2xl);
   padding: 24px;
   display: flex;
   align-items: center;
   gap: 16px;
-  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.25);
+  box-shadow: 0 8px 24px rgba(75, 168, 114, 0.20);
   position: relative;
   overflow: hidden;
 }
