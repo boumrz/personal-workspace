@@ -26,6 +26,10 @@
   --accent-muted-light: rgba(74, 158, 214, 0.12);
   --income: #34c759;
   --income-light: rgba(52, 199, 89, 0.12);
+  /* Приглушённые доходы — для карточки баланса */
+  --income-muted: #5bb87a;
+  --income-muted-dark: #4ba872;
+  --income-muted-darker: #3d8f5a;
   --expense: #d96560;
   --expense-light: rgba(217, 101, 96, 0.12);
   --warning: #ff9500;
@@ -86,6 +90,10 @@
   --accent-muted-light: rgba(90, 168, 219, 0.25);
   --income: #30d158;
   --income-light: rgba(48, 209, 88, 0.25);
+  /* Приглушённые доходы — для карточки баланса */
+  --income-muted: #6bc98e;
+  --income-muted-dark: #5ab87d;
+  --income-muted-darker: #4aa56c;
   --expense: #ff6961;
   --expense-light: rgba(255, 105, 97, 0.25);
   --warning: #ff9f0a;
