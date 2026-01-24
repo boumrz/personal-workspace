@@ -7,21 +7,24 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 24px;
-}
-
-@media (min-width: 769px) {
-  .profilePage {
-    padding-top: 0; /* PageHeader больше не fixed, отступ не нужен */
-  }
-  
-  .container {
-    padding: 24px;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
 }
 
 @media (max-width: 768px) {
+  .profilePage {
+    padding: 0;
+    padding-top: 56px;
+    padding-bottom: 80px;
+    background: var(--bg-base);
+    min-height: 100%;
+  }
+
   .container {
+    max-width: 100%;
     padding: 16px;
+    gap: 24px;
   }
 }
 
@@ -34,186 +37,404 @@
   color: var(--text-secondary);
 }
 
+/* Секции */
 .section {
-  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .sectionHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
 }
 
 .sectionHeader h2 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.profileInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.profileField {
-  display: grid;
-  grid-template-columns: 150px 1fr;
-  gap: 16px;
-  font-size: 16px;
-  line-height: 1.6;
-  align-items: start;
-}
-
-.profileLabel {
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.profileValue {
+  font-size: 22px;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
+.sectionActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.viewAllBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viewAllBtn:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.addBtn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+/* Карточка баланса */
+.balanceCard {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  border-radius: var(--radius-2xl);
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.balanceCard::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 200px;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.balanceCard::after {
+  content: "";
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 150px;
+  height: 150px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+}
+
+.balanceIcon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #fff;
+  position: relative;
+  z-index: 1;
+}
+
+.balanceInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  z-index: 1;
+}
+
+.balanceLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.balanceAmount {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+
 @media (max-width: 768px) {
-  .profileField {
-    grid-template-columns: 120px 1fr;
-    gap: 12px;
+  .balanceCard {
+    padding: 20px;
+  }
+
+  .balanceAmount {
+    font-size: 24px;
   }
 }
 
+/* Пустая карточка */
+.emptyCard {
+  background: var(--bg-card);
+  border-radius: var(--radius-2xl);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 2px dashed var(--border);
+}
+
+/* Список целей */
 .goalsList {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .goalCard {
-  border-radius: 8px;
-}
-
-.goalHeader {
+  background: var(--bg-card);
+  border-radius: var(--radius-2xl);
+  padding: 16px;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.goalCard:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.goalTop {
+  display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  gap: 12px;
 }
 
-.goalHeader h3 {
-  margin: 0;
-  font-size: 18px;
+.goalIcon {
+  width: 44px;
+  height: 44px;
+  background: var(--accent-light);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.goalInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.goalTitle {
+  font-size: 16px;
   font-weight: 600;
-}
-
-.goalDescription {
-  margin: 12px 0;
-  color: var(--text-secondary);
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.goalProgress {
-  margin: 20px 0;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .goalAmounts {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 12px;
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.goalPercent {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.goalProgress {
+  margin: 0;
+}
+
+.goalProgress :global(.ant-progress-inner) {
+  background: var(--bg-surface) !important;
+}
+
+.goalProgress :global(.ant-progress-bg) {
+  height: 8px !important;
+  border-radius: 4px;
 }
 
 .goalActions {
   display: flex;
-  gap: 12px;
-  margin-top: 20px;
+  gap: 8px;
+  margin-top: 4px;
 }
 
-.goalActions button {
+.goalActionBtn {
   flex: 1;
-}
-
-.logoutSection {
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
-}
-
-.logoutButton {
-  height: auto;
-  padding: 12px 24px;
-  font-size: 15px;
-  font-weight: 500;
+  height: 36px;
+  background: var(--bg-surface);
+  border: none;
   border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
+.goalActionBtn:hover {
+  background: var(--border);
+  color: var(--text-primary);
+}
+
+.goalActionBtnPrimary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.goalActionBtnPrimary:hover {
+  background: var(--accent-hover);
+  color: #fff;
+}
+
+.goalActionBtnDanger:hover {
+  background: var(--expense-light);
+  color: var(--expense);
+}
+
+/* Список настроек */
+.settingsList {
+  background: var(--bg-card);
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.settingsItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.2s ease;
+  text-align: left;
+}
+
+.settingsItem:last-child {
+  border-bottom: none;
+}
+
+.settingsItem:hover {
+  background: var(--bg-surface);
+}
+
+.settingsItemIcon {
+  width: 40px;
+  height: 40px;
+  background: var(--accent-light);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.settingsItemIconDanger {
+  background: var(--expense-light);
+  color: var(--expense);
+}
+
+.settingsItemContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.settingsItemTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.settingsItemDanger .settingsItemTitle {
+  color: var(--expense);
+}
+
+.settingsItemSubtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.settingsItemArrow {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+/* Мобильные адаптации */
 @media (max-width: 768px) {
-  .profilePage {
-    padding: 0;
-    padding-top: 56px; /* Отступ для фиксированной шапки на мобильных */
-    padding-bottom: 100px; /* Отступ снизу для нижней навигации */
-    background: var(--bg-base);
-    min-height: 100%;
-  }
-
-  .container {
-    max-width: 100%;
-  }
-
-  .section {
-    margin-bottom: 24px;
-  }
-
-  .sectionHeader {
-    margin-bottom: 12px;
-  }
-
   .sectionHeader h2 {
-    font-size: 18px;
-  }
-
-  .sectionHeader :global(.ant-btn) {
-    padding: 8px;
-    width: auto;
-    min-width: auto;
-  }
-
-  .sectionHeader :global(.ant-btn) :global(.anticon) {
-    margin-right: 0;
-  }
-
-  .sectionHeader :global(.ant-btn) {
-    padding: 4px 12px;
-    height: auto;
-  }
-
-  .section :global(.ant-card) {
-    border-radius: var(--radius-lg);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  }
-
-  .goalHeader h3 {
-    font-size: 16px;
+    font-size: 20px;
   }
 
   .goalCard {
-    border-radius: var(--radius-lg);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 14px;
   }
 
-  .logoutSection {
-    margin-top: 24px;
-    padding-top: 20px;
-    margin-bottom: 24px;
+  .goalIcon {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
   }
 
-  .logoutButton {
-    padding: 14px 24px;
+  .goalTitle {
+    font-size: 15px;
+  }
+
+  .goalAmounts {
+    font-size: 12px;
+  }
+
+  .goalActions {
+    gap: 6px;
+  }
+
+  .goalActionBtn {
+    height: 34px;
+    font-size: 14px;
+  }
+
+  .settingsItem {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .settingsItemIcon {
+    width: 36px;
+    height: 36px;
     font-size: 16px;
-    border-radius: var(--radius-lg);
+  }
+
+  .settingsItemTitle {
+    font-size: 15px;
   }
 }

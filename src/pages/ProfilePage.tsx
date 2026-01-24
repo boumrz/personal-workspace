@@ -1,30 +1,29 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Form,
-  Input,
   InputNumber,
   Button,
-  Space,
-  Divider,
-  Empty,
   Progress,
-  Card,
   Modal,
-  DatePicker,
+  Empty,
 } from "antd";
 import dayjs from "dayjs";
 import {
-  UserOutlined,
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
   MinusOutlined,
   LogoutOutlined,
   FileAddOutlined,
+  RightOutlined,
+  WalletOutlined,
+  SettingOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { Profile, Goal } from "../store/api";
+import { Goal } from "../store/api";
 import { useAuth } from "../context/AuthContext";
+import { useFinance } from "../context/FinanceContext";
 import {
   useGetProfileQuery,
   useGetGoalsQuery,
@@ -38,11 +37,13 @@ import ProfileEditDrawer from "../components/ProfileEditDrawer";
 import GoalEditDrawer from "../components/GoalEditDrawer";
 import GoalAddDrawer from "../components/GoalAddDrawer";
 import PageHeader from "../components/PageHeader";
+import IconRenderer from "../components/IconRenderer";
 import * as styles from "./ProfilePage.module.css";
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { transactions } = useFinance();
 
   // RTK Query хуки
   const {
@@ -74,6 +75,18 @@ const ProfilePage: React.FC = () => {
     useState<Goal | null>(null);
   const [amountType, setAmountType] = useState<"add" | "subtract">("add");
   const [amountForm] = Form.useForm();
+  const [showAllGoals, setShowAllGoals] = useState(false);
+
+  // Расчёт баланса
+  const balance = useMemo(() => {
+    const totalIncome = transactions
+      .filter((t) => t.type === "income")
+      .reduce((sum, t) => sum + t.amount, 0);
+    const totalExpenses = transactions
+      .filter((t) => t.type === "expense")
+      .reduce((sum, t) => sum + t.amount, 0);
+    return totalIncome - totalExpenses;
+  }, [transactions]);
 
   useEffect(() => {
     if (profile) {
@@ -96,23 +109,6 @@ const ProfilePage: React.FC = () => {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-
-  const handleProfileSubmit = async () => {
-    try {
-      const values = await profileForm.validateFields();
-      const submitValues = {
-        ...values,
-        dateOfBirth: values.dateOfBirth
-          ? values.dateOfBirth.format("YYYY-MM-DD")
-          : undefined,
-      };
-      await updateProfile(submitValues).unwrap();
-      setEditingProfile(false);
-      refetchProfile();
-    } catch (error) {
-      console.error("Error updating profile:", error);
-    }
-  };
 
   const handleGoalAdd = async (
     goal: Omit<Goal, "id" | "createdAt" | "updatedAt">
@@ -188,6 +184,20 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  // Получаем имя пользователя для отображения
+  const displayName = useMemo(() => {
+    if (profile?.firstName) {
+      return profile.firstName;
+    }
+    if (profile?.name) {
+      return profile.name.split(" ")[0];
+    }
+    return "Пользователь";
+  }, [profile]);
+
+  // Отображаемые цели (максимум 3 если не показываем все)
+  const displayedGoals = showAllGoals ? goals : goals.slice(0, 3);
+
   if (loading) {
     return <div className={styles.loading}>Загрузка...</div>;
   }
@@ -196,258 +206,202 @@ const ProfilePage: React.FC = () => {
     <div className={styles.profilePage}>
       <PageHeader title="Мой профиль" />
       <div className={styles.container}>
-        {/* Профиль */}
-        <div className={styles.section}>
+        {/* Карточка баланса */}
+        <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <h2>
-              <UserOutlined /> Данные профиля
-            </h2>
-            <Button
-              type="primary"
-              icon={<EditOutlined />}
-              onClick={() => setEditingProfile(true)}
-              className="circle-icon-btn"
-              title="Редактировать"
-              aria-label="Редактировать"
-            />
+            <h2>Кошелёк</h2>
           </div>
-
-          {editingProfile && !isMobile ? (
-            <Card>
-              <Form
-                form={profileForm}
-                layout="vertical"
-                onFinish={handleProfileSubmit}
-              >
-                <Form.Item name="lastName" label="Фамилия">
-                  <Input placeholder="Введите фамилию" />
-                </Form.Item>
-                <Form.Item name="firstName" label="Имя">
-                  <Input placeholder="Введите имя" />
-                </Form.Item>
-                <Form.Item name="middleName" label="Отчество">
-                  <Input placeholder="Введите отчество" />
-                </Form.Item>
-                <Form.Item name="dateOfBirth" label="Дата рождения">
-                  <DatePicker
-                    placeholder="Выберите дату рождения"
-                    style={{ width: "100%" }}
-                    format="DD.MM.YYYY"
-                  />
-                </Form.Item>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 8,
-                    width: "100%",
-                  }}
-                >
-                  <Button
-                    style={{ flex: 1, minWidth: 0 }}
-                    type="primary"
-                    htmlType="submit"
-                  >
-                    Сохранить
-                  </Button>
-                  <Button
-                    style={{ flex: 1, minWidth: 0 }}
-                    onClick={() => {
-                      setEditingProfile(false);
-                      profileForm.resetFields();
-                    }}
-                  >
-                    Отмена
-                  </Button>
-                </div>
-              </Form>
-            </Card>
-          ) : (
-            <Card>
-              <div className={styles.profileInfo}>
-                <div className={styles.profileField}>
-                  <span className={styles.profileLabel}>Фамилия:</span>
-                  <span className={styles.profileValue}>
-                    {profile?.lastName || "Не указана"}
-                  </span>
-                </div>
-                <div className={styles.profileField}>
-                  <span className={styles.profileLabel}>Имя:</span>
-                  <span className={styles.profileValue}>
-                    {profile?.firstName || "Не указано"}
-                  </span>
-                </div>
-                <div className={styles.profileField}>
-                  <span className={styles.profileLabel}>Отчество:</span>
-                  <span className={styles.profileValue}>
-                    {profile?.middleName || "Не указано"}
-                  </span>
-                </div>
-                <div className={styles.profileField}>
-                  <span className={styles.profileLabel}>Дата рождения:</span>
-                  <span className={styles.profileValue}>
-                    {profile?.dateOfBirth
-                      ? dayjs(profile.dateOfBirth).format("DD.MM.YYYY")
-                      : "Не указана"}
-                  </span>
-                </div>
-              </div>
-            </Card>
-          )}
-        </div>
-
-        <Divider />
+          <div className={styles.balanceCard}>
+            <div className={styles.balanceIcon}>
+              <WalletOutlined />
+            </div>
+            <div className={styles.balanceInfo}>
+              <span className={styles.balanceLabel}>Баланс</span>
+              <span className={styles.balanceAmount}>
+                {balance.toLocaleString("ru-RU")} ₽
+              </span>
+            </div>
+          </div>
+        </section>
 
         {/* Цели */}
-        <div className={styles.section}>
+        <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2>Цели</h2>
-            <Button
-              type="primary"
-              icon={<FileAddOutlined />}
-              onClick={() => setShowGoalForm(true)}
-              className="circle-icon-btn"
-              title="Добавить цель"
-              aria-label="Добавить цель"
-            />
+            <div className={styles.sectionActions}>
+              {goals.length > 3 && (
+                <button
+                  className={styles.viewAllBtn}
+                  onClick={() => setShowAllGoals(!showAllGoals)}
+                >
+                  {showAllGoals ? "Скрыть" : "Все"}
+                  <RightOutlined />
+                </button>
+              )}
+              <Button
+                type="primary"
+                icon={<FileAddOutlined />}
+                onClick={() => setShowGoalForm(true)}
+                className={styles.addBtn}
+                title="Добавить цель"
+                aria-label="Добавить цель"
+              />
+            </div>
           </div>
 
-          {showGoalForm && !isMobile && (
-            <Card style={{ marginBottom: 16 }}>
-              <GoalForm
-                onSave={handleGoalAdd}
-                onCancel={() => {
-                  setShowGoalForm(false);
-                  setEditingGoal(null);
-                }}
-              />
-            </Card>
-          )}
-
-          {goals.length === 0 && !showGoalForm ? (
-            <Card>
-              <Empty description="Нет целей. Добавьте первую цель!" />
-            </Card>
+          {goals.length === 0 ? (
+            <div className={styles.emptyCard}>
+              <Empty description="Нет целей" />
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => setShowGoalForm(true)}
+                style={{ marginTop: 16 }}
+              >
+                Добавить первую цель
+              </Button>
+            </div>
           ) : (
             <div className={styles.goalsList}>
-              {goals.map((goal) => (
-                <Card key={goal.id} className={styles.goalCard}>
-                  {editingGoal?.id === goal.id && !isMobile ? (
-                    <GoalForm
-                      goal={goal}
-                      onSave={(updates) => handleGoalUpdate(goal.id, updates)}
-                      onCancel={() => setEditingGoal(null)}
+              {displayedGoals.map((goal) => {
+                const percent = Math.min(
+                  100,
+                  Math.round((goal.currentAmount / goal.targetAmount) * 100)
+                );
+                return (
+                  <div key={goal.id} className={styles.goalCard}>
+                    <div className={styles.goalTop}>
+                      <div className={styles.goalIcon}>
+                        <IconRenderer iconName="Target" />
+                      </div>
+                      <div className={styles.goalInfo}>
+                        <span className={styles.goalTitle}>{goal.title}</span>
+                        <span className={styles.goalAmounts}>
+                          {goal.currentAmount.toLocaleString("ru-RU")} ₽ /{" "}
+                          {goal.targetAmount.toLocaleString("ru-RU")} ₽
+                        </span>
+                      </div>
+                      <span className={styles.goalPercent}>{percent}%</span>
+                    </div>
+                    <Progress
+                      percent={percent}
+                      showInfo={false}
+                      strokeColor="var(--accent)"
+                      trailColor="var(--border)"
+                      className={styles.goalProgress}
                     />
-                  ) : (
-                    <>
-                      <div className={styles.goalHeader}>
-                        <h3>{goal.title}</h3>
-                        <Space>
-                          <Button
-                            type="text"
-                            icon={<EditOutlined />}
-                            onClick={() => setEditingGoal(goal)}
-                          />
-                          <Button
-                            type="text"
-                            danger
-                            icon={<DeleteOutlined />}
-                            onClick={() => handleGoalDelete(goal.id)}
-                          />
-                        </Space>
-                      </div>
-                      {goal.description && (
-                        <p className={styles.goalDescription}>
-                          {goal.description}
-                        </p>
-                      )}
-                      <div className={styles.goalProgress}>
-                        <Progress
-                          percent={Math.min(
-                            100,
-                            (goal.currentAmount / goal.targetAmount) * 100
-                          )}
-                          format={(percent) => `${Math.round(percent || 0)}%`}
-                        />
-                        <div className={styles.goalAmounts}>
-                          <span>{goal.currentAmount.toLocaleString()} ₽</span>
-                          <span>из {goal.targetAmount.toLocaleString()} ₽</span>
-                        </div>
-                      </div>
-                      <div className={styles.goalActions}>
-                        <Button
-                          icon={<MinusOutlined />}
-                          onClick={() =>
-                            handleAmountButtonClick(goal, "subtract")
-                          }
-                        />
-                        <Button
-                          icon={<PlusOutlined />}
-                          type="primary"
-                          onClick={() => handleAmountButtonClick(goal, "add")}
-                        />
-                      </div>
-                    </>
-                  )}
-                </Card>
-              ))}
+                    <div className={styles.goalActions}>
+                      <button
+                        className={styles.goalActionBtn}
+                        onClick={() =>
+                          handleAmountButtonClick(goal, "subtract")
+                        }
+                        title="Убавить"
+                      >
+                        <MinusOutlined />
+                      </button>
+                      <button
+                        className={`${styles.goalActionBtn} ${styles.goalActionBtnPrimary}`}
+                        onClick={() => handleAmountButtonClick(goal, "add")}
+                        title="Добавить"
+                      >
+                        <PlusOutlined />
+                      </button>
+                      <button
+                        className={styles.goalActionBtn}
+                        onClick={() => setEditingGoal(goal)}
+                        title="Редактировать"
+                      >
+                        <EditOutlined />
+                      </button>
+                      <button
+                        className={`${styles.goalActionBtn} ${styles.goalActionBtnDanger}`}
+                        onClick={() => handleGoalDelete(goal.id)}
+                        title="Удалить"
+                      >
+                        <DeleteOutlined />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Кнопка выхода */}
-        <div className={styles.logoutSection}>
-          <Button
-            danger
-            icon={<LogoutOutlined />}
-            onClick={() => {
-              logout();
-              navigate("/login");
-            }}
-            className={styles.logoutButton}
-            size={isMobile ? "large" : "middle"}
-            block={isMobile}
-          >
-            Выйти из аккаунта
-          </Button>
-        </div>
+        {/* Настройки */}
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2>Настройки</h2>
+          </div>
+          <div className={styles.settingsList}>
+            <button
+              className={styles.settingsItem}
+              onClick={() => setEditingProfile(true)}
+            >
+              <div className={styles.settingsItemIcon}>
+                <UserOutlined />
+              </div>
+              <div className={styles.settingsItemContent}>
+                <span className={styles.settingsItemTitle}>Данные профиля</span>
+                <span className={styles.settingsItemSubtitle}>
+                  {displayName}
+                  {profile?.dateOfBirth &&
+                    ` • ${dayjs(profile.dateOfBirth).format("DD.MM.YYYY")}`}
+                </span>
+              </div>
+              <RightOutlined className={styles.settingsItemArrow} />
+            </button>
+
+            <button
+              className={`${styles.settingsItem} ${styles.settingsItemDanger}`}
+              onClick={() => {
+                logout();
+                navigate("/login");
+              }}
+            >
+              <div
+                className={`${styles.settingsItemIcon} ${styles.settingsItemIconDanger}`}
+              >
+                <LogoutOutlined />
+              </div>
+              <span className={styles.settingsItemTitle}>Выйти из аккаунта</span>
+              <RightOutlined className={styles.settingsItemArrow} />
+            </button>
+          </div>
+        </section>
       </div>
 
-      {/* Swipeable Drawer для редактирования профиля на мобилке */}
-      {isMobile && (
-        <ProfileEditDrawer
-          open={editingProfile}
-          onClose={() => {
-            setEditingProfile(false);
-            profileForm.resetFields();
-          }}
-          profile={profile}
-          onSave={async (values) => {
-            await updateProfile(values).unwrap();
-            setEditingProfile(false);
-            refetchProfile();
-          }}
-        />
-      )}
+      {/* Drawer для редактирования профиля */}
+      <ProfileEditDrawer
+        open={editingProfile}
+        onClose={() => {
+          setEditingProfile(false);
+          profileForm.resetFields();
+        }}
+        profile={profile}
+        onSave={async (values) => {
+          await updateProfile(values).unwrap();
+          setEditingProfile(false);
+          refetchProfile();
+        }}
+      />
 
-      {/* Swipeable Drawer для редактирования цели на мобилке */}
-      {isMobile && (
-        <>
-          <GoalAddDrawer
-            open={showGoalForm}
-            onClose={() => {
-              setShowGoalForm(false);
-              setEditingGoal(null);
-            }}
-            onSave={handleGoalAdd}
-          />
-          <GoalEditDrawer
-            open={editingGoal !== null}
-            onClose={() => setEditingGoal(null)}
-            goal={editingGoal}
-            onSave={(updates) => handleGoalUpdate(editingGoal!.id, updates)}
-          />
-        </>
-      )}
+      {/* Drawer для добавления/редактирования целей */}
+      <GoalAddDrawer
+        open={showGoalForm}
+        onClose={() => {
+          setShowGoalForm(false);
+          setEditingGoal(null);
+        }}
+        onSave={handleGoalAdd}
+      />
+      <GoalEditDrawer
+        open={editingGoal !== null}
+        onClose={() => setEditingGoal(null)}
+        goal={editingGoal}
+        onSave={(updates) => handleGoalUpdate(editingGoal!.id, updates)}
+      />
 
       {/* Модалка для ввода суммы изменения цели */}
       <Modal
@@ -481,10 +435,6 @@ const ProfilePage: React.FC = () => {
               precision={2}
               placeholder="Введите сумму"
               style={{ width: "100%" }}
-              formatter={(value) =>
-                `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, " ")
-              }
-              parser={(value) => parseFloat(value!.replace(/\s?/g, "")) || 0}
             />
           </Form.Item>
           {selectedGoalForAmount && (
