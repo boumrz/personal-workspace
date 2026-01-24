@@ -14,7 +14,7 @@ body {
 }
 
 body {
-  font-family: "Helvetica", "Helvetica Neue", Arial, sans-serif;
+  font-family: Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--bg-base);
