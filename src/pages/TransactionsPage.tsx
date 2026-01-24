@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Input, FloatButton, Button, Badge, Popconfirm } from "antd";
+import { Input, FloatButton, Button, Badge, Popconfirm, Segmented } from "antd";
 import {
   PlusOutlined,
   FilterOutlined,
@@ -17,9 +17,12 @@ import "dayjs/locale/ru";
 
 dayjs.locale("ru");
 
+type TabType = "actual" | "planned";
+
 const TransactionsPage: React.FC = () => {
-  const { transactions, categories, deleteTransaction } = useFinance();
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const { transactions, plannedExpenses, categories, deleteTransaction, deletePlannedExpense } = useFinance();
+  const [activeTab, setActiveTab] = useState<TabType>("actual");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(["all"]);
   const [showForm, setShowForm] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
@@ -34,9 +37,12 @@ const TransactionsPage: React.FC = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Данные в зависимости от активного таба
+  const currentData = activeTab === "actual" ? transactions : plannedExpenses;
+
   // Фильтрация транзакций
   const filteredTransactions = useMemo(() => {
-    let filtered = transactions;
+    let filtered = currentData;
 
     // Фильтр по категориям
     if (selectedCategories.length > 0 && !selectedCategories.includes("all")) {
@@ -56,7 +62,7 @@ const TransactionsPage: React.FC = () => {
     }
 
     return filtered;
-  }, [transactions, selectedCategories, searchQuery]);
+  }, [currentData, selectedCategories, searchQuery]);
 
   // Группировка по дате
   const groupedByDate = useMemo(() => {
@@ -110,10 +116,18 @@ const TransactionsPage: React.FC = () => {
     return dayjs(dateStr).format("H:mm");
   };
 
+  const handleDelete = (id: string) => {
+    if (activeTab === "actual") {
+      deleteTransaction(id);
+    } else {
+      deletePlannedExpense(id);
+    }
+  };
+
   return (
     <div className={styles.transactionsPage}>
       <PageHeader
-        title="Все операции"
+        title={activeTab === "actual" ? "Операции" : "Планируемые расходы"}
         extra={
           <Badge
             count={hasActiveFilters ? selectedCategories.length : 0}
@@ -130,6 +144,20 @@ const TransactionsPage: React.FC = () => {
       />
 
       <div className={styles.container}>
+        {/* Табы */}
+        <div className={styles.tabsContainer}>
+          <Segmented
+            value={activeTab}
+            onChange={(value) => setActiveTab(value as TabType)}
+            options={[
+              { label: "Операции", value: "actual" },
+              { label: "Планируемые", value: "planned" },
+            ]}
+            block
+            className={styles.tabs}
+          />
+        </div>
+
         {/* Поиск */}
         <div className={styles.searchContainer}>
           <Input
@@ -148,7 +176,11 @@ const TransactionsPage: React.FC = () => {
         <div className={styles.transactionsList}>
           {sortedDates.length === 0 ? (
             <div className={styles.emptyState}>
-              {searchQuery ? "Ничего не найдено" : "Нет операций"}
+              {searchQuery 
+                ? "Ничего не найдено" 
+                : activeTab === "actual" 
+                  ? "Нет операций" 
+                  : "Нет планируемых расходов"}
             </div>
           ) : (
             sortedDates.map((dateKey) => {
@@ -198,9 +230,11 @@ const TransactionsPage: React.FC = () => {
                               {category.name}
                             </span>
                             <span className={styles.transactionTag}>
-                              {transaction.type === "income"
-                                ? "Доход"
-                                : "Расход"}
+                              {activeTab === "planned" 
+                                ? "План" 
+                                : transaction.type === "income"
+                                  ? "Доход"
+                                  : "Расход"}
                             </span>
                           </div>
                         </div>
@@ -209,12 +243,16 @@ const TransactionsPage: React.FC = () => {
                           <div className={styles.transactionAmountWrapper}>
                             <span
                               className={`${styles.transactionAmount} ${
-                                transaction.type === "income"
-                                  ? styles.amountIncome
-                                  : styles.amountExpense
+                                activeTab === "planned"
+                                  ? styles.amountPlanned
+                                  : transaction.type === "income"
+                                    ? styles.amountIncome
+                                    : styles.amountExpense
                               }`}
                             >
-                              {transaction.type === "income" ? "+ " : "- "}₽
+                              {activeTab === "planned" 
+                                ? "" 
+                                : transaction.type === "income" ? "+ " : "- "}₽
                               {transaction.amount.toLocaleString("ru-RU", {
                                 minimumFractionDigits: 2,
                               })}
@@ -224,9 +262,9 @@ const TransactionsPage: React.FC = () => {
                             </span>
                           </div>
                           <Popconfirm
-                            title="Удалить операцию?"
+                            title={activeTab === "actual" ? "Удалить операцию?" : "Удалить планируемый расход?"}
                             description="Это действие нельзя отменить."
-                            onConfirm={() => deleteTransaction(transaction.id)}
+                            onConfirm={() => handleDelete(transaction.id)}
                             okText="Удалить"
                             okType="danger"
                             cancelText="Отмена"
@@ -264,7 +302,7 @@ const TransactionsPage: React.FC = () => {
             onClick={() => setShowForm(true)}
             className={styles.addButtonDesktop}
           >
-            Добавить операцию
+            {activeTab === "actual" ? "Добавить операцию" : "Добавить план"}
           </Button>
         </div>
       )}
@@ -273,7 +311,7 @@ const TransactionsPage: React.FC = () => {
         <TransactionForm
           open={showForm}
           onClose={() => setShowForm(false)}
-          type="actual"
+          type={activeTab}
         />
       )}
 

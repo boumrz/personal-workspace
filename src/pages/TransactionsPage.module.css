@@ -49,6 +49,28 @@
   color: var(--accent);
 }
 
+/* Табы */
+.tabsContainer {
+  margin-bottom: 4px;
+}
+
+.tabs {
+  width: 100%;
+  padding: 4px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+}
+
+.tabs :global(.ant-segmented-item) {
+  border-radius: var(--radius-lg);
+  font-weight: 500;
+}
+
+.tabs :global(.ant-segmented-item-selected) {
+  background: var(--bg-card);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 /* Поиск */
 .searchContainer {
   display: flex;
@@ -228,6 +250,10 @@
 
 .amountExpense {
   color: var(--expense);
+}
+
+.amountPlanned {
+  color: var(--accent);
 }
 
 .transactionTime {

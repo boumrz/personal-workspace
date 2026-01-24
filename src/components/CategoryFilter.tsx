@@ -18,12 +18,19 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
   onClose,
 }) => {
   const { categories } = useFinance();
-  const [tempSelectedCategories, setTempSelectedCategories] = useState<string[]>(selectedCategories);
+  // По умолчанию "Все" если ничего не выбрано
+  const getInitialSelection = (selection: string[]) => {
+    return selection.length === 0 ? ["all"] : selection;
+  };
+  
+  const [tempSelectedCategories, setTempSelectedCategories] = useState<string[]>(
+    getInitialSelection(selectedCategories)
+  );
 
   // Синхронизируем временное состояние с выбранными категориями при открытии drawer
   useEffect(() => {
     if (open) {
-      setTempSelectedCategories(selectedCategories);
+      setTempSelectedCategories(getInitialSelection(selectedCategories));
     }
   }, [open, selectedCategories]);
 
@@ -34,27 +41,26 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
 
   const handleCategoryClick = (categoryId: string | null) => {
     if (categoryId === null) {
-      // Если кликнули на "Все"
-      if (tempSelectedCategories.includes("all")) {
-        // Если уже выбрано "Все", снимаем выбор
-        setTempSelectedCategories([]);
-      } else {
-        // Иначе выбираем только "Все" (снимаем все остальные)
-        setTempSelectedCategories(["all"]);
-      }
+      // Если кликнули на "Все" — выбираем только "Все"
+      setTempSelectedCategories(["all"]);
     } else {
       // Если кликнули на конкретную категорию
-      if (tempSelectedCategories.includes("all")) {
-        // Если было выбрано "Все", снимаем его и выбираем только эту категорию
-        setTempSelectedCategories([categoryId]);
-      } else if (tempSelectedCategories.includes(categoryId)) {
+      let newSelection: string[];
+      
+      if (tempSelectedCategories.includes(categoryId)) {
         // Если категория уже выбрана, снимаем её
-        const newSelection = tempSelectedCategories.filter((id) => id !== categoryId);
-        setTempSelectedCategories(newSelection);
+        newSelection = tempSelectedCategories.filter((id) => id !== categoryId && id !== "all");
       } else {
-        // Добавляем категорию к выбранным
-        setTempSelectedCategories([...tempSelectedCategories, categoryId]);
+        // Добавляем категорию, убираем "Все"
+        newSelection = [...tempSelectedCategories.filter((id) => id !== "all"), categoryId];
       }
+      
+      // Если ничего не выбрано — автоматически выбираем "Все"
+      if (newSelection.length === 0) {
+        newSelection = ["all"];
+      }
+      
+      setTempSelectedCategories(newSelection);
     }
   };
 
