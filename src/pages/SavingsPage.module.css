@@ -1,136 +1,300 @@
 .savingsPage {
-  width: 100%;
-  max-width: 100%;
-  min-height: 100vh;
-  background-color: var(--bg-base);
+  min-height: 100%;
+  background: var(--bg-base);
 }
 
-@media (min-width: 769px) {
-  .savingsPage {
-    padding-top: 0; /* PageHeader больше не fixed, отступ не нужен */
-  }
-}
-
-/* Глобальные стили для переопределения Ant Design */
-.savingsPage :global(.ant-statistic-content) {
-  font-size: 16px !important;
-}
-
-.savingsPage :global(.ant-statistic-content-value) {
-  font-size: 16px !important;
-}
-
-.savingsPage :global(.ant-statistic-content-value-int),
-.savingsPage :global(.ant-statistic-content-value-decimal),
-.savingsPage :global(.ant-statistic-content-suffix) {
-  font-size: 16px !important;
-}
-
-.content {
-  max-width: 1200px;
+.container {
+  max-width: 800px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-@media (min-width: 768px) {
-  .content {
-    padding: 24px;
+@media (max-width: 768px) {
+  .savingsPage {
+    padding: 0;
+    padding-top: 56px;
+    padding-bottom: 80px;
+    background: var(--bg-base);
+    min-height: 100%;
+  }
+
+  .container {
+    max-width: 100%;
+    padding: 16px;
+    gap: 12px;
   }
 }
 
-.statsContainer {
+/* Статистика */
+.statsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
 }
 
 .statCard {
-  text-align: center;
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-.statCard :global(.ant-card-body) {
-  padding: 16px 12px !important;
-  text-align: center !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
+.statIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 149, 0, 0.12);
+  color: #ff9500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
 }
 
-.statCard :global(.ant-statistic-title) {
+.statIconGreen {
+  background: rgba(52, 199, 89, 0.12);
+  color: #34c759;
+}
+
+.statIconBlue {
+  background: rgba(10, 132, 255, 0.12);
+  color: #0a84ff;
+}
+
+.statIconPurple {
+  background: rgba(175, 82, 222, 0.12);
+  color: #af52de;
+}
+
+.statInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.statLabel {
   font-size: 12px;
-  margin-bottom: 8px;
-  line-height: 1.4;
-  word-break: break-word;
-  overflow-wrap: break-word;
+  color: var(--text-secondary);
 }
 
-.statCard :global(.ant-statistic) {
-  text-align: center !important;
-  width: 100%;
-}
-
-.statCard :global(.ant-statistic-content) {
-  word-break: break-word;
-  overflow-wrap: break-word;
-  text-align: center !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  flex-wrap: wrap !important;
-}
-
-.statCard :global(.ant-statistic-content),
-.statCard :global(.ant-statistic-content-value),
-.statCard :global(.ant-statistic-content-value-int),
-.statCard :global(.ant-statistic-content-value-decimal),
-.statCard :global(.ant-statistic-content-suffix),
-.statCard :global(.ant-statistic-content) span,
-.statCard :global(.ant-statistic-content) * {
-  font-size: 16px !important;
-  line-height: 1.2 !important;
-  text-align: center !important;
-}
-
-.statCard :global(.ant-statistic-content-value) {
+.statValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  max-width: 100%;
 }
 
-.statCard :global(.ant-statistic-content-suffix) {
+.statPositive {
+  color: var(--income);
+}
+
+.statNegative {
+  color: var(--expense);
+}
+
+/* Поиск */
+.searchContainer {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.searchInput {
+  flex: 1;
+  height: 48px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+.searchInput:focus,
+.searchInput:hover {
+  border-color: var(--accent);
+}
+
+.searchInput :global(.ant-input) {
+  background: transparent;
+  font-size: 15px;
+}
+
+.searchInput :global(.ant-input-clear-icon) {
+  font-size: 14px;
+}
+
+.searchBtn {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.searchBtn:hover {
+  background: var(--bg-surface);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Список накоплений */
+.savingsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+/* Группа по дате */
+.dateGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.dateHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0 12px;
+}
+
+.dateLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  padding: 6px 14px;
+  border-radius: var(--radius-xl);
+}
+
+.dateBalance {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--income);
+}
+
+/* Элемент накопления */
+.savingItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.savingItem:last-child {
+  border-bottom: none;
+}
+
+.savingIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  background: rgba(52, 199, 89, 0.12);
+  color: #34c759;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.savingInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.savingName {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
   white-space: nowrap;
-}
-
-.statCard :global(.ant-statistic-content-value-int) {
-  display: inline-block;
-  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-align: center;
 }
 
-.statCard :global(.ant-statistic-content-value-decimal) {
-  display: inline-block;
-  text-align: center;
+.savingMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.statCard :global(.ant-statistic-content-suffix) {
-  text-align: center;
-  display: inline-block;
+.savingTag {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  background: var(--bg-surface);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
 }
 
-.emptyCard {
-  margin-top: 24px;
+.savingRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
-/* Кнопка добавления накопления для десктопа */
+.savingAmount {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--income);
+}
+
+.savingTime {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.deleteBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.deleteBtn:hover {
+  background: rgba(255, 59, 48, 0.1);
+  color: var(--expense);
+}
+
+/* Кнопка добавления для десктопа */
 .addButtonContainer {
   display: none;
 }
@@ -147,8 +311,8 @@
     right: 0;
     background: linear-gradient(
       to top,
-      var(--bg-card) 0%,
-      rgba(255, 255, 255, 0) 100%
+      var(--bg-base) 0%,
+      rgba(232, 232, 237, 0) 100%
     );
     z-index: 10;
     pointer-events: none;
@@ -173,10 +337,10 @@
   }
 }
 
-/* Кнопка добавления накопления для мобилки */
+/* Кнопка добавления для мобилки */
 .addButtonMobile {
   position: fixed !important;
-  bottom: 88px !important; /* Отступ от нижней навигации */
+  bottom: 88px !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
   right: auto !important;
@@ -185,7 +349,7 @@
   font-size: 24px !important;
   border-radius: var(--radius-xl) !important;
   box-shadow: 0 4px 12px rgba(10, 132, 255, 0.4) !important;
-  z-index: 999 !important; /* Ниже нижней навигации */
+  z-index: 999 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -204,86 +368,59 @@
   transform: translateX(-50%) translateY(-2px) !important;
 }
 
-@media (max-width: 767px) {
-  .savingsPage {
-    padding: 0;
-    padding-top: 56px; /* Отступ для фиксированной шапки на мобильных */
-    background: var(--bg-base);
-    padding-bottom: 50px; /* Отступ снизу для нижней навигации и кнопки */
-    min-height: 100%;
-  }
-
-  .content {
-    padding: 16px;
-    padding-top: 16px;
-  }
-
-  .statsContainer {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-bottom: 16px;
+/* Мобильные адаптации */
+@media (max-width: 768px) {
+  .statsGrid {
+    gap: 10px;
   }
 
   .statCard {
-    border-radius: var(--radius-lg);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 12px;
+    gap: 10px;
   }
 
-  .savingsPage :global(.ant-statistic-content),
-  .savingsPage :global(.ant-statistic-content-value),
-  .savingsPage :global(.ant-statistic-content-value-int),
-  .savingsPage :global(.ant-statistic-content-value-decimal),
-  .savingsPage :global(.ant-statistic-content-suffix) {
-    font-size: 16px !important;
+  .statIcon {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
   }
 
-  .statCard :global(.ant-card-body) {
-    padding: 12px 8px !important;
-  }
-
-  .statCard :global(.ant-statistic-title) {
+  .statLabel {
     font-size: 11px;
-    margin-bottom: 6px;
   }
 
-  .statCard :global(.ant-statistic-content),
-  .statCard :global(.ant-statistic-content-value),
-  .statCard :global(.ant-statistic-content-value-int),
-  .statCard :global(.ant-statistic-content-value-decimal),
-  .statCard :global(.ant-statistic-content-suffix),
-  .statCard :global(.ant-statistic-content) span,
-  .statCard :global(.ant-statistic-content) * {
-    font-size: 16px !important;
-    line-height: 1.2 !important;
-  }
-}
-
-@media (min-width: 768px) {
-  .statCard :global(.ant-card-body) {
-    padding: 20px 16px !important;
-  }
-
-  .statCard :global(.ant-statistic-title) {
+  .statValue {
     font-size: 14px;
-    margin-bottom: 12px;
   }
 
-  .savingsPage :global(.ant-statistic-content),
-  .savingsPage :global(.ant-statistic-content-value),
-  .savingsPage :global(.ant-statistic-content-value-int),
-  .savingsPage :global(.ant-statistic-content-value-decimal),
-  .savingsPage :global(.ant-statistic-content-suffix) {
-    font-size: 16px !important;
+  .searchInput {
+    height: 44px;
+    font-size: 14px;
   }
 
-  .statCard :global(.ant-statistic-content),
-  .statCard :global(.ant-statistic-content-value),
-  .statCard :global(.ant-statistic-content-value-int),
-  .statCard :global(.ant-statistic-content-value-decimal),
-  .statCard :global(.ant-statistic-content-suffix),
-  .statCard :global(.ant-statistic-content) span,
-  .statCard :global(.ant-statistic-content) * {
-    font-size: 16px !important;
-    line-height: 1.2 !important;
+  .searchBtn {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  .savingIcon {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+
+  .savingName {
+    font-size: 14px;
+  }
+
+  .savingAmount {
+    font-size: 14px;
+  }
+
+  .deleteBtn {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
   }
 }

@@ -1,19 +1,29 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Card, Statistic, FloatButton, Button, Empty } from "antd";
-import { PlusOutlined, WalletOutlined } from "@ant-design/icons";
+import { Input, FloatButton, Button, Modal } from "antd";
+import {
+  PlusOutlined,
+  SearchOutlined,
+  DeleteOutlined,
+  WalletOutlined,
+  PieChartOutlined,
+  RiseOutlined,
+  PercentageOutlined,
+} from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
-import SavingsList from "../components/SavingsList";
 import SavingsForm from "../components/SavingsForm";
 import PageHeader from "../components/PageHeader";
 import * as styles from "./SavingsPage.module.css";
+import dayjs from "dayjs";
+import "dayjs/locale/ru";
+
+dayjs.locale("ru");
 
 const SavingsPage: React.FC = () => {
-  const { savings, transactions } = useFinance();
+  const { savings, transactions, deleteSaving } = useFinance();
   const [showForm, setShowForm] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Определяем, мобильное ли устройство
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -22,42 +32,6 @@ const SavingsPage: React.FC = () => {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-
-  // Группировка накоплений по месяцам
-  const groupedSavings = useMemo(() => {
-    const grouped = savings.reduce((groups, saving) => {
-      const date = new Date(saving.date);
-      const monthKey = date.toLocaleDateString("ru-RU", {
-        month: "long",
-        year: "numeric",
-      });
-
-      if (!groups[monthKey]) {
-        groups[monthKey] = [];
-      }
-      groups[monthKey].push(saving);
-      return groups;
-    }, {} as Record<string, typeof savings>);
-
-    const sortedMonths = Object.keys(grouped).sort((a, b) => {
-      const dateA = new Date(
-        grouped[a][0].date.substring(0, 7) + "-01"
-      ).getTime();
-      const dateB = new Date(
-        grouped[b][0].date.substring(0, 7) + "-01"
-      ).getTime();
-      return dateB - dateA; // Сначала новые месяцы
-    });
-
-    return { grouped, sortedMonths };
-  }, [savings]);
-
-  // Устанавливаем последний месяц по умолчанию
-  useEffect(() => {
-    if (groupedSavings.sortedMonths.length > 0 && !selectedMonth) {
-      setSelectedMonth(groupedSavings.sortedMonths[0]);
-    }
-  }, [groupedSavings.sortedMonths, selectedMonth]);
 
   // Общая сумма накоплений
   const totalSavings = useMemo(() => {
@@ -78,27 +52,10 @@ const SavingsPage: React.FC = () => {
       .reduce((sum, t) => sum + t.amount, 0);
   }, [transactions]);
 
-  // Общий баланс (доходы - расходы)
+  // Общий баланс
   const totalBalance = useMemo(() => {
     return totalIncome - totalExpenses;
   }, [totalIncome, totalExpenses]);
-
-  // Средний доход в месяц
-  const averageMonthlyIncome = useMemo(() => {
-    const incomeTransactions = transactions.filter((t) => t.type === "income");
-    if (incomeTransactions.length === 0) return 0;
-
-    // Получаем уникальные месяцы с доходами
-    const monthsSet = new Set<string>();
-    incomeTransactions.forEach((t) => {
-      const date = new Date(t.date);
-      const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
-      monthsSet.add(monthKey);
-    });
-
-    const monthsCount = monthsSet.size;
-    return monthsCount > 0 ? totalIncome / monthsCount : 0;
-  }, [transactions, totalIncome]);
 
   // Процент от дохода
   const savingsPercentage = useMemo(() => {
@@ -106,139 +63,208 @@ const SavingsPage: React.FC = () => {
     return (totalSavings / totalIncome) * 100;
   }, [totalSavings, totalIncome]);
 
-  // Накопления за выбранный месяц
-  const monthlySavings = useMemo(() => {
-    if (!selectedMonth || !groupedSavings.grouped[selectedMonth]) return 0;
-    return groupedSavings.grouped[selectedMonth].reduce(
-      (sum, saving) => sum + saving.amount,
-      0
+  // Фильтрация накоплений
+  const filteredSavings = useMemo(() => {
+    if (!searchQuery.trim()) return savings;
+    const query = searchQuery.toLowerCase();
+    return savings.filter((s) =>
+      s.description?.toLowerCase().includes(query)
     );
-  }, [selectedMonth, groupedSavings]);
+  }, [savings, searchQuery]);
 
-  // Доходы за выбранный месяц
-  const monthlyIncome = useMemo(() => {
-    if (!selectedMonth) return 0;
-    const [monthName, year] = selectedMonth.split(" ");
-    const monthIndex = new Date(`${monthName} 1, ${year}`).getMonth();
-    const yearNum = parseInt(year);
+  // Группировка по дате
+  const groupedByDate = useMemo(() => {
+    const grouped: Record<
+      string,
+      { savings: typeof savings; totalAmount: number }
+    > = {};
 
-    return transactions
-      .filter((t) => {
-        const tDate = new Date(t.date);
-        return (
-          t.type === "income" &&
-          tDate.getMonth() === monthIndex &&
-          tDate.getFullYear() === yearNum
-        );
-      })
-      .reduce((sum, t) => sum + t.amount, 0);
-  }, [selectedMonth, transactions]);
+    const sorted = [...filteredSavings].sort(
+      (a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf()
+    );
 
-  // Процент от дохода за выбранный месяц
-  const monthlyPercentage = useMemo(() => {
-    if (monthlyIncome === 0) return 0;
-    return (monthlySavings / monthlyIncome) * 100;
-  }, [monthlySavings, monthlyIncome]);
+    sorted.forEach((saving) => {
+      const dateKey = saving.date;
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = { savings: [], totalAmount: 0 };
+      }
+      grouped[dateKey].savings.push(saving);
+      grouped[dateKey].totalAmount += saving.amount;
+    });
+
+    return grouped;
+  }, [filteredSavings]);
+
+  const sortedDates = Object.keys(groupedByDate).sort(
+    (a, b) => dayjs(b).valueOf() - dayjs(a).valueOf()
+  );
+
+  const formatDate = (dateStr: string) => {
+    const date = dayjs(dateStr);
+    const today = dayjs();
+    const yesterday = today.subtract(1, "day");
+
+    if (date.isSame(today, "day")) {
+      return "Сегодня";
+    }
+    if (date.isSame(yesterday, "day")) {
+      return "Вчера";
+    }
+    return date.format("D MMMM, YYYY");
+  };
+
+  const formatTime = (dateStr: string) => {
+    return dayjs(dateStr).format("H:mm");
+  };
+
+  const handleDelete = (id: string) => {
+    Modal.confirm({
+      title: "Удалить накопление?",
+      content: "Это действие нельзя отменить.",
+      okText: "Удалить",
+      okType: "danger",
+      cancelText: "Отмена",
+      onOk: async () => {
+        try {
+          await deleteSaving(id);
+        } catch (error) {
+          console.error("Error deleting saving:", error);
+        }
+      },
+    });
+  };
 
   return (
     <div className={styles.savingsPage}>
       <PageHeader title="Накопления" />
-      <div className={styles.content}>
-        {/* Статистика */}
-        <div className={styles.statsContainer}>
-          <Card className={styles.statCard}>
-            <Statistic
-              title={isMobile ? "Баланс" : "Общий баланс"}
-              value={totalBalance}
-              precision={isMobile ? 0 : 2}
-              suffix="₽"
-              styles={{
-                content: {
-                  color: totalBalance >= 0 ? "var(--income)" : "var(--expense)",
-                  fontSize: "16px",
-                },
-              }}
-            />
-          </Card>
-          <Card className={styles.statCard}>
-            <Statistic
-              title={isMobile ? "Средний доход" : "Средний доход в месяц"}
-              value={averageMonthlyIncome}
-              precision={isMobile ? 0 : 2}
-              suffix="₽"
-              styles={{
-                content: {
-                  color: "var(--accent)",
-                  fontSize: "16px",
-                },
-              }}
-            />
-          </Card>
-          <Card className={styles.statCard}>
-            <Statistic
-              title={isMobile ? "Накоплено" : "Всего накоплено"}
-              value={totalSavings}
-              precision={isMobile ? 0 : 2}
-              suffix="₽"
-              styles={{
-                content: {
-                  color: "var(--income)",
-                  fontSize: "16px",
-                },
-              }}
-            />
-          </Card>
-          <Card className={styles.statCard}>
-            <Statistic
-              title={isMobile ? "% от дохода" : "Процент от дохода"}
-              value={savingsPercentage}
-              precision={1}
-              suffix="%"
-              styles={{
-                content: {
-                  color: "var(--accent)",
-                  fontSize: "16px",
-                },
-              }}
-            />
-          </Card>
-          {selectedMonth && (
-            <>
-              <Card className={styles.statCard}>
-                <Statistic
-                  title={
-                    isMobile
-                      ? `За ${selectedMonth.split(" ")[0]}`
-                      : `Накоплено за ${selectedMonth}`
-                  }
-                  value={monthlySavings}
-                  precision={isMobile ? 0 : 2}
-                  suffix="₽"
-                  styles={{
-                    content: {
-                      color: "var(--income)",
-                      fontSize: "16px",
-                    },
-                  }}
-                />
-              </Card>
-            </>
-          )}
+
+      <div className={styles.container}>
+        {/* Карточки статистики */}
+        <div className={styles.statsGrid}>
+          <div className={styles.statCard}>
+            <div className={styles.statIcon}>
+              <WalletOutlined />
+            </div>
+            <div className={styles.statInfo}>
+              <span className={styles.statLabel}>Баланс</span>
+              <span
+                className={`${styles.statValue} ${
+                  totalBalance >= 0 ? styles.statPositive : styles.statNegative
+                }`}
+              >
+                ₽{totalBalance.toLocaleString("ru-RU", { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
+
+          <div className={styles.statCard}>
+            <div className={`${styles.statIcon} ${styles.statIconGreen}`}>
+              <RiseOutlined />
+            </div>
+            <div className={styles.statInfo}>
+              <span className={styles.statLabel}>Накоплено</span>
+              <span className={`${styles.statValue} ${styles.statPositive}`}>
+                ₽{totalSavings.toLocaleString("ru-RU", { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
+
+          <div className={styles.statCard}>
+            <div className={`${styles.statIcon} ${styles.statIconBlue}`}>
+              <PercentageOutlined />
+            </div>
+            <div className={styles.statInfo}>
+              <span className={styles.statLabel}>% от дохода</span>
+              <span className={styles.statValue}>
+                {savingsPercentage.toFixed(1)}%
+              </span>
+            </div>
+          </div>
+
+          <div className={styles.statCard}>
+            <div className={`${styles.statIcon} ${styles.statIconPurple}`}>
+              <PieChartOutlined />
+            </div>
+            <div className={styles.statInfo}>
+              <span className={styles.statLabel}>Записей</span>
+              <span className={styles.statValue}>{savings.length}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Поиск */}
+        <div className={styles.searchContainer}>
+          <Input
+            placeholder="Поиск по описанию"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={styles.searchInput}
+            allowClear
+          />
+          <button className={styles.searchBtn}>
+            <SearchOutlined />
+          </button>
         </div>
 
         {/* Список накоплений */}
-        {savings.length === 0 ? (
-          <Card className={styles.emptyCard}>
-            <Empty description="Нет накоплений" />
-          </Card>
-        ) : (
-          <SavingsList
-            savings={savings}
-            selectedMonth={selectedMonth}
-            months={groupedSavings.sortedMonths}
-            onMonthChange={setSelectedMonth}
-          />
-        )}
+        <div className={styles.savingsList}>
+          {sortedDates.length === 0 ? (
+            <div className={styles.emptyState}>
+              {searchQuery ? "Ничего не найдено" : "Нет накоплений"}
+            </div>
+          ) : (
+            sortedDates.map((dateKey) => {
+              const { savings: daySavings, totalAmount } = groupedByDate[dateKey];
+              return (
+                <div key={dateKey} className={styles.dateGroup}>
+                  <div className={styles.dateHeader}>
+                    <span className={styles.dateLabel}>{formatDate(dateKey)}</span>
+                    <div className={styles.dateBalance}>
+                      + ₽{totalAmount.toLocaleString("ru-RU", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </div>
+                  </div>
+
+                  {daySavings.map((saving) => (
+                    <div key={saving.id} className={styles.savingItem}>
+                      <div className={styles.savingIcon}>
+                        <WalletOutlined />
+                      </div>
+
+                      <div className={styles.savingInfo}>
+                        <span className={styles.savingName}>
+                          {saving.description || "Накопление"}
+                        </span>
+                        <div className={styles.savingMeta}>
+                          <span className={styles.savingTag}>Сбережение</span>
+                        </div>
+                      </div>
+
+                      <div className={styles.savingRight}>
+                        <span className={styles.savingAmount}>
+                          + ₽{saving.amount.toLocaleString("ru-RU", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </span>
+                        <span className={styles.savingTime}>
+                          {formatTime(saving.date)}
+                        </span>
+                      </div>
+
+                      <button
+                        className={styles.deleteBtn}
+                        onClick={() => handleDelete(saving.id)}
+                      >
+                        <DeleteOutlined />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
 
       {/* Кнопка добавления накопления */}

@@ -49,6 +49,7 @@ const ExpensesByCategoryChart: React.FC<ExpensesByCategoryChartProps> = ({
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    cutout: "75%",
     plugins: {
       legend: {
         position: "bottom" as const,

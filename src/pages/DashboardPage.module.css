@@ -1,161 +1,398 @@
 .dashboardPage {
-  width: 100%;
-  max-width: 100%;
+  min-height: 100%;
   background: var(--bg-base);
 }
 
-@media (min-width: 769px) {
-  .dashboardPage {
-    padding-top: 0; /* PageHeader больше не fixed, отступ не нужен */
-  }
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 @media (max-width: 768px) {
   .dashboardPage {
     padding: 0;
-    padding-top: 56px; /* Отступ для фиксированной шапки на мобильных */
-    padding-bottom: 50px; /* Отступ снизу для нижней навигации */
+    padding-top: 56px;
+    padding-bottom: 80px;
+    background: var(--bg-base);
     min-height: 100%;
+  }
+
+  .container {
+    max-width: 100%;
+    padding: 16px;
+    gap: 12px;
   }
 }
 
-.pageTitle {
-  font-size: 28px;
+/* Селектор периода */
+.periodSelector {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.periodLabel {
+  font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 24px;
 }
 
-.statsRow {
-  margin-bottom: 24px;
-  padding: 24px;
+.periodNav {
+  display: flex;
+  gap: 8px;
 }
 
-.summaryCard {
+.navBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.navBtn:hover {
+  background: var(--bg-surface);
+  transform: scale(1.05);
+}
+
+.navBtn:active {
+  transform: scale(0.95);
+}
+
+/* Статистика сверху */
+.summaryStats {
+  display: flex;
+  gap: 12px;
+}
+
+.statBox {
+  flex: 1;
+  background: var(--bg-card);
   border-radius: var(--radius-xl);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.summaryCard :global(.ant-card-body) {
+.statBoxValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Общие стили карточек */
+.chartCard {
+  background: var(--bg-card);
+  border-radius: var(--radius-2xl);
   padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.balanceRow {
+.chartHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border);
 }
 
-.balanceLabel {
+.chartTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.chartBalance {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.balanceIconUp {
+  color: var(--income);
   font-size: 14px;
-  color: var(--text-secondary);
 }
 
-.balanceValue {
-  font-size: 28px;
-  font-weight: 700;
+.balanceIconDown {
+  color: var(--expense);
+  font-size: 14px;
 }
 
-.statsItems {
+.balancePositive {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.balanceNegative {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--expense);
+}
+
+/* Balance Trend */
+.balanceStats {
   display: flex;
   justify-content: space-between;
-  gap: 24px;
+  margin-bottom: 16px;
 }
 
-.statItem {
+.balanceStat {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.statLabel {
+.balanceStatLabel {
   font-size: 12px;
   color: var(--text-secondary);
 }
 
-.statValue {
-  font-size: 18px;
+.balanceStatValue {
+  font-size: 16px;
   font-weight: 600;
+  color: var(--text-primary);
 }
 
-.chartsRow {
-  margin-bottom: 24px;
-  padding: 0 24px;
+.trendChartContainer {
+  height: 200px;
+  margin-bottom: 16px;
 }
 
-@media (min-width: 769px) {
-  .statsRow {
-    padding: 24px;
-  }
-
-  .chartsRow {
-    padding: 0 24px;
-  }
+.trendChartContainer > div {
+  height: 100% !important;
 }
 
-.chartCard {
-  height: 100%;
-  min-height: 400px;
+/* Select Point Hint */
+.selectPointHint {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
 }
 
-.chartCard :global(.ant-card-body) {
-  height: calc(100% - 57px);
+.hintRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hintLabel {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.hintValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.hintDivider {
+  height: 1px;
+  background: var(--border);
+  margin: 10px 0;
+}
+
+.hintComparison {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.hintPositive {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--income);
+}
+
+.hintNegative {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--expense);
+}
+
+/* Type Toggle */
+.typeToggle {
+  display: flex;
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  padding: 4px;
+  margin-bottom: 20px;
+}
+
+.toggleBtn {
+  flex: 1;
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggleBtnActive {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Donut Chart */
+.donutChartContainer {
+  position: relative;
+  height: 280px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+.donutChartContainer > div:first-child {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.donutCenter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: none;
+}
+
+.donutCenterLabel {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.donutCenterValue {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.emptyChart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Weekly Chart */
+.weeklyChartContainer {
+  height: 180px;
+  margin-bottom: 16px;
+}
+
+/* Статистика недели */
+.weekStats {
+  display: flex;
+  gap: 12px;
+}
+
+.weekStatBox {
+  flex: 1;
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.weekStatLabel {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.weekStatValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Мобильные адаптации */
 @media (max-width: 768px) {
-  .statsRow {
-    padding: 16px;
-    padding-top: 16px;
-    margin-top: 0;
-    margin-bottom: 16px;
+  .periodLabel {
+    font-size: 20px;
   }
 
-  .chartsRow {
-    padding: 0 16px;
+  .navBtn {
+    width: 40px;
+    height: 40px;
+    font-size: 12px;
   }
 
-  .summaryCard {
-    border-radius: var(--radius-lg);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  .statBox {
+    padding: 14px;
   }
 
-  .summaryCard :global(.ant-card-body) {
-    padding: 16px;
-  }
-
-  .balanceRow {
-    margin-bottom: 12px;
-    padding-bottom: 12px;
-  }
-
-  .balanceValue {
-    font-size: 24px;
-  }
-
-  .statValue {
-    font-size: 16px;
-  }
-
-  .chartsRow {
-    margin-bottom: 16px;
-  }
-
-  .chartsRow :global(.ant-col) {
-    margin-bottom: 16px;
+  .statBoxValue {
+    font-size: 14px;
   }
 
   .chartCard {
-    min-height: 250px;
-    border-radius: var(--radius-lg);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 16px;
   }
 
-  .chartCard :global(.ant-card-body) {
-    padding: 12px !important;
+  .chartTitle {
+    font-size: 16px;
+  }
+
+  .balanceStatValue {
+    font-size: 14px;
+  }
+
+  .trendChartContainer {
+    height: 160px;
+  }
+
+  .toggleBtn {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+
+  .donutChartContainer {
+    height: 240px;
+  }
+
+  .donutCenterValue {
+    font-size: 14px;
+  }
+
+  .weeklyChartContainer {
+    height: 150px;
+  }
+
+  .weekStatBox {
+    padding: 12px 14px;
+  }
+
+  .weekStatValue {
+    font-size: 14px;
   }
 }

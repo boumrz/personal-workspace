@@ -1,24 +1,29 @@
-import React, { useState, useEffect } from "react";
-import { Tabs, FloatButton, Button, Badge, Tag, Space } from "antd";
-import { PlusOutlined, FilterOutlined, CloseOutlined } from "@ant-design/icons";
+import React, { useState, useEffect, useMemo } from "react";
+import { Input, FloatButton, Button, Badge } from "antd";
+import {
+  PlusOutlined,
+  FilterOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
-import TransactionList from "../components/TransactionList";
-import PlannedExpenses from "../components/PlannedExpenses";
 import TransactionForm from "../components/TransactionForm";
 import CategoryFilter from "../components/CategoryFilter";
 import PageHeader from "../components/PageHeader";
 import IconRenderer from "../components/IconRenderer";
 import * as styles from "./TransactionsPage.module.css";
+import dayjs from "dayjs";
+import "dayjs/locale/ru";
+
+dayjs.locale("ru");
 
 const TransactionsPage: React.FC = () => {
-  const { transactions, plannedExpenses, categories } = useFinance();
-  const [activeTab, setActiveTab] = useState<"actual" | "planned">("actual");
+  const { transactions, categories, deleteTransaction } = useFinance();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Определяем, мобильное ли устройство
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -28,108 +33,202 @@ const TransactionsPage: React.FC = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Фильтрация для актуальных операций
-  const filteredTransactions =
-    selectedCategories.length === 0 || selectedCategories.includes("all")
-      ? transactions
-      : transactions.filter((t) => selectedCategories.includes(t.category.id));
+  // Фильтрация транзакций
+  const filteredTransactions = useMemo(() => {
+    let filtered = transactions;
 
-  // Фильтрация для планируемых операций
-  const filteredPlannedExpenses =
-    selectedCategories.length === 0 || selectedCategories.includes("all")
-      ? plannedExpenses
-      : plannedExpenses.filter((e) => selectedCategories.includes(e.category.id));
+    // Фильтр по категориям
+    if (selectedCategories.length > 0 && !selectedCategories.includes("all")) {
+      filtered = filtered.filter((t) =>
+        selectedCategories.includes(t.category.id)
+      );
+    }
 
-  const handleRemoveCategory = (categoryId: string) => {
-    setSelectedCategories(selectedCategories.filter((id) => id !== categoryId));
+    // Поиск
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (t) =>
+          t.description?.toLowerCase().includes(query) ||
+          t.category.name.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [transactions, selectedCategories, searchQuery]);
+
+  // Группировка по дате
+  const groupedByDate = useMemo(() => {
+    const grouped: Record<
+      string,
+      { transactions: typeof transactions; totalBalance: number }
+    > = {};
+
+    // Сортируем транзакции по дате (сначала новые)
+    const sorted = [...filteredTransactions].sort(
+      (a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf()
+    );
+
+    sorted.forEach((transaction) => {
+      const dateKey = transaction.date;
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = { transactions: [], totalBalance: 0 };
+      }
+      grouped[dateKey].transactions.push(transaction);
+      grouped[dateKey].totalBalance +=
+        transaction.type === "income"
+          ? transaction.amount
+          : -transaction.amount;
+    });
+
+    return grouped;
+  }, [filteredTransactions]);
+
+  const sortedDates = Object.keys(groupedByDate).sort(
+    (a, b) => dayjs(b).valueOf() - dayjs(a).valueOf()
+  );
+
+  const hasActiveFilters =
+    selectedCategories.length > 0 && !selectedCategories.includes("all");
+
+  const formatDate = (dateStr: string) => {
+    const date = dayjs(dateStr);
+    const today = dayjs();
+    const yesterday = today.subtract(1, "day");
+
+    if (date.isSame(today, "day")) {
+      return "Сегодня";
+    }
+    if (date.isSame(yesterday, "day")) {
+      return "Вчера";
+    }
+    return date.format("D MMMM, YYYY");
   };
 
-  const getCategoryById = (categoryId: string) => {
-    return categories.find((c) => c.id === categoryId);
+  const formatTime = (dateStr: string) => {
+    return dayjs(dateStr).format("H:mm");
   };
-
-  const tabItems = [
-    {
-      key: "actual",
-      label: "Актуальные",
-      children: (
-        <TransactionList
-          transactions={filteredTransactions}
-          selectedCategory={null}
-          plannedExpenses={plannedExpenses}
-        />
-      ),
-    },
-    {
-      key: "planned",
-      label: "Планируемые",
-      children: <PlannedExpenses expenses={filteredPlannedExpenses} />,
-    },
-  ];
-
-  const hasActiveFilters = selectedCategories.length > 0 && !selectedCategories.includes("all");
 
   return (
     <div className={styles.transactionsPage}>
       <PageHeader
         title="Все операции"
         extra={
-          <Badge count={hasActiveFilters ? selectedCategories.length : 0} size="small">
-            {isMobile ? (
-              <Button
-                type="text"
-                icon={<FilterOutlined />}
-                onClick={() => setFilterDrawerOpen(true)}
-                className={styles.filterButton}
-              />
-            ) : (
-              <Button
-                type="default"
-                icon={<FilterOutlined />}
-                onClick={() => setFilterDrawerOpen(true)}
-                className={styles.filterButtonDesktop}
-              >
-                Фильтр
-              </Button>
-            )}
+          <Badge
+            count={hasActiveFilters ? selectedCategories.length : 0}
+            size="small"
+          >
+            <button
+              className={styles.filterBtn}
+              onClick={() => setFilterDrawerOpen(true)}
+            >
+              <FilterOutlined />
+            </button>
           </Badge>
         }
       />
-      {hasActiveFilters && (
-        <div className={styles.activeFilters}>
-          <Space size={[8, 8]} wrap>
-            {selectedCategories.map((categoryId) => {
-              const category = getCategoryById(categoryId);
-              if (!category) return null;
-              return (
-                <Tag
-                  key={categoryId}
-                  closable
-                  onClose={() => handleRemoveCategory(categoryId)}
-                  color={category.color}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    padding: "4px 8px",
-                    fontSize: "12px",
-                  }}
-                >
-                  <span style={{ marginRight: 4, display: "inline-flex", alignItems: "center" }}>
-                    <IconRenderer iconName={category.icon} size={12} />
-                  </span>
-                  {category.name}
-                </Tag>
-              );
-            })}
-          </Space>
+
+      <div className={styles.container}>
+        {/* Поиск */}
+        <div className={styles.searchContainer}>
+          <Input
+            placeholder="Поиск по ключевым словам"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={styles.searchInput}
+            allowClear
+          />
+          <button className={styles.searchBtn}>
+            <SearchOutlined />
+          </button>
         </div>
-      )}
-      <div className={styles.content}>
-        <Tabs
-          activeKey={activeTab}
-          onChange={(key) => setActiveTab(key as "actual" | "planned")}
-          items={tabItems}
-        />
+
+        {/* Список транзакций */}
+        <div className={styles.transactionsList}>
+          {sortedDates.length === 0 ? (
+            <div className={styles.emptyState}>
+              {searchQuery ? "Ничего не найдено" : "Нет операций"}
+            </div>
+          ) : (
+            sortedDates.map((dateKey) => {
+              const { transactions: dayTransactions, totalBalance } =
+                groupedByDate[dateKey];
+              return (
+                <div key={dateKey} className={styles.dateGroup}>
+                  <div className={styles.dateHeader}>
+                    <span className={styles.dateLabel}>
+                      {formatDate(dateKey)}
+                    </span>
+                    <div className={styles.dateBalance}>
+                      {totalBalance >= 0 ? "△" : "▽"} ₽
+                      {Math.abs(totalBalance).toLocaleString("ru-RU", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </div>
+                  </div>
+
+                  {dayTransactions.map((transaction) => {
+                    const category =
+                      categories.find((c) => c.id === transaction.category.id) ||
+                      transaction.category;
+
+                    return (
+                      <div
+                        key={transaction.id}
+                        className={styles.transactionItem}
+                      >
+                        <div
+                          className={styles.transactionIcon}
+                          style={{ backgroundColor: category.color + "20" }}
+                        >
+                          <IconRenderer
+                            iconName={category.icon}
+                            size={22}
+                            color={category.color}
+                          />
+                        </div>
+
+                        <div className={styles.transactionInfo}>
+                          <span className={styles.transactionName}>
+                            {transaction.description || "Без описания"}
+                          </span>
+                          <div className={styles.transactionMeta}>
+                            <span className={styles.transactionWallet}>
+                              {category.name}
+                            </span>
+                            <span className={styles.transactionTag}>
+                              {transaction.type === "income"
+                                ? "Доход"
+                                : "Расход"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className={styles.transactionRight}>
+                          <span
+                            className={`${styles.transactionAmount} ${
+                              transaction.type === "income"
+                                ? styles.amountIncome
+                                : styles.amountExpense
+                            }`}
+                          >
+                            {transaction.type === "income" ? "+ " : "- "}₽
+                            {transaction.amount.toLocaleString("ru-RU", {
+                              minimumFractionDigits: 2,
+                            })}
+                          </span>
+                          <span className={styles.transactionTime}>
+                            {formatTime(transaction.date)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
 
       {/* Кнопка добавления операции */}
@@ -158,7 +257,7 @@ const TransactionsPage: React.FC = () => {
         <TransactionForm
           open={showForm}
           onClose={() => setShowForm(false)}
-          type={activeTab === "planned" ? "planned" : "actual"}
+          type="actual"
         />
       )}
 

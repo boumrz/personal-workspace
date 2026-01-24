@@ -1,132 +1,232 @@
 .transactionsPage {
-  width: 100%;
-  max-width: 100%;
+  min-height: 100%;
+  background: var(--bg-base);
 }
 
-@media (min-width: 769px) {
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
   .transactionsPage {
-    padding-top: 0; /* PageHeader больше не fixed, отступ не нужен */
+    padding: 0;
+    padding-top: 56px;
+    padding-bottom: 80px;
+    background: var(--bg-base);
+    min-height: 100%;
+  }
+
+  .container {
+    max-width: 100%;
+    padding: 16px;
+    gap: 12px;
   }
 }
 
-.filterButton {
-  font-size: 20px;
-  color: var(--text-primary);
-  padding: 8px;
+/* Кнопка фильтра */
+.filterBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-md);
+  font-size: 18px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.filterButton:hover {
+.filterBtn:hover {
+  background: var(--bg-surface);
   color: var(--accent);
-  background-color: var(--bg-elevated);
 }
 
-.filterButtonDesktop {
+/* Поиск */
+.searchContainer {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.searchInput {
+  flex: 1;
+  height: 48px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+.searchInput:focus,
+.searchInput:hover {
+  border-color: var(--accent);
+}
+
+.searchInput :global(.ant-input) {
+  background: transparent;
+  font-size: 15px;
+}
+
+.searchInput :global(.ant-input-clear-icon) {
+  font-size: 14px;
+}
+
+.searchBtn {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: var(--radius-md);
-  font-weight: 500;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
-.filterButtonDesktop:hover {
+.searchBtn:hover {
+  background: var(--bg-surface);
   border-color: var(--accent);
   color: var(--accent);
 }
 
-.activeFilters {
-  padding: 12px 24px;
-  background-color: var(--bg-card);
+/* Список транзакций */
+.transactionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+/* Группа по дате */
+.dateGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.dateHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0 12px;
+}
+
+.dateLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  padding: 6px 14px;
+  border-radius: var(--radius-xl);
+}
+
+.dateBalance {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Элемент транзакции */
+.transactionItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
   border-bottom: 1px solid var(--border);
-  position: sticky;
-  z-index: 998;
 }
 
-@media (min-width: 769px) {
-  .activeFilters {
-    top: 64px; /* Под Header (64px) на десктопе, PageHeader не fixed */
-  }
+.transactionItem:last-child {
+  border-bottom: none;
 }
 
-@media (max-width: 768px) {
-  .activeFilters {
-    padding: 12px 16px;
-  }
-}
-
-.pageTitle {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 24px;
-}
-
-.content {
-  background-color: var(--bg-card);
+.transactionIcon {
+  width: 48px;
+  height: 48px;
   border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.transactionInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.transactionName {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  margin: 0 24px;
+  text-overflow: ellipsis;
 }
 
-@media (max-width: 768px) {
-  .content {
-    margin: 0;
-  }
+.transactionMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.content :global(.ant-tabs-nav) {
-  padding: 0 24px;
-  margin: 0;
+.transactionWallet {
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 
-.content :global(.ant-tabs-content-holder) {
-  padding: 16px 24px;
+.transactionTag {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  background: var(--bg-surface);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
 }
 
-@media (max-width: 768px) {
-  .transactionsPage {
-    padding: 0;
-    padding-top: 56px; /* Отступ для фиксированной шапки на мобильных */
-    background: var(--bg-card);
-    padding-bottom: 40px; /* Отступ снизу для нижней навигации и кнопки */
-    min-height: 100%;
-  }
-  
-  .activeFilters {
-    top: 56px; /* Под фиксированной шапкой на мобильных */
-  }
+.transactionRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
 
-  .content {
-    border-radius: 0;
-    box-shadow: none;
-    background: var(--bg-card);
-  }
+.transactionAmount {
+  font-size: 15px;
+  font-weight: 600;
+}
 
-  .content :global(.ant-tabs-nav) {
-    padding: 0 16px;
-    background: var(--bg-card);
-    margin: 0;
-  }
+.amountIncome {
+  color: var(--income);
+}
 
-  .content :global(.ant-tabs-content-holder) {
-    padding: 0;
-  }
+.amountExpense {
+  color: var(--expense);
+}
 
-  .content :global(.ant-tabs-tab) {
-    padding: 12px 16px;
-    font-size: 15px;
-    font-weight: 500;
-    border-radius: var(--radius-md);
-  }
-
-  .content :global(.ant-tabs-tab-active) {
-    font-weight: 600;
-  }
+.transactionTime {
+  font-size: 12px;
+  color: var(--text-tertiary);
 }
 
 /* Кнопка добавления операции для десктопа */
@@ -146,8 +246,8 @@
     right: 0;
     background: linear-gradient(
       to top,
-      var(--bg-card) 0%,
-      rgba(255, 255, 255, 0) 100%
+      var(--bg-base) 0%,
+      rgba(232, 232, 237, 0) 100%
     );
     z-index: 10;
     pointer-events: none;
@@ -175,7 +275,7 @@
 /* Кнопка добавления операции для мобилки */
 .addButtonMobile {
   position: fixed !important;
-  bottom: 88px !important; /* Отступ от нижней навигации */
+  bottom: 88px !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
   right: auto !important;
@@ -184,7 +284,7 @@
   font-size: 24px !important;
   border-radius: var(--radius-xl) !important;
   box-shadow: 0 4px 12px rgba(10, 132, 255, 0.4) !important;
-  z-index: 999 !important; /* Ниже нижней навигации */
+  z-index: 999 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -201,4 +301,31 @@
 .addButtonMobile:hover {
   box-shadow: 0 6px 16px rgba(10, 132, 255, 0.5) !important;
   transform: translateX(-50%) translateY(-2px) !important;
+}
+
+/* Мобильные адаптации */
+@media (max-width: 768px) {
+  .searchInput {
+    height: 44px;
+    font-size: 14px;
+  }
+
+  .searchBtn {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  .transactionIcon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .transactionName {
+    font-size: 14px;
+  }
+
+  .transactionAmount {
+    font-size: 14px;
+  }
 }
