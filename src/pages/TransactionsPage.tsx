@@ -150,7 +150,7 @@ const TransactionsPage: React.FC = () => {
             value={activeTab}
             onChange={(value) => setActiveTab(value as TabType)}
             options={[
-              { label: "Операции", value: "actual" },
+              { label: "Актуальные", value: "actual" },
               { label: "Планируемые", value: "planned" },
             ]}
             block
