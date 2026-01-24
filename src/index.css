@@ -40,16 +40,16 @@ body {
 
 /* Ant Design global overrides — приглушённая палитра */
 .ant-btn-primary {
-  background: #4a9ed6 !important;
-  border-color: #4a9ed6 !important;
+  background: var(--accent-muted) !important;
+  border-color: var(--accent-muted) !important;
 }
 .ant-btn-primary:hover,
 .ant-btn-primary:focus {
-  background: #6ab0de !important;
-  border-color: #6ab0de !important;
+  background: var(--accent-muted-hover) !important;
+  border-color: var(--accent-muted-hover) !important;
 }
 
-/* Приглушённые цвета для инпутов и других элементов */
+/* Цвета для инпутов и других элементов */
 .ant-input:focus,
 .ant-input:hover,
 .ant-input-focused,
@@ -57,34 +57,514 @@ body {
 .ant-input-affix-wrapper:hover,
 .ant-input-affix-wrapper-focused,
 .ant-input-affix-wrapper:focus-within {
-  border-color: #4a9ed6 !important;
+  border-color: var(--accent) !important;
 }
 .ant-input-number:focus,
 .ant-input-number:hover,
 .ant-input-number-focused,
 .ant-input-number:focus-within {
-  border-color: #4a9ed6 !important;
+  border-color: var(--accent) !important;
 }
 .ant-input-number-focused,
 .ant-input-number:focus-within {
-  box-shadow: 0 0 0 2px rgba(74, 158, 214, 0.2) !important;
+  box-shadow: 0 0 0 2px var(--accent-light) !important;
 }
 .ant-select:not(.ant-select-disabled):hover .ant-select-selector,
 .ant-select-focused .ant-select-selector {
-  border-color: #4a9ed6 !important;
+  border-color: var(--accent) !important;
 }
 .ant-picker:hover,
 .ant-picker-focused {
-  border-color: #4a9ed6 !important;
+  border-color: var(--accent) !important;
 }
 .ant-progress-bg {
-  background-color: #4a9ed6 !important;
+  background-color: var(--accent-muted) !important;
 }
 .ant-float-btn-primary .ant-float-btn-body {
-  background: #4a9ed6 !important;
+  background: var(--accent-muted) !important;
 }
 .ant-float-btn-primary:hover .ant-float-btn-body {
-  background: #6ab0de !important;
+  background: var(--accent-muted-hover) !important;
+}
+
+/* Темная тема для Ant Design компонентов */
+/* Используем html[data-theme="dark"] для модалок, которые рендерятся в body */
+/* Modal основные стили */
+html[data-theme="dark"] .ant-modal .ant-modal-content {
+  background-color: #1c1c1e !important;
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-modal-content {
+  background-color: #1c1c1e !important;
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-modal-header {
+  background-color: #1c1c1e !important;
+  border-bottom-color: #48484a !important;
+}
+
+html[data-theme="dark"] .ant-modal-body {
+  background-color: #1c1c1e !important;
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-modal-footer {
+  background-color: #1c1c1e !important;
+  border-top-color: #48484a !important;
+}
+
+html[data-theme="dark"] .ant-modal-title {
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-modal-close {
+  color: #aeaeb2 !important;
+}
+
+html[data-theme="dark"] .ant-modal-close:hover {
+  color: #f5f5f7 !important;
+  background-color: #3a3a3c !important;
+}
+
+/* Modal.confirm */
+html[data-theme="dark"] .ant-modal-confirm .ant-modal-content {
+  background-color: #1c1c1e !important;
+}
+
+html[data-theme="dark"] .ant-modal-confirm-title {
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-modal-confirm-content {
+  color: #aeaeb2 !important;
+}
+
+html[data-theme="dark"] .ant-modal-confirm-body {
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-modal-confirm-btns .ant-btn-default {
+  background-color: #2c2c2e !important;
+  border-color: #48484a !important;
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-modal-confirm-btns .ant-btn-default:hover {
+  background-color: #3a3a3c !important;
+  border-color: #636366 !important;
+}
+
+html[data-theme="dark"] .ant-modal-confirm-btns .ant-btn-primary {
+  background-color: #5aa8db !important;
+  border-color: #5aa8db !important;
+}
+
+html[data-theme="dark"] .ant-modal-confirm-btns .ant-btn-primary:hover {
+  background-color: #7bbde5 !important;
+  border-color: #7bbde5 !important;
+}
+
+/* Danger button for delete confirmations */
+html[data-theme="dark"] .ant-modal-confirm-btns .ant-btn-dangerous {
+  background-color: #ff6961 !important;
+  border-color: #ff6961 !important;
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .ant-modal-confirm-btns .ant-btn-dangerous:hover {
+  background-color: #ff8a84 !important;
+  border-color: #ff8a84 !important;
+}
+
+/* Form внутри Modal */
+html[data-theme="dark"] .ant-modal .ant-form-item-label > label {
+  color: #aeaeb2 !important;
+}
+
+html[data-theme="dark"] .ant-modal .ant-form-item-label > label.ant-form-item-required::before {
+  color: #ff6961 !important;
+}
+
+html[data-theme="dark"] .ant-modal .ant-input {
+  background-color: #2c2c2e !important;
+  border-color: #48484a !important;
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-modal .ant-input::placeholder {
+  color: #8e8e93 !important;
+}
+
+html[data-theme="dark"] .ant-modal .ant-input-number {
+  background-color: #2c2c2e !important;
+  border-color: #48484a !important;
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-modal .ant-input-number-input {
+  background-color: #2c2c2e !important;
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-modal .ant-input-number-input::placeholder {
+  color: #8e8e93 !important;
+}
+
+html[data-theme="dark"] .ant-input,
+html[data-theme="dark"] .ant-input-affix-wrapper,
+html[data-theme="dark"] .ant-input-number,
+html[data-theme="dark"] .ant-input-number-input,
+html[data-theme="dark"] .ant-select-selector,
+html[data-theme="dark"] .ant-picker {
+  background-color: #2c2c2e !important;
+  border-color: #48484a !important;
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-input::placeholder,
+html[data-theme="dark"] .ant-input-number::placeholder,
+html[data-theme="dark"] .ant-input-number-input::placeholder {
+  color: #8e8e93 !important;
+}
+
+html[data-theme="dark"] .ant-select-selection-placeholder,
+html[data-theme="dark"] .ant-picker-input > input::placeholder {
+  color: #8e8e93 !important;
+}
+
+html[data-theme="dark"] .ant-select-selection-item,
+html[data-theme="dark"] .ant-picker-input > input {
+  color: #f5f5f7 !important;
+}
+
+/* Drawer для тёмной темы */
+html[data-theme="dark"] .ant-drawer-content {
+  background-color: #1c1c1e !important;
+}
+
+html[data-theme="dark"] .ant-drawer-header {
+  background-color: #1c1c1e !important;
+  border-bottom-color: #48484a !important;
+}
+
+html[data-theme="dark"] .ant-drawer-body {
+  background-color: #1c1c1e !important;
+}
+
+html[data-theme="dark"] .ant-drawer-title {
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-drawer-close {
+  color: #aeaeb2 !important;
+}
+
+html[data-theme="dark"] .ant-drawer-footer {
+  background-color: #1c1c1e !important;
+  border-top-color: #48484a !important;
+}
+
+/* Кнопки для тёмной темы */
+html[data-theme="dark"] .ant-btn-default {
+  background-color: #2c2c2e !important;
+  border-color: #48484a !important;
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-btn-default:hover {
+  background-color: #3a3a3c !important;
+  border-color: #636366 !important;
+  color: #f5f5f7 !important;
+}
+
+/* Формы для тёмной темы */
+html[data-theme="dark"] .ant-form-item-label > label {
+  color: #aeaeb2 !important;
+}
+
+html[data-theme="dark"] .ant-form-item-label > label.ant-form-item-required::before {
+  color: #ff6961 !important;
+}
+
+html[data-theme="dark"] .ant-form-item-explain-error {
+  color: #ff6961 !important;
+}
+
+html[data-theme="dark"] .ant-empty-description {
+  color: #aeaeb2 !important;
+}
+
+/* Теги и категории для тёмной темы */
+html[data-theme="dark"] .ant-tag {
+  background-color: #2c2c2e !important;
+  border-color: #48484a !important;
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-tag-checkable:not(.ant-tag-checkable-checked) {
+  background-color: #2c2c2e !important;
+  border-color: #48484a !important;
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-tag-checkable-checked {
+  background-color: #5aa8db !important;
+  border-color: #5aa8db !important;
+  color: #fff !important;
+}
+
+/* Segmented для тёмной темы */
+html[data-theme="dark"] .ant-segmented {
+  background-color: #2c2c2e !important;
+}
+
+html[data-theme="dark"] .ant-segmented-item {
+  color: #aeaeb2 !important;
+}
+
+html[data-theme="dark"] .ant-segmented-item-selected {
+  background-color: #3a3a3c !important;
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-segmented-thumb {
+  background-color: #3a3a3c !important;
+}
+
+/* Меню для тёмной темы */
+html[data-theme="dark"] .ant-menu {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] .ant-menu-item:hover {
+  background-color: var(--bg-surface) !important;
+}
+
+html[data-theme="dark"] .ant-dropdown-menu {
+  background-color: var(--bg-card) !important;
+}
+
+html[data-theme="dark"] .ant-dropdown-menu-item {
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] .ant-dropdown-menu-item:hover {
+  background-color: var(--bg-surface) !important;
+}
+
+/* Picker для тёмной темы */
+html[data-theme="dark"] .ant-picker-panel-container {
+  background-color: var(--bg-card) !important;
+}
+
+html[data-theme="dark"] .ant-picker-header,
+html[data-theme="dark"] .ant-picker-content th {
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] .ant-picker-header button {
+  color: var(--text-secondary) !important;
+}
+
+html[data-theme="dark"] .ant-picker-header button:hover {
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] .ant-picker-cell {
+  color: var(--text-tertiary) !important;
+}
+
+html[data-theme="dark"] .ant-picker-cell-in-view {
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] .ant-picker-cell:hover .ant-picker-cell-inner {
+  background-color: var(--bg-surface) !important;
+}
+
+html[data-theme="dark"] .ant-picker-cell-selected .ant-picker-cell-inner {
+  background-color: var(--accent-muted) !important;
+}
+
+html[data-theme="dark"] .ant-picker-today-btn {
+  color: var(--accent-muted) !important;
+}
+
+/* Select для тёмной темы */
+html[data-theme="dark"] .ant-select-dropdown {
+  background-color: var(--bg-card) !important;
+}
+
+html[data-theme="dark"] .ant-select-item {
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] .ant-select-item-option-active {
+  background-color: var(--bg-surface) !important;
+}
+
+html[data-theme="dark"] .ant-select-item-option-selected {
+  background-color: var(--bg-elevated) !important;
+}
+
+/* Input TextArea для тёмной темы */
+html[data-theme="dark"] .ant-input-textarea textarea {
+  background-color: var(--bg-surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] .ant-input-textarea textarea::placeholder {
+  color: var(--text-tertiary) !important;
+}
+
+/* Checkbox и Radio для тёмной темы */
+html[data-theme="dark"] .ant-checkbox-inner {
+  background-color: var(--bg-surface) !important;
+  border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .ant-checkbox-checked .ant-checkbox-inner {
+  background-color: var(--accent-muted) !important;
+  border-color: var(--accent-muted) !important;
+}
+
+html[data-theme="dark"] .ant-radio-inner {
+  background-color: var(--bg-surface) !important;
+  border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .ant-radio-checked .ant-radio-inner {
+  border-color: var(--accent-muted) !important;
+}
+
+html[data-theme="dark"] .ant-radio-checked .ant-radio-inner::after {
+  background-color: var(--accent-muted) !important;
+}
+
+/* Switch для тёмной темы */
+html[data-theme="dark"] .ant-switch {
+  background-color: var(--bg-elevated) !important;
+}
+
+html[data-theme="dark"] .ant-switch-checked {
+  background-color: var(--accent-muted) !important;
+}
+
+/* Progress для тёмной темы */
+html[data-theme="dark"] .ant-progress-inner {
+  background-color: var(--bg-surface) !important;
+}
+
+/* Tooltip для тёмной темы */
+html[data-theme="dark"] .ant-tooltip-inner {
+  background-color: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Message и Notification для тёмной темы */
+html[data-theme="dark"] .ant-message-notice-content {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] .ant-notification-notice {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] .ant-notification-notice-message {
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] .ant-notification-notice-description {
+  color: var(--text-secondary) !important;
+}
+
+/* Popover для тёмной темы */
+html[data-theme="dark"] .ant-popover-inner {
+  background-color: var(--bg-card) !important;
+}
+
+html[data-theme="dark"] .ant-popover-title {
+  color: var(--text-primary) !important;
+  border-bottom-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .ant-popover-inner-content {
+  color: var(--text-secondary) !important;
+}
+
+html[data-theme="dark"] .ant-popover-arrow::before {
+  background-color: var(--bg-card) !important;
+}
+
+/* Popconfirm для тёмной темы */
+html[data-theme="dark"] .ant-popconfirm .ant-popover-inner {
+  background-color: #1c1c1e !important;
+}
+
+html[data-theme="dark"] .ant-popconfirm .ant-popover-arrow::before {
+  background-color: #1c1c1e !important;
+}
+
+html[data-theme="dark"] .ant-popconfirm-message-title {
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-popconfirm-description {
+  color: #aeaeb2 !important;
+}
+
+html[data-theme="dark"] .ant-popconfirm-buttons .ant-btn-default {
+  background-color: #2c2c2e !important;
+  border-color: #48484a !important;
+  color: #f5f5f7 !important;
+}
+
+html[data-theme="dark"] .ant-popconfirm-buttons .ant-btn-default:hover {
+  background-color: #3a3a3c !important;
+  border-color: #636366 !important;
+}
+
+html[data-theme="dark"] .ant-popconfirm-buttons .ant-btn-primary {
+  background-color: #5aa8db !important;
+  border-color: #5aa8db !important;
+}
+
+html[data-theme="dark"] .ant-popconfirm-buttons .ant-btn-primary.ant-btn-dangerous,
+html[data-theme="dark"] .ant-popconfirm-buttons .ant-btn-dangerous {
+  background-color: #ff6961 !important;
+  border-color: #ff6961 !important;
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .ant-popconfirm-buttons .ant-btn-dangerous:hover {
+  background-color: #ff8a84 !important;
+  border-color: #ff8a84 !important;
+}
+
+/* Tooltip arrow */
+html[data-theme="dark"] .ant-tooltip-arrow::before {
+  background-color: var(--bg-elevated) !important;
+}
+
+/* Card для тёмной темы */
+html[data-theme="dark"] .ant-card {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .ant-card-head {
+  border-bottom-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] .ant-card-body {
+  color: var(--text-primary) !important;
 }
 
 /* Border radius */
@@ -217,5 +697,12 @@ body {
     z-index: 1 !important;
     background: var(--bg-card) !important;
     border-radius: var(--radius-sheet) var(--radius-sheet) 0 0 !important;
+  }
+}
+
+/* Тёмная тема для мобильного drawer */
+@media (max-width: 768px) {
+  html[data-theme="dark"] .ant-drawer-header {
+    background: var(--bg-card) !important;
   }
 }

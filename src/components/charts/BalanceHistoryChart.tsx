@@ -12,6 +12,7 @@ import {
   Filler,
 } from "chart.js";
 import dayjs from "dayjs";
+import { useTheme } from "../../context/ThemeContext";
 
 ChartJS.register(
   CategoryScale,
@@ -34,6 +35,11 @@ interface BalanceHistoryChartProps {
 }
 
 const BalanceHistoryChart: React.FC<BalanceHistoryChartProps> = ({ data }) => {
+  const { resolvedTheme } = useTheme();
+  const tickColor = resolvedTheme === "dark" ? "#aeaeb2" : "#6c6c70";
+  const gridColor = resolvedTheme === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)";
+  const pointBorderColor = resolvedTheme === "dark" ? "#1c1c1e" : "#ffffff";
+
   if (data.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "40px", color: "var(--text-secondary)" }}>
@@ -66,7 +72,7 @@ const BalanceHistoryChart: React.FC<BalanceHistoryChartProps> = ({ data }) => {
         pointRadius: 4,
         pointHoverRadius: 6,
         pointBackgroundColor: "#4a9ed6",
-        pointBorderColor: "#ffffff",
+        pointBorderColor: pointBorderColor,
         pointBorderWidth: 2,
       },
     ],
@@ -92,6 +98,7 @@ const BalanceHistoryChart: React.FC<BalanceHistoryChartProps> = ({ data }) => {
       y: {
         beginAtZero: false,
         ticks: {
+          color: tickColor,
           callback: function (value: any) {
             return value.toLocaleString("ru-RU") + " ₽";
           },
@@ -113,10 +120,13 @@ const BalanceHistoryChart: React.FC<BalanceHistoryChartProps> = ({ data }) => {
           })(),
         },
         grid: {
-          color: "rgba(0, 0, 0, 0.05)",
+          color: gridColor,
         },
       },
       x: {
+        ticks: {
+          color: tickColor,
+        },
         grid: {
           display: false,
         },

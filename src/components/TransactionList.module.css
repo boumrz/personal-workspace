@@ -14,7 +14,7 @@
   padding: 12px;
   background-color: var(--bg-card);
   border-radius: var(--radius-lg);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px var(--shadow-md);
 }
 
 .monthLabel {
@@ -41,7 +41,7 @@
   padding: 16px;
   background-color: var(--bg-card);
   border-radius: var(--radius-lg);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px var(--shadow-md);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -162,7 +162,7 @@
   .transaction {
     padding: 16px;
     border-radius: var(--radius-lg);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px var(--shadow-md);
     margin-bottom: 0;
   }
 
@@ -233,7 +233,7 @@
   }
 
   .transaction:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px var(--shadow-md);
   }
 
   .categoryBadge {

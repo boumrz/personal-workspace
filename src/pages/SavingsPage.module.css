@@ -42,15 +42,15 @@
   padding: 16px;
   background: var(--bg-card);
   border-radius: var(--radius-lg);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px var(--shadow-sm);
 }
 
 .statIcon {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-md);
-  background: rgba(255, 149, 0, 0.12);
-  color: #ff9500;
+  background: var(--warning-light);
+  color: var(--warning);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -59,13 +59,13 @@
 }
 
 .statIconGreen {
-  background: rgba(52, 199, 89, 0.12);
-  color: #34c759;
+  background: var(--income-light);
+  color: var(--income);
 }
 
 .statIconBlue {
-  background: rgba(10, 132, 255, 0.12);
-  color: #0a84ff;
+  background: var(--accent-muted-light);
+  color: var(--accent-muted);
 }
 
 .statIconPurple {
@@ -121,7 +121,7 @@
 
 .searchInput:focus,
 .searchInput:hover {
-  border-color: #4a9ed6;
+  border-color: var(--accent);
 }
 
 .searchInput :global(.ant-input) {
@@ -151,8 +151,8 @@
 
 .searchBtn:hover {
   background: var(--bg-surface);
-  border-color: #4a9ed6;
-  color: #4a9ed6;
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* Список накоплений */
@@ -214,8 +214,8 @@
   width: 48px;
   height: 48px;
   border-radius: var(--radius-lg);
-  background: rgba(52, 199, 89, 0.12);
-  color: #34c759;
+  background: var(--income-light);
+  color: var(--income);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -290,7 +290,7 @@
 }
 
 .deleteBtn:hover {
-  background: rgba(255, 59, 48, 0.1);
+  background: var(--expense-light);
   color: var(--expense);
 }
 
@@ -312,7 +312,7 @@
     background: linear-gradient(
       to top,
       var(--bg-base) 0%,
-      rgba(232, 232, 237, 0) 100%
+      transparent 100%
     );
     z-index: 10;
     pointer-events: none;
@@ -328,15 +328,15 @@
     font-weight: 600;
     padding: 0 32px;
     border-radius: var(--radius-lg);
-    background: #4a9ed6 !important;
-    border-color: #4a9ed6 !important;
-    box-shadow: 0 4px 12px rgba(74, 158, 214, 0.35);
+    background: var(--accent-muted) !important;
+    border-color: var(--accent-muted) !important;
+    box-shadow: 0 4px 12px var(--shadow-lg);
   }
 
   .addButtonDesktop:hover {
-    background: #6ab0de !important;
-    border-color: #6ab0de !important;
-    box-shadow: 0 6px 16px rgba(74, 158, 214, 0.45);
+    background: var(--accent-muted-hover) !important;
+    border-color: var(--accent-muted-hover) !important;
+    box-shadow: 0 6px 16px var(--shadow-xl);
     transform: translateY(-2px);
   }
 }
@@ -352,8 +352,8 @@
   height: 56px !important;
   font-size: 24px !important;
   border-radius: var(--radius-xl) !important;
-  background: #4a9ed6 !important;
-  box-shadow: 0 4px 12px rgba(74, 158, 214, 0.4) !important;
+  background: var(--accent-muted) !important;
+  box-shadow: 0 4px 12px var(--shadow-lg) !important;
   z-index: 999 !important;
   display: flex !important;
   align-items: center !important;
@@ -361,7 +361,7 @@
 }
 
 .addButtonMobile :global(.ant-float-btn-body) {
-  background: #4a9ed6 !important;
+  background: var(--accent-muted) !important;
 }
 
 .addButtonMobile :global(.ant-float-btn-icon) {
@@ -373,12 +373,12 @@
 }
 
 .addButtonMobile:hover {
-  box-shadow: 0 6px 16px rgba(74, 158, 214, 0.5) !important;
+  box-shadow: 0 6px 16px var(--shadow-xl) !important;
   transform: translateX(-50%) translateY(-2px) !important;
 }
 
 .addButtonMobile:hover :global(.ant-float-btn-body) {
-  background: #6ab0de !important;
+  background: var(--accent-muted-hover) !important;
 }
 
 /* Мобильные адаптации */

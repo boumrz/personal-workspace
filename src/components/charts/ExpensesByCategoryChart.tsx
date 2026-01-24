@@ -5,6 +5,7 @@ import {
   ArcElement,
   Tooltip,
 } from "chart.js";
+import { useTheme } from "../../context/ThemeContext";
 
 ChartJS.register(ArcElement, Tooltip);
 
@@ -23,6 +24,9 @@ interface ExpensesByCategoryChartProps {
 const ExpensesByCategoryChart: React.FC<ExpensesByCategoryChartProps> = ({
   data,
 }) => {
+  const { resolvedTheme } = useTheme();
+  const borderColor = resolvedTheme === "dark" ? "#1c1c1e" : "#ffffff";
+
   if (data.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "40px", color: "var(--text-secondary)" }}>
@@ -39,7 +43,7 @@ const ExpensesByCategoryChart: React.FC<ExpensesByCategoryChartProps> = ({
       {
         data: data.map((item) => item.amount),
         backgroundColor: data.map((item) => item.color),
-        borderColor: "#ffffff",
+        borderColor: borderColor,
         borderWidth: 2,
       },
     ],

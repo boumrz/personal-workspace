@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.45);
+  background-color: var(--overlay-bg);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -107,8 +107,8 @@
 
 .typeButton.active {
   background-color: var(--bg-card);
-  color: #4a9ed6;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  color: var(--accent-muted);
+  box-shadow: 0 1px 3px var(--shadow-md);
 }
 
 .field {
@@ -133,7 +133,7 @@
 
 .input:focus {
   outline: none;
-  border-color: #4a9ed6;
+  border-color: var(--accent-muted);
 }
 
 .categoryGrid {
@@ -171,7 +171,7 @@
   padding: 16px;
   border: none;
   border-radius: var(--radius-lg);
-  background: #4a9ed6;
+  background: var(--accent-muted);
   color: white;
   font-size: 16px;
   font-weight: 600;
@@ -284,7 +284,7 @@
   color: white !important;
   border-radius: 50% !important;
   border: 1.5px solid var(--bg-card) !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 2px var(--shadow-xl);
   z-index: 10;
   font-size: 8px !important;
   line-height: 1 !important;
@@ -308,15 +308,15 @@
 }
 
 .deleteCategoryButton:hover {
-  background-color: #e07872 !important;
+  background-color: var(--expense-soft) !important;
   color: white;
   border-color: var(--bg-card) !important;
 }
 
 .addCategoryButton {
   border-style: dashed !important;
-  border-color: #4a9ed6 !important;
-  color: #4a9ed6 !important;
+  border-color: var(--accent-muted) !important;
+  color: var(--accent-muted) !important;
   padding: 8px 24px !important;
   height: auto !important;
   min-height: 36px;
@@ -333,7 +333,7 @@
   min-width: 20px !important;
   min-height: 20px !important;
   border-radius: 50% !important;
-  background-color: #4a9ed6 !important;
+  background-color: var(--accent-muted) !important;
   color: white !important;
   font-size: 12px !important;
   line-height: 1 !important;
@@ -341,9 +341,9 @@
 }
 
 .addCategoryButton:hover {
-  border-color: #6ab0de !important;
-  color: #6ab0de !important;
-  background-color: rgba(74, 158, 214, 0.12) !important;
+  border-color: var(--accent-muted-hover) !important;
+  color: var(--accent-muted-hover) !important;
+  background-color: var(--accent-muted-light) !important;
 }
 
 @media (max-width: 767px) {
@@ -517,7 +517,7 @@
 
   .submitButton:hover {
     transform: translateY(-1px);
-    background-color: #6ab0de;
-    box-shadow: 0 4px 12px rgba(74, 158, 214, 0.35);
+    background-color: var(--accent-muted-hover);
+    box-shadow: 0 4px 12px var(--shadow-lg);
   }
 }

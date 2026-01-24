@@ -9,6 +9,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { useTheme } from "../../context/ThemeContext";
 
 ChartJS.register(
   CategoryScale,
@@ -36,6 +37,9 @@ const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({
   selectedWeek,
   onWeekSelect,
 }) => {
+  const { resolvedTheme } = useTheme();
+  const tickColor = resolvedTheme === "dark" ? "#aeaeb2" : "#6c6c70";
+
   if (data.length === 0) {
     return (
       <div
@@ -110,7 +114,7 @@ const WeeklyBarChart: React.FC<WeeklyBarChartProps> = ({
           display: false,
         },
         ticks: {
-          color: "var(--text-secondary)",
+          color: tickColor,
           font: {
             size: 11,
           },

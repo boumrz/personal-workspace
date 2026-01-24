@@ -11,7 +11,7 @@
   padding: 8px 0;
   padding-bottom: max(8px, env(safe-area-inset-bottom));
   z-index: 1000;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 -2px 8px var(--shadow-sm);
   height: 64px;
 }
 
@@ -55,7 +55,7 @@
 }
 
 .navItem.active {
-  color: #4a9ed6;
+  color: var(--accent-muted);
 }
 
 .navItem.active .navIcon {

@@ -25,13 +25,13 @@
 }
 
 .iconButton:hover {
-  border-color: #4a9ed6;
+  border-color: var(--accent-muted);
   transform: scale(1.1);
 }
 
 .iconButtonActive {
   border-color: transparent;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 8px var(--shadow-lg);
 }
 
 .colorGrid {
@@ -59,13 +59,13 @@
 
 .colorButton:hover {
   transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px var(--shadow-xl);
 }
 
 .colorButtonActive {
   border-color: var(--text-primary);
   border-width: 3px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px var(--shadow-xl);
 }
 
 .checkmark {
@@ -90,7 +90,7 @@
   gap: 8px;
   padding: 12px 16px;
   border-radius: var(--radius-lg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px var(--shadow-md);
 }
 
 .previewIcon {

@@ -46,7 +46,7 @@
 
 .filterBtn:hover {
   background: var(--bg-surface);
-  color: #4a9ed6;
+  color: var(--accent);
 }
 
 /* Табы */
@@ -68,7 +68,7 @@
 
 .tabs :global(.ant-segmented-item-selected) {
   background: var(--bg-card);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px var(--shadow-md);
 }
 
 /* Поиск */
@@ -90,7 +90,7 @@
 
 .searchInput:focus,
 .searchInput:hover {
-  border-color: #4a9ed6;
+  border-color: var(--accent);
 }
 
 .searchInput :global(.ant-input) {
@@ -120,8 +120,8 @@
 
 .searchBtn:hover {
   background: var(--bg-surface);
-  border-color: #4a9ed6;
-  color: #4a9ed6;
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* Список транзакций */
@@ -253,7 +253,7 @@
 }
 
 .amountPlanned {
-  color: #4a9ed6;
+  color: var(--accent);
 }
 
 .transactionTime {
@@ -277,7 +277,7 @@
 }
 
 .deleteBtn:hover {
-  background: var(--expense-bg, rgba(255, 59, 48, 0.1));
+  background: var(--expense-light);
   color: var(--expense);
 }
 
@@ -296,11 +296,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(
-      to top,
-      var(--bg-base) 0%,
-      rgba(232, 232, 237, 0) 100%
-    );
+    background: linear-gradient(to top, var(--bg-base) 0%, transparent 100%);
     z-index: 10;
     pointer-events: none;
   }
@@ -315,15 +311,15 @@
     font-weight: 600;
     padding: 0 32px;
     border-radius: var(--radius-lg);
-    background: #4a9ed6 !important;
-    border-color: #4a9ed6 !important;
-    box-shadow: 0 4px 12px rgba(74, 158, 214, 0.35);
+    background: var(--accent-muted) !important;
+    border-color: var(--accent-muted) !important;
+    box-shadow: 0 4px 12px var(--shadow-lg);
   }
 
   .addButtonDesktop:hover {
-    background: #6ab0de !important;
-    border-color: #6ab0de !important;
-    box-shadow: 0 6px 16px rgba(74, 158, 214, 0.45);
+    background: var(--accent-muted-hover) !important;
+    border-color: var(--accent-muted-hover) !important;
+    box-shadow: 0 6px 16px var(--shadow-xl);
     transform: translateY(-2px);
   }
 }
@@ -339,8 +335,8 @@
   height: 56px !important;
   font-size: 24px !important;
   border-radius: var(--radius-xl) !important;
-  background: #4a9ed6 !important;
-  box-shadow: 0 4px 12px rgba(74, 158, 214, 0.4) !important;
+  background: var(--accent-muted) !important;
+  box-shadow: 0 4px 12px var(--shadow-lg) !important;
   z-index: 999 !important;
   display: flex !important;
   align-items: center !important;
@@ -348,7 +344,7 @@
 }
 
 .addButtonMobile :global(.ant-float-btn-body) {
-  background: #4a9ed6 !important;
+  background: var(--accent-muted) !important;
 }
 
 .addButtonMobile :global(.ant-float-btn-icon) {
@@ -360,12 +356,12 @@
 }
 
 .addButtonMobile:hover {
-  box-shadow: 0 6px 16px rgba(74, 158, 214, 0.5) !important;
+  box-shadow: 0 6px 16px var(--shadow-xl) !important;
   transform: translateX(-50%) translateY(-2px) !important;
 }
 
 .addButtonMobile:hover :global(.ant-float-btn-body) {
-  background: #6ab0de !important;
+  background: var(--accent-muted-hover) !important;
 }
 
 /* Мобильные адаптации */

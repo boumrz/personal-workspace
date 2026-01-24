@@ -64,12 +64,12 @@
   height: 48px;
   font-size: 16px;
   border-radius: var(--radius-md);
-  background: #4a9ed6 !important;
+  background: var(--accent-muted) !important;
   border: none !important;
 }
 
 .submitButton:hover {
-  background: #6ab0de !important;
+  background: var(--accent-muted-hover) !important;
 }
 
 .cancelButton {

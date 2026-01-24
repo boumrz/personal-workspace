@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ConfigProvider } from "antd";
+import { ConfigProvider, theme } from "antd";
 import ruRU from "antd/locale/ru_RU";
 import dayjs from "dayjs";
 import "dayjs/locale/ru";
@@ -13,6 +13,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import AdminRoute from "./components/AdminRoute";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import {
   FinanceContext,
   Transaction,
@@ -239,32 +240,77 @@ const AppContent: React.FC = () => {
   );
 };
 
-const App: React.FC = () => {
+// Компонент-обертка для ConfigProvider с поддержкой темы
+const ThemedApp: React.FC = () => {
+  const { resolvedTheme } = useTheme();
+  
+  // Динамические цвета в зависимости от темы
+  const themeTokens = resolvedTheme === "dark" ? {
+    colorPrimary: "#5AA8DB",
+    colorSuccess: "#30D158",
+    colorError: "#FF6961",
+    colorWarning: "#FF9F0A",
+    colorText: "#F5F5F7",
+    colorTextSecondary: "#AEAEB2",
+    colorTextTertiary: "#8E8E93",
+    colorBorder: "#48484A",
+    colorBorderSecondary: "#38383A",
+    colorBgContainer: "#1C1C1E",
+    colorBgElevated: "#1C1C1E",
+    colorBgLayout: "#000000",
+    colorBgSpotlight: "#2C2C2E",
+    colorBgMask: "rgba(0, 0, 0, 0.75)",
+    colorFill: "#2C2C2E",
+    colorFillSecondary: "#3A3A3C",
+    colorFillTertiary: "#48484A",
+    borderRadius: 10,
+    borderRadiusLG: 12,
+    borderRadiusSM: 8,
+    fontFamily: '"Helvetica", "Helvetica Neue", Arial, sans-serif',
+  } : {
+    colorPrimary: "#4A9ED6",
+    colorSuccess: "#34C759",
+    colorError: "#D96560",
+    colorWarning: "#FF9500",
+    colorText: "#2C2C2E",
+    colorTextSecondary: "#6C6C70",
+    colorTextTertiary: "#8E8E93",
+    colorBorder: "#DCDCE1",
+    colorBorderSecondary: "#CECED3",
+    colorBgContainer: "#F2F2F6",
+    colorBgElevated: "#FFFFFF",
+    colorBgLayout: "#E8E8ED",
+    colorBgSpotlight: "#DEDEE3",
+    colorBgMask: "rgba(0, 0, 0, 0.45)",
+    colorFill: "#ECECF0",
+    colorFillSecondary: "#DEDEE3",
+    colorFillTertiary: "#D1D1D6",
+    borderRadius: 10,
+    borderRadiusLG: 12,
+    borderRadiusSM: 8,
+    fontFamily: '"Helvetica", "Helvetica Neue", Arial, sans-serif',
+  };
+
   return (
     <ConfigProvider
       locale={ruRU}
       theme={{
-        token: {
-          colorPrimary: "#0A84FF",
-          colorSuccess: "#34C759",
-          colorError: "#FF3B30",
-          colorWarning: "#FF9500",
-          colorText: "#2c2c2e",
-          colorTextSecondary: "#6c6c70",
-          colorBorder: "#dcdce1",
-          colorBgContainer: "#f2f2f6",
-          colorBgLayout: "#e8e8ed",
-          borderRadius: 10,
-          borderRadiusLG: 12,
-          borderRadiusSM: 8,
-          fontFamily: '"Helvetica", "Helvetica Neue", Arial, sans-serif',
-        },
+        algorithm: resolvedTheme === "dark" ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        token: themeTokens,
       }}
     >
       <AuthProvider>
         <AppContent />
       </AuthProvider>
     </ConfigProvider>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <ThemedApp />
+    </ThemeProvider>
   );
 };
 

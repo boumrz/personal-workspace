@@ -19,11 +19,14 @@ import {
   WalletOutlined,
   SettingOutlined,
   UserOutlined,
+  BulbOutlined,
+  BulbFilled,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { Goal } from "../store/api";
 import { useAuth } from "../context/AuthContext";
 import { useFinance } from "../context/FinanceContext";
+import { useTheme } from "../context/ThemeContext";
 import {
   useGetProfileQuery,
   useGetGoalsQuery,
@@ -44,6 +47,7 @@ const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { transactions } = useFinance();
+  const { theme, resolvedTheme, setTheme } = useTheme();
 
   // RTK Query хуки
   const {
@@ -354,6 +358,34 @@ const ProfilePage: React.FC = () => {
                   {displayName}
                   {profile?.dateOfBirth &&
                     ` • ${dayjs(profile.dateOfBirth).format("DD.MM.YYYY")}`}
+                </span>
+              </div>
+              <RightOutlined className={styles.settingsItemArrow} />
+            </button>
+            <button
+              className={styles.settingsItem}
+              onClick={() => {
+                // Cycle through themes: light -> dark -> system -> light
+                if (theme === "light") {
+                  setTheme("dark");
+                } else if (theme === "dark") {
+                  setTheme("system");
+                } else {
+                  setTheme("light");
+                }
+              }}
+            >
+              <div className={styles.settingsItemIcon}>
+                {resolvedTheme === "dark" ? <BulbFilled /> : <BulbOutlined />}
+              </div>
+              <div className={styles.settingsItemContent}>
+                <span className={styles.settingsItemTitle}>Тема оформления</span>
+                <span className={styles.settingsItemSubtitle}>
+                  {theme === "dark"
+                    ? "Тёмная"
+                    : theme === "light"
+                    ? "Светлая"
+                    : "Системная"}
                 </span>
               </div>
               <RightOutlined className={styles.settingsItemArrow} />
