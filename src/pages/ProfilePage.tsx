@@ -281,12 +281,18 @@ const ProfilePage: React.FC = () => {
                           {goal.targetAmount.toLocaleString("ru-RU")} ₽
                         </span>
                       </div>
-                      <span className={styles.goalPercent}>{percent}%</span>
+                      <span
+                        className={`${styles.goalPercent} ${
+                          percent >= 100 ? styles.goalPercentComplete : ""
+                        }`}
+                      >
+                        {percent}%
+                      </span>
                     </div>
                     <Progress
                       percent={percent}
                       showInfo={false}
-                      strokeColor="var(--accent)"
+                      strokeColor={percent >= 100 ? "var(--income)" : "var(--accent)"}
                       trailColor="var(--border)"
                       className={styles.goalProgress}
                     />
@@ -352,24 +358,20 @@ const ProfilePage: React.FC = () => {
               </div>
               <RightOutlined className={styles.settingsItemArrow} />
             </button>
-
-            <button
-              className={`${styles.settingsItem} ${styles.settingsItemDanger}`}
-              onClick={() => {
-                logout();
-                navigate("/login");
-              }}
-            >
-              <div
-                className={`${styles.settingsItemIcon} ${styles.settingsItemIconDanger}`}
-              >
-                <LogoutOutlined />
-              </div>
-              <span className={styles.settingsItemTitle}>Выйти из аккаунта</span>
-              <RightOutlined className={styles.settingsItemArrow} />
-            </button>
           </div>
         </section>
+
+        {/* Кнопка выхода */}
+        <button
+          className={styles.logoutBtn}
+          onClick={() => {
+            logout();
+            navigate("/login");
+          }}
+        >
+          <LogoutOutlined />
+          <span>Выйти из аккаунта</span>
+        </button>
       </div>
 
       {/* Drawer для редактирования профиля */}

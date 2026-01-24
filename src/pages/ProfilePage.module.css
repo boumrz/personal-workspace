@@ -84,13 +84,15 @@
 }
 
 .addBtn {
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
 }
 
 /* Карточка баланса */
@@ -256,6 +258,10 @@
   flex-shrink: 0;
 }
 
+.goalPercentComplete {
+  color: var(--income);
+}
+
 .goalProgress {
   margin: 0;
 }
@@ -390,6 +396,29 @@
   flex-shrink: 0;
 }
 
+/* Кнопка выхода */
+.logoutBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  margin-top: 16px;
+  background: transparent;
+  border: 1px solid var(--expense);
+  border-radius: var(--radius-2xl);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--expense);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logoutBtn:hover {
+  background: var(--expense-light);
+}
+
 /* Мобильные адаптации */
 @media (max-width: 768px) {
   .sectionHeader h2 {
@@ -436,5 +465,11 @@
 
   .settingsItemTitle {
     font-size: 15px;
+  }
+
+  .logoutBtn {
+    padding: 14px;
+    font-size: 15px;
+    margin-top: 12px;
   }
 }
