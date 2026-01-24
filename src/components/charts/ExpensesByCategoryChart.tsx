@@ -4,10 +4,9 @@ import {
   Chart as ChartJS,
   ArcElement,
   Tooltip,
-  Legend,
 } from "chart.js";
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(ArcElement, Tooltip);
 
 interface CategoryData {
   categoryId: string;
@@ -52,28 +51,7 @@ const ExpensesByCategoryChart: React.FC<ExpensesByCategoryChartProps> = ({
     cutout: "75%",
     plugins: {
       legend: {
-        position: "bottom" as const,
-        labels: {
-          padding: 12,
-          usePointStyle: true,
-          font: {
-            size: 11,
-          },
-          boxWidth: 12,
-          boxHeight: 12,
-          generateLabels: (chart: any) => {
-            const original = ChartJS.defaults.plugins.legend.labels.generateLabels;
-            const labels = original(chart);
-            return labels.map((label: any, index: number) => {
-              const item = data[index];
-              const percentage = ((item.amount / total) * 100).toFixed(1);
-              return {
-                ...label,
-                text: `${item.categoryName} (${percentage}%)`,
-              };
-            });
-          },
-        },
+        display: false,
       },
       tooltip: {
         callbacks: {
@@ -89,7 +67,7 @@ const ExpensesByCategoryChart: React.FC<ExpensesByCategoryChartProps> = ({
   };
 
   return (
-    <div style={{ height: "500px", position: "relative" }}>
+    <div style={{ height: "300px", position: "relative" }}>
       <Doughnut data={chartData} options={options} />
     </div>
   );
