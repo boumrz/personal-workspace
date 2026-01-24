@@ -55,11 +55,12 @@
 }
 
 .navItem.active {
-  color: var(--accent);
+  color: #4a9ed6;
 }
 
 .navItem.active .navIcon {
   transform: scale(1.1);
+  -webkit-text-stroke: 0.5px currentColor;
 }
 
 .navItem.active .navLabel {
@@ -71,11 +72,11 @@
   .navLabel {
     font-size: 10px;
   }
-  
+
   .navIcon {
     font-size: 20px;
   }
-  
+
   .navItem {
     padding: 8px 12px;
   }

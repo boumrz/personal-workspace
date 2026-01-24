@@ -25,7 +25,7 @@
 }
 
 .iconButton:hover {
-  border-color: var(--accent);
+  border-color: #4a9ed6;
   transform: scale(1.1);
 }
 

@@ -9,7 +9,7 @@
 }
 
 .header {
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  background: linear-gradient(135deg, #4a9ed6 0%, #6ab0de 100%);
   padding: 20px;
   color: white;
   border-radius: 0 0 var(--radius-3xl) var(--radius-3xl);
@@ -172,11 +172,15 @@
     font-weight: 600;
     padding: 0 32px;
     border-radius: var(--radius-lg);
-    box-shadow: 0 4px 12px rgba(10, 132, 255, 0.35);
+    background: #4a9ed6 !important;
+    border-color: #4a9ed6 !important;
+    box-shadow: 0 4px 12px rgba(74, 158, 214, 0.35);
   }
 
   .addButtonDesktop:hover {
-    box-shadow: 0 6px 16px rgba(10, 132, 255, 0.45);
+    background: #6ab0de !important;
+    border-color: #6ab0de !important;
+    box-shadow: 0 6px 16px rgba(74, 158, 214, 0.45);
     transform: translateY(-2px);
   }
 }
@@ -192,11 +196,16 @@
   height: 56px !important;
   font-size: 24px !important;
   border-radius: var(--radius-xl) !important;
-  box-shadow: 0 4px 12px rgba(10, 132, 255, 0.4) !important;
+  background: #4a9ed6 !important;
+  box-shadow: 0 4px 12px rgba(74, 158, 214, 0.4) !important;
   z-index: 1000 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+}
+
+.addButtonMobile :global(.ant-float-btn-body) {
+  background: #4a9ed6 !important;
 }
 
 .addButtonMobile :global(.ant-float-btn-icon) {
@@ -208,6 +217,10 @@
 }
 
 .addButtonMobile:hover {
-  box-shadow: 0 6px 16px rgba(10, 132, 255, 0.5) !important;
+  box-shadow: 0 6px 16px rgba(74, 158, 214, 0.5) !important;
   transform: translateX(-50%) translateY(-2px) !important;
+}
+
+.addButtonMobile:hover :global(.ant-float-btn-body) {
+  background: #6ab0de !important;
 }

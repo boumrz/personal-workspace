@@ -38,36 +38,77 @@ body {
   display: none; /* Chrome, Safari, Opera */
 }
 
-/* Ant Design global overrides — Expend palette + Apple radius */
-:global(.ant-btn-primary) {
-  background: var(--accent) !important;
-  border-color: var(--accent) !important;
+/* Ant Design global overrides — приглушённая палитра */
+.ant-btn-primary {
+  background: #4a9ed6 !important;
+  border-color: #4a9ed6 !important;
 }
-:global(.ant-btn-primary:hover) {
-  background: var(--accent-hover) !important;
-  border-color: var(--accent-hover) !important;
+.ant-btn-primary:hover,
+.ant-btn-primary:focus {
+  background: #6ab0de !important;
+  border-color: #6ab0de !important;
 }
-:global(.ant-input-affix-wrapper),
-:global(.ant-input),
-:global(.ant-select-selector),
-:global(.ant-picker) {
+
+/* Приглушённые цвета для инпутов и других элементов */
+.ant-input:focus,
+.ant-input:hover,
+.ant-input-focused,
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper:hover,
+.ant-input-affix-wrapper-focused,
+.ant-input-affix-wrapper:focus-within {
+  border-color: #4a9ed6 !important;
+}
+.ant-input-number:focus,
+.ant-input-number:hover,
+.ant-input-number-focused,
+.ant-input-number:focus-within {
+  border-color: #4a9ed6 !important;
+}
+.ant-input-number-focused,
+.ant-input-number:focus-within {
+  box-shadow: 0 0 0 2px rgba(74, 158, 214, 0.2) !important;
+}
+.ant-select:not(.ant-select-disabled):hover .ant-select-selector,
+.ant-select-focused .ant-select-selector {
+  border-color: #4a9ed6 !important;
+}
+.ant-picker:hover,
+.ant-picker-focused {
+  border-color: #4a9ed6 !important;
+}
+.ant-progress-bg {
+  background-color: #4a9ed6 !important;
+}
+.ant-float-btn-primary .ant-float-btn-body {
+  background: #4a9ed6 !important;
+}
+.ant-float-btn-primary:hover .ant-float-btn-body {
+  background: #6ab0de !important;
+}
+
+/* Border radius */
+.ant-input-affix-wrapper,
+.ant-input,
+.ant-select-selector,
+.ant-picker {
   border-radius: var(--radius-md) !important;
 }
-:global(.ant-card) {
+.ant-card {
   border-radius: var(--radius-lg) !important;
 }
-:global(.ant-tag) {
+.ant-tag {
   border-radius: var(--radius-sm) !important;
 }
-:global(.ant-modal-content) {
+.ant-modal-content {
   border-radius: var(--radius-2xl) !important;
 }
-:global(.ant-float-btn-circle) {
+.ant-float-btn-circle {
   border-radius: var(--radius-xl) !important;
 }
 
 /* Кнопки — единые высота и ширина где применимо */
-:global(.ant-btn) {
+.ant-btn {
   min-height: var(--btn-height) !important;
   height: auto !important;
   padding: 6px 16px !important;
@@ -75,11 +116,11 @@ body {
   align-items: center !important;
   justify-content: center !important;
 }
-:global(.ant-btn-lg) {
+.ant-btn-lg {
   min-height: var(--btn-height-lg) !important;
   padding: 8px 20px !important;
 }
-:global(.ant-btn-icon-only) {
+.ant-btn-icon-only {
   width: var(--btn-icon-size) !important;
   min-width: var(--btn-icon-size) !important;
   height: var(--btn-icon-size) !important;
@@ -87,7 +128,7 @@ body {
   padding: 0 !important;
 }
 /* Круглые кнопки «как плюсики» (Редактировать, Добавить цель) */
-:global(.ant-btn.circle-icon-btn) {
+.ant-btn.circle-icon-btn {
   border-radius: 50% !important;
   width: var(--btn-icon-size) !important;
   min-width: var(--btn-icon-size) !important;
@@ -95,42 +136,42 @@ body {
   min-height: var(--btn-icon-size) !important;
   padding: 0 !important;
 }
-:global(.ant-btn-sm) {
+.ant-btn-sm {
   min-height: 32px !important;
   padding: 2px 8px !important;
 }
 
 /* Пары кнопок в футерах — одинаковая ширина */
-:global(.ant-modal-footer) {
+.ant-modal-footer {
   display: flex !important;
   gap: 8px !important;
 }
-:global(.ant-modal-footer .ant-btn) {
+.ant-modal-footer .ant-btn {
   flex: 1 !important;
   min-width: 0 !important;
 }
-:global(.ant-drawer-footer) {
+.ant-drawer-footer {
   display: flex !important;
   gap: 8px !important;
 }
-:global(.ant-drawer-footer .ant-btn) {
+.ant-drawer-footer .ant-btn {
   flex: 1 !important;
   min-width: 0 !important;
 }
 
 /* Общие стили для всех drawers */
-:global(.ant-drawer-content-wrapper) {
+.ant-drawer-content-wrapper {
   box-shadow: none !important;
   z-index: 1002 !important; /* Выше Header (1001) */
 }
 
-:global(.ant-drawer-mask) {
+.ant-drawer-mask {
   z-index: 1001 !important; /* Выше Header (1001), но ниже drawer content */
 }
 
 /* Стили для drawers на десктопе — четверть экрана */
 @media (min-width: 769px) {
-  :global(.ant-drawer-content-wrapper) {
+  .ant-drawer-content-wrapper {
     width: 25vw !important;
     max-width: 400px !important;
   }
@@ -138,7 +179,7 @@ body {
 
 /* Исправление для drawers снизу на мобильных устройствах — на весь экран, Apple-style radius */
 @media (max-width: 768px) {
-  :global(.ant-drawer-content-wrapper) {
+  .ant-drawer-content-wrapper {
     width: 100% !important;
     max-width: 100% !important;
     left: 0 !important;
@@ -151,7 +192,7 @@ body {
     bottom: 0 !important;
   }
 
-  :global(.ant-drawer-content) {
+  .ant-drawer-content {
     width: 100% !important;
     max-width: 100% !important;
     height: 100vh !important;
@@ -162,7 +203,7 @@ body {
     border-radius: var(--radius-sheet) var(--radius-sheet) 0 0 !important;
   }
 
-  :global(.ant-drawer-body) {
+  .ant-drawer-body {
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     max-height: calc(100vh - 55px) !important;
@@ -170,7 +211,7 @@ body {
     padding-bottom: max(20px, env(safe-area-inset-bottom)) !important;
   }
 
-  :global(.ant-drawer-header) {
+  .ant-drawer-header {
     position: sticky !important;
     top: 0 !important;
     z-index: 1 !important;
