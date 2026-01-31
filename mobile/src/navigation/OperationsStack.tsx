@@ -1,13 +1,14 @@
 import React, { Suspense, lazy } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ActivityIndicator, View } from "react-native";
-import { theme } from "../theme";
+import { useTheme } from "../context";
 
 const TransactionsScreen = lazy(() => import("../screens/TransactionsScreen"));
 const AddTransactionScreen = lazy(() => import("../screens/AddTransactionScreen"));
 const CategoryFilterScreen = lazy(() => import("../screens/CategoryFilterScreen"));
 
 function Fallback() {
+  const { theme } = useTheme();
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: theme.bgBase }}>
       <ActivityIndicator size="large" color={theme.accentMuted} />
@@ -27,16 +28,18 @@ function withSuspense(Lazy: React.LazyExoticComponent<React.ComponentType<any>>)
 
 const Stack = createNativeStackNavigator();
 
-const screenOptions = {
-  headerShown: true,
-  headerStyle: { backgroundColor: theme.bgCard },
-  headerTintColor: theme.textPrimary,
-  headerTitleStyle: { fontWeight: "600" as const, fontSize: 18 },
-};
-
 export default function OperationsStack() {
+  const { theme } = useTheme();
+
   return (
-    <Stack.Navigator screenOptions={screenOptions}>
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: true,
+        headerStyle: { backgroundColor: theme.bgCard },
+        headerTintColor: theme.textPrimary,
+        headerTitleStyle: { fontWeight: "600" as const, fontSize: 18 },
+      }}
+    >
       <Stack.Screen
         name="TransactionsList"
         component={withSuspense(TransactionsScreen)}

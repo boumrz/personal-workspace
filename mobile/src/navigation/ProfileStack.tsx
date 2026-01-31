@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { TouchableOpacity, Text, ActivityIndicator, View } from "react-native";
-import { theme } from "../theme";
+import { useTheme } from "../context";
 
 const ProfileScreen = lazy(() => import("../screens/ProfileScreen"));
 const CategoriesScreen = lazy(() => import("../screens/CategoriesScreen"));
@@ -11,6 +11,7 @@ const AddGoalScreen = lazy(() => import("../screens/AddGoalScreen"));
 const GoalAmountScreen = lazy(() => import("../screens/GoalAmountScreen"));
 
 function Fallback() {
+  const { theme } = useTheme();
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: theme.bgBase }}>
       <ActivityIndicator size="large" color={theme.accentMuted} />
@@ -31,6 +32,8 @@ function withSuspense(Lazy: React.LazyExoticComponent<React.ComponentType<any>>)
 const Stack = createNativeStackNavigator();
 
 export default function ProfileStack() {
+  const { theme } = useTheme();
+
   return (
     <Stack.Navigator
       screenOptions={{

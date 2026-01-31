@@ -1,7 +1,7 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
-import { theme } from "../theme";
+import { useTheme } from "../context";
 import OperationsStack from "./OperationsStack";
 import DashboardStack from "./DashboardStack";
 import SavingsStack from "./SavingsStack";
@@ -19,6 +19,8 @@ const tabIcons: Record<string, { active: IconName; inactive: IconName }> = {
 };
 
 export default function MainTabs() {
+  const { theme } = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -33,8 +35,8 @@ export default function MainTabs() {
         },
         tabBarActiveTintColor: theme.accent,
         tabBarInactiveTintColor: theme.textSecondary,
-        tabBarLabelStyle: { fontSize: 12, fontWeight: "500" },
-        tabBarIcon: ({ focused, color, size }) => {
+        tabBarLabelStyle: { fontSize: 12, fontWeight: "500" as const },
+        tabBarIcon: ({ focused, color }) => {
           const icons = tabIcons[route.name];
           const iconName = focused ? icons.active : icons.inactive;
           return <Ionicons name={iconName} size={22} color={color} />;

@@ -1,6 +1,6 @@
 /**
- * Дизайн-токены как в веб-приложении (src/styles/tokens.css).
- * Одинаковые цвета, радиусы и отступы для единого вида веб и Android.
+ * Static theme tokens for use in static StyleSheet.create()
+ * For dynamic theming, use useTheme() from context
  */
 
 export const theme = {

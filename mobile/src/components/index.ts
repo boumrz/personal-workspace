@@ -1,2 +1,1 @@
-// Components will be added in port-* steps
-export {};
+export { default as ConfirmModal } from "./ConfirmModal";

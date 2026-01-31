@@ -1,11 +1,12 @@
-import React, { useRef, Suspense, lazy } from "react";
+import React, { Suspense, lazy } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ActivityIndicator, View } from "react-native";
-import { theme } from "../theme";
+import { useTheme } from "../context";
 
 const DashboardScreen = lazy(() => import("../screens/DashboardScreen"));
 
 function Fallback() {
+  const { theme } = useTheme();
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: theme.bgBase }}>
       <ActivityIndicator size="large" color={theme.accentMuted} />
@@ -26,6 +27,8 @@ function withSuspense(Lazy: React.LazyExoticComponent<React.ComponentType<any>>)
 const Stack = createNativeStackNavigator();
 
 export default function DashboardStack() {
+  const { theme } = useTheme();
+
   return (
     <Stack.Navigator
       screenOptions={{
