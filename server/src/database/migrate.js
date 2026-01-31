@@ -501,6 +501,35 @@ async function migrate() {
     }
     console.log("Goals table created/verified");
 
+    // Check if analytics_events table exists
+    const analyticsTableExists = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'analytics_events'
+      );
+    `);
+
+    if (!analyticsTableExists.rows[0].exists) {
+      console.log("Creating analytics_events table...");
+      await pool.query(`
+        CREATE TABLE analytics_events (
+          id SERIAL PRIMARY KEY,
+          event VARCHAR(100) NOT NULL,
+          platform VARCHAR(20) NOT NULL,
+          user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          payload JSONB,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_analytics_events_created_at ON analytics_events(created_at)`);
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_analytics_events_platform ON analytics_events(platform)`);
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_analytics_events_event ON analytics_events(event)`);
+      console.log("analytics_events table created");
+    } else {
+      console.log("analytics_events table already exists");
+    }
+
     // Create indexes
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_login ON users(login) WHERE login IS NOT NULL`);

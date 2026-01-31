@@ -12,6 +12,7 @@ import authRouter from "./routes/auth.js";
 import profileRouter from "./routes/profile.js";
 import goalsRouter from "./routes/goals.js";
 import adminRouter from "./routes/admin.js";
+import analyticsRouter from "./routes/analytics.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import { handleDbError } from "./middleware/dbErrorHandler.js";
 
@@ -61,6 +62,7 @@ app.use("/api/savings", savingsRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/goals", goalsRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/analytics", analyticsRouter);
 
 // Health check
 app.get("/api/health", (req, res) => {

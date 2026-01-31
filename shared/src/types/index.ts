@@ -1,0 +1,88 @@
+/**
+ * Shared TypeScript types for Finance Assistant (used by mobile app).
+ * Copied from web app - web app is not modified.
+ */
+
+export interface Category {
+  id: string;
+  name: string;
+  color: string;
+  icon: string;
+}
+
+export interface Transaction {
+  id: string;
+  type: "income" | "expense";
+  amount: number;
+  category: Category;
+  description: string;
+  date: string;
+}
+
+export interface Saving {
+  id: string;
+  amount: number;
+  description: string;
+  date: string;
+}
+
+export interface Profile {
+  id: number;
+  login?: string;
+  email?: string;
+  name?: string;
+  lastName?: string;
+  firstName?: string;
+  middleName?: string;
+  age?: number;
+  dateOfBirth?: string;
+}
+
+export interface Goal {
+  id: string;
+  title: string;
+  targetAmount: number;
+  currentAmount: number;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface User {
+  id: number;
+  email?: string;
+  login?: string;
+  name?: string;
+}
+
+export interface AdminUser {
+  id: number;
+  login?: string;
+  email?: string;
+  name?: string;
+  last_name?: string;
+  first_name?: string;
+  middle_name?: string;
+  age?: number;
+  date_of_birth?: string;
+  created_at: string;
+  last_login_at?: string;
+  login_count?: number;
+  google_id?: string;
+}
+
+export interface LoginRequest {
+  login: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  fullName: string;
+  login: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  user: User;
+}
