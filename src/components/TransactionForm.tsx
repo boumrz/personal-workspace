@@ -223,17 +223,19 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     onClose();
   };
 
-  // Функция для блокировки дат из будущих месяцев (только для актуальных операций)
+  // Функция для блокировки дат в зависимости от типа операции
   const disabledDate = (current: dayjs.Dayjs | null) => {
-    if (!current || type !== "actual") {
-      return false; // Для планируемых операций не блокируем даты
+    if (!current) return false;
+
+    if (type === "actual") {
+      // Для актуальных операций: блокируем будущие месяцы
+      const endOfCurrentMonth = dayjs().endOf("month");
+      return current.isAfter(endOfCurrentMonth, "day");
+    } else {
+      // Для планируемых трат: блокируем прошлые месяцы
+      const startOfCurrentMonth = dayjs().startOf("month");
+      return current.isBefore(startOfCurrentMonth, "day");
     }
-
-    // Получаем конец текущего месяца
-    const endOfCurrentMonth = dayjs().endOf("month");
-
-    // Блокируем даты, которые позже конца текущего месяца
-    return current.isAfter(endOfCurrentMonth, "day");
   };
 
   // Функция для кастомного рендеринга дат с тултипами
@@ -242,17 +244,21 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     // Проверяем, заблокирована ли дата
     const isDisabled = disabledDate(current);
 
+    // Определяем текст подсказки в зависимости от типа операции
+    const tooltipText = type === "actual" 
+      ? "Нельзя добавлять операции на будущие месяцы"
+      : "Нельзя планировать траты на прошлые месяцы";
+
     // Для заблокированных дат добавляем тултип
-    const content =
-      isDisabled && type === "actual" ? (
-        <Tooltip title="Нельзя добавлять операции на будущие месяцы">
-          <div style={{ width: "100%", height: "100%", cursor: "not-allowed" }}>
-            {current.date()}
-          </div>
-        </Tooltip>
-      ) : (
-        <div style={{ width: "100%", height: "100%" }}>{current.date()}</div>
-      );
+    const content = isDisabled ? (
+      <Tooltip title={tooltipText}>
+        <div style={{ width: "100%", height: "100%", cursor: "not-allowed" }}>
+          {current.date()}
+        </div>
+      </Tooltip>
+    ) : (
+      <div style={{ width: "100%", height: "100%" }}>{current.date()}</div>
+    );
 
     // Возвращаем содержимое, обернутое в стандартную структуру Ant Design
     // Это сохраняет стандартные классы и поведение (выделение текущего дня, выбранной даты и т.д.)
@@ -536,14 +542,22 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                 return Promise.resolve();
               }
 
-              // Для актуальных операций проверяем, что дата не в будущем месяце
-              if (type === "actual") {
-                const endOfCurrentMonth = dayjs().endOf("month");
-                const selectedDate = dayjs(value);
+              const selectedDate = dayjs(value);
 
+              if (type === "actual") {
+                // Для актуальных операций проверяем, что дата не в будущем месяце
+                const endOfCurrentMonth = dayjs().endOf("month");
                 if (selectedDate.isAfter(endOfCurrentMonth, "day")) {
                   return Promise.reject(
                     new Error("Нельзя добавлять операции на будущие месяцы")
+                  );
+                }
+              } else {
+                // Для планируемых трат проверяем, что дата не в прошлом месяце
+                const startOfCurrentMonth = dayjs().startOf("month");
+                if (selectedDate.isBefore(startOfCurrentMonth, "day")) {
+                  return Promise.reject(
+                    new Error("Нельзя планировать траты на прошлые месяцы")
                   );
                 }
               }
@@ -557,7 +571,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           style={{ width: "100%" }}
           format="DD.MM.YYYY"
           disabledDate={disabledDate}
-          dateRender={type === "actual" ? dateRender : undefined}
+          dateRender={dateRender}
         />
       </Form.Item>
     </Form>

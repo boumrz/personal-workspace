@@ -5,6 +5,11 @@ import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
+// Форматирование даты без конвертации в UTC
+function formatDateLocal(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 // All routes require authentication
 router.use(authenticateToken);
 
@@ -27,7 +32,7 @@ router.get(
       id: row.id.toString(),
       amount: parseFloat(row.amount),
       description: row.description || "",
-      date: row.date.toISOString().split("T")[0],
+      date: formatDateLocal(row.date),
     }));
 
     res.json(savings);
@@ -58,7 +63,7 @@ router.get(
       id: row.id.toString(),
       amount: parseFloat(row.amount),
       description: row.description || "",
-      date: row.date.toISOString().split("T")[0],
+      date: formatDateLocal(row.date),
     };
 
     res.json(saving);
@@ -102,7 +107,7 @@ router.post(
       id: row.id.toString(),
       amount: parseFloat(row.amount),
       description: row.description || "",
-      date: row.date.toISOString().split("T")[0],
+      date: formatDateLocal(row.date),
     };
 
     res.status(201).json(saving);
@@ -149,7 +154,7 @@ router.put(
       id: row.id.toString(),
       amount: parseFloat(row.amount),
       description: row.description || "",
-      date: row.date.toISOString().split("T")[0],
+      date: formatDateLocal(row.date),
     };
 
     res.json(saving);

@@ -6,6 +6,7 @@ import { useTheme } from "../context";
 const TransactionsScreen = lazy(() => import("../screens/TransactionsScreen"));
 const AddTransactionScreen = lazy(() => import("../screens/AddTransactionScreen"));
 const CategoryFilterScreen = lazy(() => import("../screens/CategoryFilterScreen"));
+const AddCategoryScreen = lazy(() => import("../screens/AddCategoryScreen"));
 
 function Fallback() {
   const { theme } = useTheme();
@@ -54,6 +55,11 @@ export default function OperationsStack() {
         name="CategoryFilter"
         component={withSuspense(CategoryFilterScreen)}
         options={{ title: "Фильтр по категориям" }}
+      />
+      <Stack.Screen
+        name="AddCategory"
+        component={withSuspense(AddCategoryScreen)}
+        options={{ title: "Новая категория" }}
       />
     </Stack.Navigator>
   );

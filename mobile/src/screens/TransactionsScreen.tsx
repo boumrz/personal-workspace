@@ -2,24 +2,32 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import dayjs from "dayjs";
+import "dayjs/locale/ru";
 import { useAuth, useTheme } from "../context";
 import { ConfirmModal } from "../components";
+import { getIoniconsName } from "../utils/iconMap";
 import type { Transaction } from "@finance-assistant/shared";
+
+dayjs.locale("ru");
 
 type TabType = "actual" | "planned";
 
 function formatDate(dateStr: string) {
-  const date = new Date(dateStr);
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
-  if (date.toDateString() === today.toDateString()) return "Сегодня";
-  if (date.toDateString() === yesterday.toDateString()) return "Вчера";
-  return date.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+  const date = dayjs(dateStr);
+  const today = dayjs();
+  const yesterday = today.subtract(1, "day");
+  if (date.isSame(today, "day")) return "Сегодня";
+  if (date.isSame(yesterday, "day")) return "Вчера";
+  return date.format("D MMMM YYYY");
+}
+
+function formatMonth(dateStr: string) {
+  return dayjs(dateStr).format("MMMM YYYY");
 }
 
 function formatTime(dateStr: string) {
-  return new Date(dateStr).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  return dayjs(dateStr).format("HH:mm");
 }
 
 interface GroupedData { date: string; transactions: Transaction[]; totalBalance: number; }
@@ -82,15 +90,23 @@ export default function TransactionsScreen({ navigation }: any) {
 
   const groupedData: GroupedData[] = useMemo(() => {
     const groups: Record<string, { transactions: Transaction[]; totalBalance: number }> = {};
-    const sorted = [...filteredData].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const sorted = [...filteredData].sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf());
+    
     sorted.forEach((t) => {
-      const dateKey = t.date.split("T")[0];
+      // Для планируемых трат группируем по месяцу, для актуальных — по дате
+      const dateKey = activeTab === "planned" 
+        ? dayjs(t.date).format("YYYY-MM") // Группировка по месяцу
+        : t.date.split("T")[0];            // Группировка по дате
+      
       if (!groups[dateKey]) groups[dateKey] = { transactions: [], totalBalance: 0 };
       groups[dateKey].transactions.push(t);
       groups[dateKey].totalBalance += t.type === "income" ? t.amount : -t.amount;
     });
-    return Object.entries(groups).sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime()).map(([date, data]) => ({ date, ...data }));
-  }, [filteredData]);
+    
+    return Object.entries(groups)
+      .sort(([a], [b]) => dayjs(b).valueOf() - dayjs(a).valueOf())
+      .map(([date, data]) => ({ date, ...data }));
+  }, [filteredData, activeTab]);
 
   const openFilter = () => {
     navigation.navigate("CategoryFilter", { selectedCategories, onApply: (newSelected: string[]) => setSelectedCategories(newSelected) });
@@ -151,10 +167,11 @@ export default function TransactionsScreen({ navigation }: any) {
   const renderTransaction = ({ item }: { item: Transaction }) => {
     const isIncome = item.type === "income";
     const categoryColor = item.category.color || theme.textSecondary;
+    const categoryIcon = getIoniconsName(item.category.icon);
     return (
       <View style={styles.transactionItem}>
         <View style={[styles.transactionIcon, { backgroundColor: categoryColor + "20" }]}>
-          <Ionicons name={isIncome ? "arrow-down" : "arrow-up"} size={20} color={categoryColor} />
+          <Ionicons name={categoryIcon} size={22} color={categoryColor} />
         </View>
         <View style={styles.transactionInfo}>
           <Text style={styles.transactionName} numberOfLines={1}>{item.description || "Без описания"}</Text>
@@ -171,7 +188,7 @@ export default function TransactionsScreen({ navigation }: any) {
           <Text style={[styles.transactionAmount, isIncome ? styles.amountIncome : styles.amountExpense]}>
             {activeTab === "planned" ? "" : isIncome ? "+ " : "- "}₽{item.amount.toLocaleString("ru-RU", { minimumFractionDigits: 2 })}
           </Text>
-          <Text style={styles.transactionTime}>{formatTime(item.date)}</Text>
+          {activeTab !== "planned" && <Text style={styles.transactionTime}>{formatTime(item.date)}</Text>}
         </View>
         <TouchableOpacity style={styles.deleteBtn} onPress={() => setDeleteModal({ visible: true, id: item.id })}>
           <Ionicons name="trash-outline" size={18} color={theme.textTertiary} />
@@ -180,17 +197,24 @@ export default function TransactionsScreen({ navigation }: any) {
     );
   };
 
-  const renderGroup = ({ item }: { item: GroupedData }) => (
-    <View style={styles.dateGroup}>
-      <View style={styles.dateHeader}>
-        <View style={styles.dateLabelContainer}><Text style={styles.dateLabel}>{formatDate(item.date)}</Text></View>
-        <Text style={[styles.dateBalanceText, item.totalBalance >= 0 ? styles.balancePositive : styles.balanceNegative]}>
-          {item.totalBalance >= 0 ? "△" : "▽"} ₽{Math.abs(item.totalBalance).toLocaleString("ru-RU", { minimumFractionDigits: 2 })}
-        </Text>
+  const renderGroup = ({ item }: { item: GroupedData }) => {
+    // Для планируемых трат показываем месяц, для актуальных — дату
+    const dateLabel = activeTab === "planned" ? formatMonth(item.date) : formatDate(item.date);
+    
+    return (
+      <View style={styles.dateGroup}>
+        <View style={styles.dateHeader}>
+          <View style={styles.dateLabelContainer}>
+            <Text style={[styles.dateLabel, { textTransform: "capitalize" }]}>{dateLabel}</Text>
+          </View>
+          <Text style={[styles.dateBalanceText, item.totalBalance >= 0 ? styles.balancePositive : styles.balanceNegative]}>
+            {activeTab === "planned" ? "Σ" : item.totalBalance >= 0 ? "△" : "▽"} ₽{Math.abs(item.totalBalance).toLocaleString("ru-RU", { minimumFractionDigits: 2 })}
+          </Text>
+        </View>
+        {item.transactions.map((t) => <View key={t.id}>{renderTransaction({ item: t })}</View>)}
       </View>
-      {item.transactions.map((t) => <View key={t.id}>{renderTransaction({ item: t })}</View>)}
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -221,7 +245,7 @@ export default function TransactionsScreen({ navigation }: any) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       />
 
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate("AddTransaction")}>
+      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate("AddTransaction", { mode: activeTab })}>
         <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 

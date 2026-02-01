@@ -7,6 +7,12 @@ server/node_modules/
 .env.local
 .env.production
 server/.env
+mobile/*.zip
+mobile/*.pem
+mobile/*.p12
+mobile/*.jar
+mobile/*.der
+mobile/*.pk8
 
 # Build outputs
 dist/

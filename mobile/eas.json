@@ -21,7 +21,9 @@
       "android": {
         "buildType": "app-bundle"
       },
-      "channel": "production"
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://domiknote.ru/api"
+      }
     }
   },
   "submit": {

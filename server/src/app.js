@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
-import rateLimit from "express-rate-limit";
+// import rateLimit from "express-rate-limit"; // Rate limiting отключен
 import config from "./config/config.js";
 import transactionsRouter from "./routes/transactions.js";
 import plannedExpensesRouter from "./routes/plannedExpenses.js";
@@ -37,15 +37,15 @@ app.use(
   })
 );
 
-// Rate limiting с правильной настройкой для работы за прокси
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: "Too many requests from this IP, please try again after 15 minutes",
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-});
-app.use("/api/", limiter);
+// Rate limiting отключен
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   max: 100, // Limit each IP to 100 requests per windowMs
+//   message: "Too many requests from this IP, please try again after 15 minutes",
+//   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+//   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+// });
+// app.use("/api/", limiter);
 
 // Compression
 app.use(compression());

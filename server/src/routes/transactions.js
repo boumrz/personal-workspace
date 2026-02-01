@@ -5,6 +5,11 @@ import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
+// Форматирование даты без конвертации в UTC
+function formatDateLocal(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 // All routes require authentication
 router.use(authenticateToken);
 
@@ -34,7 +39,7 @@ router.get(
       type: row.type,
       amount: parseFloat(row.amount),
       description: row.description || "",
-      date: row.date.toISOString().split("T")[0],
+      date: formatDateLocal(row.date),
       category: {
         id: row.category_id.toString(),
         name: row.category_name,
@@ -78,7 +83,7 @@ router.get(
       type: row.type,
       amount: parseFloat(row.amount),
       description: row.description || "",
-      date: row.date.toISOString().split("T")[0],
+      date: formatDateLocal(row.date),
       category: {
         id: row.category_id.toString(),
         name: row.category_name,
@@ -144,7 +149,7 @@ router.post(
       type: row.type,
       amount: parseFloat(row.amount),
       description: row.description || "",
-      date: row.date.toISOString().split("T")[0],
+      date: formatDateLocal(row.date),
       category: {
         id: row.category_id.toString(),
         name: row.category_name,
@@ -213,7 +218,7 @@ router.put(
       type: row.type,
       amount: parseFloat(row.amount),
       description: row.description || "",
-      date: row.date.toISOString().split("T")[0],
+      date: formatDateLocal(row.date),
       category: {
         id: row.category_id.toString(),
         name: row.category_name,
