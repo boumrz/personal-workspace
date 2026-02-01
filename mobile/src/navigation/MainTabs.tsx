@@ -25,6 +25,7 @@ export default function MainTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        sceneStyle: { backgroundColor: theme.bgBase },
         tabBarStyle: {
           backgroundColor: theme.bgCard,
           borderTopColor: theme.border,

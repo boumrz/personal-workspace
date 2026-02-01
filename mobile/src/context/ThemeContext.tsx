@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, startTransition } from "react";
 import { useColorScheme } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -185,27 +185,26 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const systemColorScheme = useColorScheme();
-  const [mode, setModeState] = useState<ThemeMode>("light");
-  const [isLoaded, setIsLoaded] = useState(false);
+  // Рендерим сразу с темой системы — без ожидания AsyncStorage, чтобы не было белой вспышки
+  const [mode, setModeState] = useState<ThemeMode>(() => {
+    const sys = systemColorScheme ?? "light";
+    return sys === "dark" ? "dark" : "light";
+  });
 
-  // Load saved theme on mount
+  // Загружаем сохранённую тему в фоне и обновляем при необходимости
   useEffect(() => {
     const loadTheme = async () => {
       try {
         const stored = await AsyncStorage.getItem(THEME_STORAGE_KEY);
         if (stored === "light" || stored === "dark") {
           setModeState(stored);
-        } else if (systemColorScheme) {
-          setModeState(systemColorScheme);
         }
       } catch {
-        // Use default
-      } finally {
-        setIsLoaded(true);
+        // Ignore
       }
     };
     loadTheme();
-  }, [systemColorScheme]);
+  }, []);
 
   const setMode = useCallback(async (newMode: ThemeMode) => {
     setModeState(newMode);
@@ -217,7 +216,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setMode(mode === "light" ? "dark" : "light");
+    const newMode = mode === "light" ? "dark" : "light";
+    // startTransition уменьшает ощущение "перезагрузки" при смене темы
+    startTransition(() => {
+      setMode(newMode);
+    });
   }, [mode, setMode]);
 
   const theme = useMemo(() => (mode === "dark" ? darkTheme : lightTheme), [mode]);
@@ -227,10 +230,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     () => ({ mode, theme, setMode, toggleTheme, isDark }),
     [mode, theme, setMode, toggleTheme, isDark]
   );
-
-  if (!isLoaded) {
-    return null; // or a loading indicator
-  }
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };

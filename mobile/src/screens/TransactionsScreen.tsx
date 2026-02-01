@@ -5,6 +5,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import dayjs from "dayjs";
 import "dayjs/locale/ru";
 import { useAuth, useTheme } from "../context";
+import { usePreserveScrollOnThemeChange } from "../hooks";
 import { ConfirmModal } from "../components";
 import { getIoniconsName } from "../utils/iconMap";
 import type { Transaction } from "@finance-assistant/shared";
@@ -34,7 +35,8 @@ interface GroupedData { date: string; transactions: Transaction[]; totalBalance:
 
 export default function TransactionsScreen({ navigation }: any) {
   const { api } = useAuth();
-  const { theme } = useTheme();
+  const { theme, mode } = useTheme();
+  const { scrollRef, onScroll, scrollEventThrottle } = usePreserveScrollOnThemeChange(mode);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [plannedExpenses, setPlannedExpenses] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -237,6 +239,9 @@ export default function TransactionsScreen({ navigation }: any) {
       </View>
 
       <FlatList
+        ref={scrollRef}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
         data={groupedData}
         keyExtractor={(item) => item.date}
         renderItem={renderGroup}

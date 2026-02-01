@@ -14,6 +14,7 @@ import { LineChart } from "react-native-chart-kit";
 import Svg, { Path, G, Rect } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth, useTheme } from "../context";
+import { usePreserveScrollOnThemeChange } from "../hooks";
 import type { Transaction } from "@finance-assistant/shared";
 import type { ThemeTokens } from "../context";
 
@@ -204,7 +205,8 @@ function WeeklyBarChart({ data, selectedWeek, onWeekSelect, theme }: WeeklyBarCh
 
 export default function DashboardScreen() {
   const { api } = useAuth();
-  const { theme } = useTheme();
+  const { theme, mode } = useTheme();
+  const { scrollRef, onScroll, scrollEventThrottle } = usePreserveScrollOnThemeChange(mode);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -486,6 +488,9 @@ export default function DashboardScreen() {
 
   return (
     <ScrollView
+      ref={scrollRef}
+      onScroll={onScroll}
+      scrollEventThrottle={scrollEventThrottle}
       style={styles.container}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}

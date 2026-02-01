@@ -37,6 +37,7 @@ export default function SavingsStack() {
         headerStyle: { backgroundColor: theme.bgCard },
         headerTintColor: theme.textPrimary,
         headerTitleStyle: { fontWeight: "600" as const, fontSize: 18 },
+        contentStyle: { backgroundColor: theme.bgBase },
       }}
     >
       <Stack.Screen

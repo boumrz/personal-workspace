@@ -4,12 +4,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth, useTheme } from "../context";
+import { usePreserveScrollOnThemeChange } from "../hooks";
 import { ConfirmModal } from "../components";
 import type { Profile, Goal } from "@finance-assistant/shared";
 
 export default function ProfileScreen({ navigation }: any) {
   const { api, logout } = useAuth();
   const { theme, mode, toggleTheme, isDark } = useTheme();
+  const { scrollRef, onScroll, scrollEventThrottle } = usePreserveScrollOnThemeChange(mode);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -109,7 +111,7 @@ export default function ProfileScreen({ navigation }: any) {
   }
 
   return (
-    <ScrollView style={dynamicStyles.container} contentContainerStyle={dynamicStyles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+    <ScrollView ref={scrollRef} onScroll={onScroll} scrollEventThrottle={scrollEventThrottle} style={dynamicStyles.container} contentContainerStyle={dynamicStyles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
       <View style={dynamicStyles.section}>
         <Text style={dynamicStyles.sectionTitle}>Кошелёк</Text>
         <LinearGradient colors={[theme.incomeMutedDark, theme.incomeMutedDarker]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={dynamicStyles.balanceCard}>

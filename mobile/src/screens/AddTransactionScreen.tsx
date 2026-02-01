@@ -17,8 +17,12 @@ import dayjs from "dayjs";
 import "dayjs/locale/ru";
 import utc from "dayjs/plugin/utc";
 import { useAuth, useTheme } from "../context";
+import { ConfirmModal } from "../components";
 import { getIoniconsName } from "../utils/iconMap";
 import type { Category, Transaction } from "@finance-assistant/shared";
+
+// Базовые категории без кнопки удаления (как на веб)
+const DEFAULT_NAMES = ["Продукты", "Транспорт", "Развлечения", "Здоровье", "Одежда", "Жилье", "Зарплата", "Другое"];
 
 dayjs.extend(utc);
 dayjs.locale("ru");
@@ -53,6 +57,7 @@ export default function AddTransactionScreen({ navigation, route }: any) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<{ visible: boolean; category: Category | null }>({ visible: false, category: null });
   
   // Генерация списка месяцев для выбора (текущий + 11 будущих)
   // month хранится как 1-12 (не 0-11)
@@ -134,6 +139,26 @@ export default function AddTransactionScreen({ navigation, route }: any) {
       loadData();
     }, [loadData])
   );
+
+  const handleDeleteCategory = async () => {
+    const cat = deleteModal.category;
+    if (!cat) return;
+    try {
+      await api.deleteCategory(cat.id);
+      setCategories((prev) => prev.filter((c) => c.id !== cat.id));
+      if (selectedCategory?.id === cat.id) {
+        const remaining = categories.filter((c) => c.id !== cat.id);
+        const next = type === "income"
+          ? remaining.find((c) => c.name === "Зарплата" || c.name === "Другое") || remaining[0]
+          : remaining[0];
+        setSelectedCategory(next ?? null);
+      }
+    } catch (e: any) {
+      Alert.alert("Ошибка", e?.message ?? "Не удалось удалить категорию");
+    } finally {
+      setDeleteModal({ visible: false, category: null });
+    }
+  };
 
   useEffect(() => {
     if (
@@ -344,6 +369,18 @@ export default function AddTransactionScreen({ navigation, route }: any) {
         },
         categoryChipText: { fontSize: 14, color: theme.textPrimary },
         categoryChipTextActive: { color: "#fff" },
+        categoryChipWrapper: { position: "relative" as const },
+        categoryDelBtn: {
+          position: "absolute" as const,
+          top: -4,
+          right: -4,
+          width: 20,
+          height: 20,
+          borderRadius: 10,
+          backgroundColor: theme.expense,
+          justifyContent: "center",
+          alignItems: "center",
+        },
         // Add category button
         addCategoryBtn: {
           flexDirection: "row",
@@ -552,33 +589,51 @@ export default function AddTransactionScreen({ navigation, route }: any) {
       <View style={styles.categories}>
         {availableCategories.map((c) => {
           const isActive = selectedCategory?.id === c.id;
+          const canDelete = !DEFAULT_NAMES.includes(c.name);
           return (
-            <TouchableOpacity
-              key={c.id}
-              style={[
-                styles.categoryChip,
-                isActive && styles.categoryChipActive,
-              ]}
-              onPress={() => setSelectedCategory(c)}
-            >
-              <Ionicons
-                name={getIoniconsName(c.icon)}
-                size={16}
-                color={isActive ? "#fff" : theme.textSecondary}
-              />
-              <Text
+            <View key={c.id} style={styles.categoryChipWrapper}>
+              <TouchableOpacity
                 style={[
-                  styles.categoryChipText,
-                  isActive && styles.categoryChipTextActive,
+                  styles.categoryChip,
+                  isActive && styles.categoryChipActive,
                 ]}
-                numberOfLines={1}
+                onPress={() => setSelectedCategory(c)}
               >
-                {c.name}
-              </Text>
-            </TouchableOpacity>
+                <Ionicons
+                  name={getIoniconsName(c.icon)}
+                  size={16}
+                  color={isActive ? "#fff" : theme.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.categoryChipText,
+                    isActive && styles.categoryChipTextActive,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {c.name}
+                </Text>
+              </TouchableOpacity>
+              {canDelete && (
+                <TouchableOpacity
+                  style={styles.categoryDelBtn}
+                  onPress={() => setDeleteModal({ visible: true, category: c })}
+                >
+                  <Ionicons name="close" size={12} color="#fff" />
+                </TouchableOpacity>
+              )}
+            </View>
           );
         })}
       </View>
+
+      <ConfirmModal
+        visible={deleteModal.visible}
+        title="Удалить категорию?"
+        message={deleteModal.category ? `Удалить «${deleteModal.category.name}»?` : ""}
+        onConfirm={handleDeleteCategory}
+        onCancel={() => setDeleteModal({ visible: false, category: null })}
+      />
 
       {/* Добавить категорию */}
       <TouchableOpacity

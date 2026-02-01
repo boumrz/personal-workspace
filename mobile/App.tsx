@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { setApiBaseUrl, setAnalyticsPlatform, track } from "@finance-assistant/shared";
 import { API_BASE_URL } from "./src/constants/config";
@@ -17,10 +18,12 @@ function AppContent() {
   }, []);
 
   return (
-    <AuthProvider>
-      <RootNavigator />
+    <View style={{ flex: 1, backgroundColor: theme.bgBase }}>
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
       <StatusBar style={isDark ? "light" : "dark"} backgroundColor={theme.bgBase} />
-    </AuthProvider>
+    </View>
   );
 }
 

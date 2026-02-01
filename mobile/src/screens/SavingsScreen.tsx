@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth, useTheme } from "../context";
+import { usePreserveScrollOnThemeChange } from "../hooks";
 import { ConfirmModal } from "../components";
 import type { Saving } from "@finance-assistant/shared";
 
@@ -23,7 +24,8 @@ interface GroupedData { date: string; savings: Saving[]; totalAmount: number; }
 
 export default function SavingsScreen({ navigation }: any) {
   const { api } = useAuth();
-  const { theme } = useTheme();
+  const { theme, mode } = useTheme();
+  const { scrollRef, onScroll, scrollEventThrottle } = usePreserveScrollOnThemeChange(mode);
   const [savings, setSavings] = useState<Saving[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -189,6 +191,9 @@ export default function SavingsScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <FlatList
+        ref={scrollRef}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
         data={groupedData}
         keyExtractor={(item) => item.date}
         renderItem={renderGroup}
