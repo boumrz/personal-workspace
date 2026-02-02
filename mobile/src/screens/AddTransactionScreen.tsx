@@ -319,17 +319,15 @@ export default function AddTransactionScreen({ navigation, route }: any) {
           color: theme.textPrimary,
           marginBottom: 8,
         },
-        // Budget info section
+        // Budget info section — вся плашка цветом по условию (как в веб)
         budgetBox: {
-          backgroundColor: theme.bgCard,
           borderRadius: theme.radiusMd,
           padding: 14,
           marginBottom: 16,
-          borderLeftWidth: 4,
         },
-        budgetBoxSuccess: { borderLeftColor: theme.income },
-        budgetBoxWarning: { borderLeftColor: theme.expense },
-        budgetBoxInfo: { borderLeftColor: theme.accentMuted },
+        budgetBoxSuccess: { backgroundColor: theme.incomeLight },
+        budgetBoxWarning: { backgroundColor: theme.expenseLight },
+        budgetBoxInfo: { backgroundColor: theme.accentMutedLight },
         budgetTitle: {
           fontSize: 14,
           fontWeight: "600",
