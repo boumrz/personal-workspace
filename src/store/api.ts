@@ -84,6 +84,7 @@ export interface RegisterRequest {
 
 export interface LoginResponse {
   token: string;
+  refreshToken?: string;
   user: User;
 }
 
@@ -132,6 +133,51 @@ const showErrorModal = (error: any) => {
   });
 };
 
+const REFRESH_TOKEN_KEY = "refreshToken";
+
+/** Один общий промис обновления токена, чтобы не дергать refresh параллельно из нескольких запросов */
+let refreshPromise: Promise<{ token: string; refreshToken: string; user?: User } | null> | null = null;
+
+async function doRefresh(): Promise<{ token: string; refreshToken: string; user?: User } | null> {
+  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+  if (!refreshToken) return null;
+  try {
+    const baseUrl = getApiBaseUrl();
+    const res = await fetch(`${baseUrl}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.token) return null;
+    return {
+      token: data.token,
+      refreshToken: data.refreshToken ?? refreshToken,
+      user: data.user,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function refreshTokens(): Promise<{ token: string; refreshToken: string; user?: User } | null> {
+  if (!refreshPromise) {
+    refreshPromise = doRefresh().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
+function clearSessionAndRedirectToLogin() {
+  localStorage.removeItem("token");
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem("user");
+  sessionStorage.setItem("sessionExpired", "1");
+  window.location.href = "/login";
+}
+
 // Базовый запрос с интерцепторами
 const baseQuery = fetchBaseQuery({
   baseUrl: getApiBaseUrl(),
@@ -145,17 +191,32 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
-// Базовый запрос с обработкой ошибок
+// Базовый запрос с обработкой ошибок и повторной авторизацией по refresh
 const baseQueryWithErrorHandling = async (
   args: any,
   api: any,
   extraOptions: any
 ) => {
-  const result = await baseQuery(args, api, extraOptions);
+  let result = await baseQuery(args, api, extraOptions);
 
-  // Обработка ошибок
-  if (result.error) {
-    // Показываем модальное окно с ошибкой (только для сетевых ошибок и ошибок сервера)
+  // 401/403 — пробуем обновить токен и повторить запрос один раз
+  if (result.error && (result.error.status === 401 || result.error.status === 403)) {
+    const refreshed = await refreshTokens();
+    if (refreshed) {
+      localStorage.setItem("token", refreshed.token);
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshed.refreshToken);
+      if (refreshed.user) {
+        localStorage.setItem("user", JSON.stringify(refreshed.user));
+      }
+      result = await baseQuery(args, api, extraOptions);
+    } else {
+      clearSessionAndRedirectToLogin();
+      return result;
+    }
+  }
+
+  // Остальные ошибки — показываем модалку (кроме 401/403, которые уже обработаны выше)
+  if (result.error && result.error.status !== 401 && result.error.status !== 403) {
     showErrorModal(result.error);
   }
 

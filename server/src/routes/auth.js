@@ -79,13 +79,21 @@ router.post(
         );
       }
 
-      // Generate JWT token
-      const token = jwt.sign({ userId: user.id, login: user.login }, config.jwtSecret, {
-        expiresIn: "7d",
-      });
+      // Access + refresh tokens
+      const token = jwt.sign(
+        { userId: user.id, login: user.login, type: "access" },
+        config.jwtSecret,
+        { expiresIn: config.accessTokenExpiry }
+      );
+      const refreshToken = jwt.sign(
+        { userId: user.id, type: "refresh" },
+        config.jwtSecret,
+        { expiresIn: config.refreshTokenExpiry }
+      );
 
       res.status(201).json({
         token,
+        refreshToken,
         user: {
           id: user.id,
           login: user.login,
@@ -138,13 +146,21 @@ router.post(
       [user.id]
     );
 
-    // Generate JWT token
-    const token = jwt.sign({ userId: user.id, login: user.login }, config.jwtSecret, {
-      expiresIn: "7d",
-    });
+    // Access + refresh tokens
+    const token = jwt.sign(
+      { userId: user.id, login: user.login, type: "access" },
+      config.jwtSecret,
+      { expiresIn: config.accessTokenExpiry }
+    );
+    const refreshToken = jwt.sign(
+      { userId: user.id, type: "refresh" },
+      config.jwtSecret,
+      { expiresIn: config.refreshTokenExpiry }
+    );
 
     res.json({
       token,
+      refreshToken,
       user: {
         id: user.id,
         login: user.login,
@@ -299,6 +315,62 @@ router.get(
   })
 );
 */
+
+// Refresh access token (body: { refreshToken } or Authorization: Bearer <refreshToken>)
+router.post(
+  "/refresh",
+  asyncHandler(async (req, res) => {
+    const refreshToken =
+      req.body?.refreshToken ||
+      (req.headers["authorization"] && req.headers["authorization"].split(" ")[1]);
+
+    if (!refreshToken) {
+      return res.status(401).json({ error: "Refresh token required" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(refreshToken, config.jwtSecret);
+    } catch {
+      return res.status(403).json({ error: "Invalid or expired refresh token" });
+    }
+
+    if (decoded.type !== "refresh") {
+      return res.status(403).json({ error: "Invalid token type" });
+    }
+
+    const result = await pool.query(
+      "SELECT id, login, email, name FROM users WHERE id = $1",
+      [decoded.userId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const user = result.rows[0];
+    const newAccessToken = jwt.sign(
+      { userId: user.id, login: user.login },
+      config.jwtSecret,
+      { expiresIn: config.accessTokenExpiry }
+    );
+    const newRefreshToken = jwt.sign(
+      { userId: user.id, type: "refresh" },
+      config.jwtSecret,
+      { expiresIn: config.refreshTokenExpiry }
+    );
+
+    res.json({
+      token: newAccessToken,
+      refreshToken: newRefreshToken,
+      user: {
+        id: user.id,
+        login: user.login,
+        email: user.email,
+        name: user.name,
+      },
+    });
+  })
+);
 
 // Get current user
 router.get(

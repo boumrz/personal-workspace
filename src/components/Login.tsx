@@ -17,6 +17,14 @@ const Login: React.FC = () => {
   // const [googleLoading, setGoogleLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
 
+  // Сообщение при редиректе из-за истёкшей сессии (401/403 → refresh не удался)
+  useEffect(() => {
+    if (sessionStorage.getItem("sessionExpired")) {
+      sessionStorage.removeItem("sessionExpired");
+      message.info("Сессия истекла. Войдите снова.");
+    }
+  }, []);
+
   // Redirect if already logged in
   useEffect(() => {
     if (user) {

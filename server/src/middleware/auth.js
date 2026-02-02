@@ -9,11 +9,15 @@ export const authenticateToken = (req, res, next) => {
     return res.status(401).json({ error: "Access token required" });
   }
 
-  jwt.verify(token, config.jwtSecret, (err, user) => {
+  jwt.verify(token, config.jwtSecret, (err, decoded) => {
     if (err) {
       return res.status(403).json({ error: "Invalid or expired token" });
     }
-    req.user = user;
+    // Не принимаем refresh-токен в заголовке для защищённых маршрутов
+    if (decoded.type === "refresh") {
+      return res.status(403).json({ error: "Access token required" });
+    }
+    req.user = decoded;
     next();
   });
 };

@@ -4,6 +4,7 @@ import { ApiClient, setAnalyticsAuthToken, track } from "@finance-assistant/shar
 import type { User } from "@finance-assistant/shared";
 
 const TOKEN_KEY = "token";
+const REFRESH_TOKEN_KEY = "refreshToken";
 const USER_KEY = "user";
 
 interface AuthContextType {
@@ -29,12 +30,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const tokenRef = useRef<string | null>(null);
+  const refreshTokenRef = useRef<string | null>(null);
   tokenRef.current = token;
+
+  const logout = async () => {
+    track("logout");
+    setAnalyticsAuthToken(null);
+    setToken(null);
+    setUser(null);
+    refreshTokenRef.current = null;
+    await AsyncStorage.multiRemove([TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY]);
+  };
+  const logoutRef = useRef(logout);
+  logoutRef.current = logout;
 
   const api = useMemo(
     () =>
       new ApiClient({
         getToken: () => tokenRef.current,
+        getRefreshToken: () => refreshTokenRef.current,
+        onTokensRefreshed: (newToken, newRefreshToken, newUser) => {
+          setToken(newToken);
+          if (newRefreshToken) refreshTokenRef.current = newRefreshToken;
+          if (newUser) setUser(newUser);
+          setAnalyticsAuthToken(newToken);
+          AsyncStorage.setItem(TOKEN_KEY, newToken);
+          if (newRefreshToken) AsyncStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
+          if (newUser) AsyncStorage.setItem(USER_KEY, JSON.stringify(newUser));
+        },
+        onSessionExpired: () => {
+          AsyncStorage.setItem("sessionExpired", "1").catch(() => {});
+          void logoutRef.current?.();
+        },
       }),
     []
   );
@@ -42,13 +69,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        const [storedToken, storedUser] = await Promise.all([
+        const [storedToken, storedRefreshToken, storedUser] = await Promise.all([
           AsyncStorage.getItem(TOKEN_KEY),
+          AsyncStorage.getItem(REFRESH_TOKEN_KEY),
           AsyncStorage.getItem(USER_KEY),
         ]);
         if (storedToken && storedUser) {
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
+          if (storedRefreshToken) refreshTokenRef.current = storedRefreshToken;
         }
       } catch {
         // ignore
@@ -62,6 +91,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await api.login({ login: loginValue, password });
     setToken(res.token);
     setUser(res.user);
+    if (res.refreshToken) {
+      refreshTokenRef.current = res.refreshToken;
+      await AsyncStorage.setItem(REFRESH_TOKEN_KEY, res.refreshToken);
+    }
     setAnalyticsAuthToken(res.token);
     await AsyncStorage.setItem(TOKEN_KEY, res.token);
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(res.user));
@@ -72,18 +105,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await api.register({ fullName, login: loginValue, password });
     setToken(res.token);
     setUser(res.user);
+    if (res.refreshToken) {
+      refreshTokenRef.current = res.refreshToken;
+      await AsyncStorage.setItem(REFRESH_TOKEN_KEY, res.refreshToken);
+    }
     setAnalyticsAuthToken(res.token);
     await AsyncStorage.setItem(TOKEN_KEY, res.token);
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(res.user));
     track("register_success");
-  };
-
-  const logout = async () => {
-    track("logout");
-    setAnalyticsAuthToken(null);
-    setToken(null);
-    setUser(null);
-    await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
   };
 
   const value: AuthContextType = useMemo(

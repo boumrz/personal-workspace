@@ -17,18 +17,37 @@ import { getApiBaseUrl } from "../utils";
 
 export type GetTokenFn = () => string | null | Promise<string | null>;
 
+export interface RefreshResponse {
+  token: string;
+  refreshToken?: string;
+  user?: { id: number; login?: string; email?: string; name?: string };
+}
+
 export interface ApiClientOptions {
   baseUrl?: string;
   getToken: GetTokenFn;
+  /** Для обновления access по 401/403. Если не задан, при 401/403 вызывается только onSessionExpired */
+  getRefreshToken?: () => string | null | Promise<string | null>;
+  /** Вызывается после успешного refresh; нужно сохранить новые токены */
+  onTokensRefreshed?: (token: string, refreshToken?: string, user?: RefreshResponse["user"]) => void;
+  /** Вызывается, когда refresh не удался или токена нет — выход и редирект на логин */
+  onSessionExpired?: () => void;
 }
 
 export class ApiClient {
   private getToken: GetTokenFn;
   private baseUrl: string;
+  private getRefreshToken?: ApiClientOptions["getRefreshToken"];
+  private onTokensRefreshed?: ApiClientOptions["onTokensRefreshed"];
+  private onSessionExpired?: ApiClientOptions["onSessionExpired"];
+  private refreshPromise: Promise<RefreshResponse | null> | null = null;
 
   constructor(options: ApiClientOptions) {
     this.getToken = options.getToken;
     this.baseUrl = options.baseUrl ?? getApiBaseUrl();
+    this.getRefreshToken = options.getRefreshToken;
+    this.onTokensRefreshed = options.onTokensRefreshed;
+    this.onSessionExpired = options.onSessionExpired;
   }
 
   private async resolveToken(): Promise<string | null> {
@@ -36,7 +55,42 @@ export class ApiClient {
     return t instanceof Promise ? t : Promise.resolve(t);
   }
 
-  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  private async doRefresh(): Promise<RefreshResponse | null> {
+    const getRef = this.getRefreshToken;
+    if (!getRef) return null;
+    const r = getRef();
+    const refreshToken = r instanceof Promise ? await r : r;
+    if (!refreshToken) return null;
+    const url = `${this.baseUrl.replace(/\/$/, "")}/auth/refresh`;
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data.token) return null;
+      return {
+        token: data.token,
+        refreshToken: data.refreshToken ?? refreshToken,
+        user: data.user,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  private refreshTokens(): Promise<RefreshResponse | null> {
+    if (!this.refreshPromise) {
+      this.refreshPromise = this.doRefresh().finally(() => {
+        this.refreshPromise = null;
+      });
+    }
+    return this.refreshPromise;
+  }
+
+  private async request<T>(endpoint: string, options?: RequestInit, isRetry = false): Promise<T> {
     const token = await this.resolveToken();
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -59,6 +113,15 @@ export class ApiClient {
       throw err;
     }
     if (!response.ok) {
+      const status = response.status;
+      if ((status === 401 || status === 403) && !isRetry && this.getRefreshToken && this.onTokensRefreshed && this.onSessionExpired) {
+        const refreshed = await this.refreshTokens();
+        if (refreshed) {
+          this.onTokensRefreshed(refreshed.token, refreshed.refreshToken, refreshed.user);
+          return this.request<T>(endpoint, options, true);
+        }
+        this.onSessionExpired();
+      }
       let errorMessage = `API error: ${response.statusText}`;
       try {
         const errorData = await response.json();

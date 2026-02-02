@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [registerMutation] = useRegisterMutation();
 
   useEffect(() => {
-    // Check for stored token on mount
+    // Check for stored token on mount (refreshToken хранится в api/store для refresh)
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
 
@@ -58,6 +58,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(result.user);
       localStorage.setItem("token", result.token);
       localStorage.setItem("user", JSON.stringify(result.user));
+      if (result.refreshToken) {
+        localStorage.setItem("refreshToken", result.refreshToken);
+      }
     } catch (error: any) {
       // Ошибка уже обработана в интерцепторе, но можем пробросить дальше
       throw new Error(error?.data?.error || error?.error || "Login failed");
@@ -74,6 +77,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(result.user);
       localStorage.setItem("token", result.token);
       localStorage.setItem("user", JSON.stringify(result.user));
+      if (result.refreshToken) {
+        localStorage.setItem("refreshToken", result.refreshToken);
+      }
     } catch (error: any) {
       // Ошибка уже обработана в интерцепторе, но можем пробросить дальше
       throw new Error(error?.data?.error || error?.error || "Registration failed");
@@ -149,6 +155,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    localStorage.removeItem("refreshToken");
   };
 
   return (

@@ -1,6 +1,9 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Alert } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth, useTheme } from "../context";
+
+const SESSION_EXPIRED_KEY = "sessionExpired";
 
 type Tab = "login" | "register";
 
@@ -8,6 +11,15 @@ export default function LoginScreen() {
   const { login, register } = useAuth();
   const { theme } = useTheme();
   const [tab, setTab] = useState<Tab>("login");
+
+  useEffect(() => {
+    AsyncStorage.getItem(SESSION_EXPIRED_KEY).then((v) => {
+      if (v === "1") {
+        AsyncStorage.removeItem(SESSION_EXPIRED_KEY);
+        Alert.alert("Сессия истекла", "Войдите снова.");
+      }
+    });
+  }, []);
   const [loading, setLoading] = useState(false);
   const [loginValue, setLoginValue] = useState("");
   const [password, setPassword] = useState("");
