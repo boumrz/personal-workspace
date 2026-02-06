@@ -1,5 +1,5 @@
 import React, { useRef, useMemo } from "react";
-import { View } from "react-native";
+import { View, ActivityIndicator } from "react-native";
 import { NavigationContainer, DefaultTheme, DarkTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { track } from "@finance-assistant/shared";
@@ -31,7 +31,11 @@ export default function RootNavigator() {
   );
 
   if (loading) {
-    return <View style={{ flex: 1, backgroundColor: theme.bgBase }} />;
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.bgBase, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color={theme.accentMuted} />
+      </View>
+    );
   }
 
   return (

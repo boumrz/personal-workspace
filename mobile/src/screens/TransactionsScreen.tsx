@@ -129,7 +129,7 @@ export default function TransactionsScreen({ navigation }: any) {
     tabText: { fontSize: 14, fontWeight: "500", color: theme.textSecondary },
     tabTextActive: { color: theme.textPrimary },
     searchContainer: { flexDirection: "row", marginHorizontal: 16, marginBottom: 12, gap: 12 },
-    searchInput: { flex: 1, height: 48, backgroundColor: theme.bgCard, borderRadius: theme.radiusXl, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, fontSize: 15, color: theme.textPrimary },
+    searchInput: { flex: 1, height: 48, backgroundColor: theme.bgCard, borderRadius: theme.radiusXl, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, fontSize: 15, color: theme.textPrimary, paddingVertical: 12 },
     searchBtn: { width: 48, height: 48, backgroundColor: theme.bgCard, borderRadius: theme.radiusXl, borderWidth: 1, borderColor: theme.border, justifyContent: "center", alignItems: "center" },
     filterBtn: { width: 48, height: 48, backgroundColor: theme.bgCard, borderRadius: theme.radiusXl, borderWidth: 1, borderColor: theme.border, justifyContent: "center", alignItems: "center", position: "relative" },
     filterBadge: { position: "absolute", top: 6, right: 6, width: 18, height: 18, borderRadius: 9, backgroundColor: theme.accent, justifyContent: "center", alignItems: "center" },
@@ -230,7 +230,7 @@ export default function TransactionsScreen({ navigation }: any) {
       </View>
 
       <View style={styles.searchContainer}>
-        <TextInput style={styles.searchInput} placeholder="Поиск по ключевым словам" placeholderTextColor={theme.textTertiary} value={searchQuery} onChangeText={setSearchQuery} />
+        <TextInput style={styles.searchInput} placeholder="Поиск по описанию" placeholderTextColor={theme.textTertiary} value={searchQuery} onChangeText={setSearchQuery} numberOfLines={1} />
         <TouchableOpacity style={styles.searchBtn}><Ionicons name="search" size={18} color={theme.textPrimary} /></TouchableOpacity>
         <TouchableOpacity style={styles.filterBtn} onPress={openFilter}>
           <Ionicons name="funnel-outline" size={18} color={theme.textPrimary} />

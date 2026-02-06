@@ -67,14 +67,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+    const TIMEOUT_MS = 4000; // На части Android AsyncStorage может зависнуть — не блокируем экран дольше 4 сек
+
+    const load = async () => {
       try {
         const [storedToken, storedRefreshToken, storedUser] = await Promise.all([
           AsyncStorage.getItem(TOKEN_KEY),
           AsyncStorage.getItem(REFRESH_TOKEN_KEY),
           AsyncStorage.getItem(USER_KEY),
         ]);
-        if (storedToken && storedUser) {
+        if (!cancelled && storedToken && storedUser) {
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
           if (storedRefreshToken) refreshTokenRef.current = storedRefreshToken;
@@ -82,9 +85,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch {
         // ignore
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
-    })();
+    };
+
+    const t = setTimeout(() => {
+      if (cancelled) return;
+      setLoading(false);
+    }, TIMEOUT_MS);
+
+    load().finally(() => {
+      clearTimeout(t);
+    });
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
   }, []);
 
   const login = async (loginValue: string, password: string) => {
