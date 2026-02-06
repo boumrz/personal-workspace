@@ -7,7 +7,9 @@
     "start:tunnel": "expo start --tunnel --clear",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build:android:aab": "eas build --platform android --profile production",
+    "build:android:apk": "eas build --platform android --profile production-apk"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
