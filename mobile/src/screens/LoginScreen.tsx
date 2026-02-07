@@ -61,7 +61,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Финансовый помощник</Text>
+        <Text style={styles.title}>Мой бюджет - расходы и доходы</Text>
         <View style={styles.tabs}>
           <TouchableOpacity style={[styles.tab, tab === "login" && styles.tabActive]} onPress={() => setTab("login")}>
             <Text style={[styles.tabText, tab === "login" && styles.tabTextActive]}>Вход</Text>

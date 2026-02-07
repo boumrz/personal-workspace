@@ -159,7 +159,7 @@ const Login: React.FC = () => {
   return (
     <div className={styles.loginContainer}>
       <Card className={styles.loginCard}>
-        <h1 className={styles.title}>💰 Финансовый помощник</h1>
+        <h1 className={styles.title}>💰 Мой бюджет - расходы и доходы</h1>
         <Tabs
           activeKey={activeTab}
           onChange={(key) => setActiveTab(key as "login" | "register")}

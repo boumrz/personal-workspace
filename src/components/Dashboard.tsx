@@ -79,7 +79,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className={styles.dashboard}>
       <header className={styles.header}>
-        <h1 className={styles.title}>Финансовый помощник</h1>
+        <h1 className={styles.title}>Мой бюджет - расходы и доходы</h1>
         <Card className={styles.summaryCard} bordered={false}>
           <div className={styles.balanceRow}>
             <span className={styles.balanceLabel}>Баланс</span>

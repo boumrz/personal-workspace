@@ -1,7 +1,7 @@
 {
   "name": "finance-assistant",
   "version": "1.0.0",
-  "description": "Финансовый помощник",
+  "description": "Мой бюджет - расходы и доходы",
   "type": "module",
   "scripts": {
     "dev": "rspack serve",
