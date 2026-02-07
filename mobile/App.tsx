@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { setApiBaseUrl, setAnalyticsPlatform, track } from "@finance-assistant/shared";
 import { API_BASE_URL } from "./src/constants/config";
+import { initMyTracker, trackMyTrackerEvent } from "./src/analytics";
 import { AuthProvider, ThemeProvider, useTheme } from "./src/context";
 import RootNavigator from "./src/navigation/RootNavigator";
 
@@ -11,11 +12,15 @@ import RootNavigator from "./src/navigation/RootNavigator";
 setApiBaseUrl(API_BASE_URL);
 setAnalyticsPlatform("android");
 
+// Initialize MyTracker for analytics (launches/sessions tracked automatically)
+initMyTracker();
+
 function AppContent() {
   const { isDark, theme } = useTheme();
 
   useEffect(() => {
     track("app_open");
+    trackMyTrackerEvent("app_open");
   }, []);
 
   return (

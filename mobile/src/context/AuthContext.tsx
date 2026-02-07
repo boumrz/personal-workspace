@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ApiClient, setAnalyticsAuthToken, track } from "@finance-assistant/shared";
+import { trackMyTrackerLogin, trackMyTrackerRegistration, clearMyTrackerUserId } from "../analytics";
 import type { User } from "@finance-assistant/shared";
 
 const TOKEN_KEY = "token";
@@ -35,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     track("logout");
+    clearMyTrackerUserId();
     setAnalyticsAuthToken(null);
     setToken(null);
     setUser(null);
@@ -116,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(TOKEN_KEY, res.token);
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(res.user));
     track("login_success");
+    trackMyTrackerLogin(String(res.user.id));
   };
 
   const register = async (fullName: string, loginValue: string, password: string) => {
@@ -130,6 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(TOKEN_KEY, res.token);
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(res.user));
     track("register_success");
+    trackMyTrackerRegistration(String(res.user.id));
   };
 
   const value: AuthContextType = useMemo(

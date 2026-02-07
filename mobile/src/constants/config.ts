@@ -5,3 +5,11 @@
  */
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ?? "http://10.0.2.2:3001/api";
+
+/**
+ * MyTracker SDK key for analytics (Android/iOS).
+ * Local: set EXPO_PUBLIC_MYTRACKER_SDK_KEY in mobile/.env
+ * Production: set in EAS project Secrets.
+ */
+export const MYTRACKER_SDK_KEY =
+  process.env.EXPO_PUBLIC_MYTRACKER_SDK_KEY ?? "";

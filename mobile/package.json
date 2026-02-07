@@ -13,6 +13,7 @@
     "build:android:apk": "eas build --platform android --profile production-apk"
   },
   "dependencies": {
+    "@mytracker/react-native-mytracker": "1.0.4",
     "@expo/metro-runtime": "~6.1.2",
     "@expo/vector-icons": "^15.0.3",
     "@finance-assistant/shared": "file:../shared",
