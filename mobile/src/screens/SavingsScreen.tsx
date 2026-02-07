@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, TextInput } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, TextInput, AppState, AppStateStatus } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth, useTheme } from "../context";
 import { usePreserveScrollOnThemeChange } from "../hooks";
 import { ConfirmModal } from "../components";
@@ -25,6 +27,7 @@ interface GroupedData { date: string; savings: Saving[]; totalAmount: number; }
 export default function SavingsScreen({ navigation }: any) {
   const { api } = useAuth();
   const { theme, mode } = useTheme();
+  const insets = useSafeAreaInsets();
   const { scrollRef, onScroll, scrollEventThrottle } = usePreserveScrollOnThemeChange(mode);
   const [savings, setSavings] = useState<Saving[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -43,6 +46,13 @@ export default function SavingsScreen({ navigation }: any) {
   }, [api]);
 
   useEffect(() => { load(); }, [load]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state: AppStateStatus) => {
+      if (state === "active") load();
+    });
+    return () => sub.remove();
+  }, [load]);
   const onRefresh = () => { setRefreshing(true); load(); };
 
   const handleDeleteConfirm = async () => {
@@ -78,11 +88,15 @@ export default function SavingsScreen({ navigation }: any) {
     return Object.entries(groups).sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime()).map(([date, data]) => ({ date, ...data }));
   }, [filteredSavings]);
 
+  const bottomInset = insets.bottom > 0 ? insets.bottom : 24;
+  const listBottomPadding = 80 + bottomInset;
+  const fabBottom = 16 + bottomInset;
+
   const styles = useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: theme.bgBase },
     centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-    listContent: { paddingHorizontal: 16, paddingBottom: 100 },
-    emptyWithHeader: { paddingHorizontal: 16, paddingBottom: 100 },
+    listContent: { paddingHorizontal: 16, paddingBottom: listBottomPadding },
+    emptyWithHeader: { paddingHorizontal: 16, paddingBottom: listBottomPadding },
     emptyText: { fontSize: 16, color: theme.textSecondary, textAlign: "center", paddingVertical: 60 },
     statsGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: 16, marginBottom: 16, rowGap: 12 },
     statCard: { width: "48.5%", flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: theme.bgCard, borderRadius: theme.radiusLg, padding: 12, shadowColor: theme.shadowSm, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 1, shadowRadius: 3, elevation: 2 },
@@ -115,8 +129,8 @@ export default function SavingsScreen({ navigation }: any) {
     savingAmount: { fontSize: 15, fontWeight: "600", color: theme.income, marginBottom: 4 },
     savingTime: { fontSize: 12, color: theme.textTertiary },
     deleteBtn: { width: 36, height: 36, borderRadius: theme.radiusMd, justifyContent: "center", alignItems: "center" },
-    fab: { position: "absolute", bottom: 16, alignSelf: "center", width: 56, height: 56, borderRadius: theme.radiusXl, backgroundColor: theme.accentMuted, justifyContent: "center", alignItems: "center", shadowColor: theme.shadowLg, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 12, elevation: 4 },
-  }), [theme]);
+    fab: { position: "absolute", bottom: fabBottom, alignSelf: "center", width: 56, height: 56, borderRadius: theme.radiusXl, backgroundColor: theme.accentMuted, justifyContent: "center", alignItems: "center", shadowColor: theme.shadowLg, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 12, elevation: 4 },
+  }), [theme, fabBottom, listBottomPadding]);
 
   if (loading) {
     return <View style={styles.centered}><ActivityIndicator size="large" color={theme.accentMuted} /></View>;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,10 +9,14 @@ import {
   Dimensions,
   TouchableOpacity,
   GestureResponderEvent,
+  AppState,
+  AppStateStatus,
 } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import Svg, { Path, G, Rect } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth, useTheme } from "../context";
 import { usePreserveScrollOnThemeChange } from "../hooks";
 import type { Transaction } from "@finance-assistant/shared";
@@ -35,12 +39,13 @@ interface DonutChartProps {
 }
 
 function DonutChart({ data, size, strokeWidth, selectedIndex, onSegmentPress }: DonutChartProps) {
+  const total = data.reduce((sum, item) => sum + item.amount, 0);
+  if (total === 0) return null;
+
   const radius = (size - strokeWidth) / 2;
   const center = size / 2;
-  const total = data.reduce((sum, item) => sum + item.amount, 0);
-  const innerRadius = radius - strokeWidth;
-
-  if (total === 0) return null;
+  const innerEdge = radius - strokeWidth / 2;
+  const outerEdge = radius + strokeWidth / 2;
 
   const segmentAngles = useMemo(() => {
     const angles: Array<{ startAngle: number; endAngle: number }> = [];
@@ -59,7 +64,7 @@ function DonutChart({ data, size, strokeWidth, selectedIndex, onSegmentPress }: 
     const dy = locationY - center;
     const distance = Math.sqrt(dx * dx + dy * dy);
 
-    if (distance < innerRadius || distance > radius + strokeWidth / 2) {
+    if (distance < innerEdge || distance > outerEdge) {
       onSegmentPress(null);
       return;
     }
@@ -105,7 +110,7 @@ function DonutChart({ data, size, strokeWidth, selectedIndex, onSegmentPress }: 
         stroke={item.color}
         strokeWidth={isSelected ? strokeWidth + 6 : strokeWidth}
         fill="none"
-        strokeLinecap="round"
+        strokeLinecap="butt"
         opacity={opacity}
       />
     );
@@ -206,6 +211,7 @@ function WeeklyBarChart({ data, selectedWeek, onWeekSelect, theme }: WeeklyBarCh
 export default function DashboardScreen() {
   const { api } = useAuth();
   const { theme, mode } = useTheme();
+  const insets = useSafeAreaInsets();
   const { scrollRef, onScroll, scrollEventThrottle } = usePreserveScrollOnThemeChange(mode);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -229,6 +235,19 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     loadData();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state: AppStateStatus) => {
+      if (state === "active") loadData();
+    });
+    return () => sub.remove();
   }, []);
 
   const onRefresh = () => {
@@ -304,10 +323,24 @@ export default function DashboardScreen() {
 
   const lineChartData = useMemo(() => {
     if (balanceTrendData.history.length === 0) {
-      return { labels: [""], datasets: [{ data: [balanceTrendData.startingBalance || 0] }] };
+      const v = balanceTrendData.startingBalance ?? 0;
+      return {
+        labels: ["", ""],
+        datasets: [{ data: [v, v] }],
+      };
     }
 
     const points = balanceTrendData.history;
+    if (points.length === 1) {
+      const p = points[0];
+      const d = new Date(p.date);
+      const label = `${d.getDate()}.${String(d.getMonth() + 1).padStart(2, "0")}`;
+      return {
+        labels: [label, label],
+        datasets: [{ data: [p.balance, p.balance] }],
+      };
+    }
+
     const step = Math.max(1, Math.floor(points.length / 6));
     const selectedPoints = points.filter((_, i) => i % step === 0 || i === points.length - 1);
 
@@ -403,7 +436,7 @@ export default function DashboardScreen() {
     () =>
       StyleSheet.create({
         container: { flex: 1, backgroundColor: theme.bgBase },
-        content: { padding: 16, paddingBottom: 32 },
+        content: { padding: 16, paddingBottom: Math.max(32, insets.bottom + 16) },
         centered: { flex: 1, justifyContent: "center", alignItems: "center" },
         periodSelector: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
         periodLabel: { fontSize: 22, fontWeight: "700", color: theme.textPrimary },
@@ -473,7 +506,7 @@ export default function DashboardScreen() {
         weekStatLabel: { fontSize: 12, color: theme.textSecondary, marginBottom: 4 },
         weekStatValue: { fontSize: 16, fontWeight: "600", color: theme.textPrimary },
       }),
-    [theme]
+    [theme, insets.bottom]
   );
 
   if (loading) {
@@ -545,20 +578,24 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {balanceTrendData.history.length > 0 && (
-          <LineChart
-            data={lineChartData}
-            width={screenWidth - 64}
-            height={180}
-            chartConfig={chartConfig}
-            bezier
-            style={styles.lineChart}
-            withInnerLines={false}
-            withOuterLines={false}
-            withVerticalLabels={true}
-            withHorizontalLabels={true}
-            fromZero={false}
-          />
+        {(balanceTrendData.history.length > 0 || balanceTrendData.startingBalance !== 0) && (
+          <View style={{ width: screenWidth - 32, marginLeft: -8 }}>
+            <LineChart
+              data={lineChartData}
+              width={screenWidth - 48}
+              height={180}
+              chartConfig={chartConfig}
+              bezier
+              style={styles.lineChart}
+              withInnerLines={false}
+              withOuterLines={false}
+              withVerticalLabels={true}
+              withHorizontalLabels={true}
+              withDots={true}
+              fromZero={false}
+              segments={4}
+            />
+          </View>
         )}
       </View>
 

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, TextInput } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, TextInput, AppState, AppStateStatus } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import dayjs from "dayjs";
 import "dayjs/locale/ru";
 import { useAuth, useTheme } from "../context";
@@ -36,6 +37,7 @@ interface GroupedData { date: string; transactions: Transaction[]; totalBalance:
 export default function TransactionsScreen({ navigation }: any) {
   const { api } = useAuth();
   const { theme, mode } = useTheme();
+  const insets = useSafeAreaInsets();
   const { scrollRef, onScroll, scrollEventThrottle } = usePreserveScrollOnThemeChange(mode);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [plannedExpenses, setPlannedExpenses] = useState<Transaction[]>([]);
@@ -60,6 +62,12 @@ export default function TransactionsScreen({ navigation }: any) {
 
   useEffect(() => { load(); }, [load]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state: AppStateStatus) => {
+      if (state === "active") load();
+    });
+    return () => sub.remove();
+  }, [load]);
   const onRefresh = () => { setRefreshing(true); load(); };
 
   const handleDeleteConfirm = async () => {
@@ -117,10 +125,14 @@ export default function TransactionsScreen({ navigation }: any) {
   const hasActiveFilter = !selectedCategories.includes("all");
   const filterCount = hasActiveFilter ? selectedCategories.length : 0;
 
+  const bottomInset = insets.bottom > 0 ? insets.bottom : 24;
+  const listBottomPadding = 80 + bottomInset;
+  const fabBottom = 16 + bottomInset;
+
   const styles = useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: theme.bgBase },
     centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-    listContent: { paddingHorizontal: 16, paddingBottom: 100 },
+    listContent: { paddingHorizontal: 16, paddingBottom: listBottomPadding },
     emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
     emptyText: { fontSize: 16, color: theme.textSecondary },
     tabsContainer: { flexDirection: "row", margin: 16, padding: 4, backgroundColor: theme.bgSurface, borderRadius: theme.radiusXl },
@@ -159,8 +171,8 @@ export default function TransactionsScreen({ navigation }: any) {
     amountExpense: { color: theme.expense },
     transactionTime: { fontSize: 12, color: theme.textTertiary },
     deleteBtn: { width: 36, height: 36, borderRadius: theme.radiusMd, justifyContent: "center", alignItems: "center" },
-    fab: { position: "absolute", bottom: 16, alignSelf: "center", width: 56, height: 56, borderRadius: theme.radiusXl, backgroundColor: theme.accentMuted, justifyContent: "center", alignItems: "center", shadowColor: theme.shadowLg, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 12, elevation: 4 },
-  }), [theme]);
+    fab: { position: "absolute", bottom: fabBottom, alignSelf: "center", width: 56, height: 56, borderRadius: theme.radiusXl, backgroundColor: theme.accentMuted, justifyContent: "center", alignItems: "center", shadowColor: theme.shadowLg, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 12, elevation: 4 },
+  }), [theme, fabBottom, listBottomPadding]);
 
   if (loading) {
     return <View style={styles.centered}><ActivityIndicator size="large" color={theme.accentMuted} /></View>;

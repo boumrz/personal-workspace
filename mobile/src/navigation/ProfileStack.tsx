@@ -9,6 +9,8 @@ const AddCategoryScreen = lazy(() => import("../screens/AddCategoryScreen"));
 const EditProfileScreen = lazy(() => import("../screens/EditProfileScreen"));
 const AddGoalScreen = lazy(() => import("../screens/AddGoalScreen"));
 const GoalAmountScreen = lazy(() => import("../screens/GoalAmountScreen"));
+const PrivacyPolicyScreen = lazy(() => import("../screens/PrivacyPolicyScreen"));
+const TermsScreen = lazy(() => import("../screens/TermsScreen"));
 
 function Fallback() {
   const { theme } = useTheme();
@@ -87,6 +89,16 @@ export default function ProfileStack() {
         options={({ route }: any) => ({
           title: route.params?.type === "add" ? "Добавить к цели" : "Убавить от цели",
         })}
+      />
+      <Stack.Screen
+        name="PrivacyPolicy"
+        component={withSuspense(PrivacyPolicyScreen)}
+        options={{ title: "Политика конфиденциальности" }}
+      />
+      <Stack.Screen
+        name="Terms"
+        component={withSuspense(TermsScreen)}
+        options={{ title: "Условия использования" }}
       />
     </Stack.Navigator>
   );

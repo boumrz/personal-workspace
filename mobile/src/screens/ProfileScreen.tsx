@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, Switch } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, Switch, AppState, AppStateStatus } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth, useTheme } from "../context";
 import { usePreserveScrollOnThemeChange } from "../hooks";
 import { ConfirmModal } from "../components";
@@ -11,6 +12,7 @@ import type { Profile, Goal } from "@finance-assistant/shared";
 export default function ProfileScreen({ navigation }: any) {
   const { api, logout } = useAuth();
   const { theme, mode, toggleTheme, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const { scrollRef, onScroll, scrollEventThrottle } = usePreserveScrollOnThemeChange(mode);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -42,6 +44,12 @@ export default function ProfileScreen({ navigation }: any) {
 
   useEffect(() => { loadData(); }, [loadData]);
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state: AppStateStatus) => {
+      if (state === "active") loadData();
+    });
+    return () => sub.remove();
+  }, [loadData]);
   const onRefresh = () => { setRefreshing(true); loadData(); };
 
   const handleGoalDeleteConfirm = async () => {
@@ -66,7 +74,7 @@ export default function ProfileScreen({ navigation }: any) {
 
   const dynamicStyles = useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: theme.bgBase },
-    content: { padding: 16, paddingBottom: 32 },
+    content: { padding: 16, paddingBottom: Math.max(32, insets.bottom + 16) },
     centered: { flex: 1, justifyContent: "center", alignItems: "center" },
     section: { marginBottom: 24 },
     sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
@@ -104,7 +112,7 @@ export default function ProfileScreen({ navigation }: any) {
     settingsItemSubtitle: { fontSize: 13, color: theme.textSecondary },
     logoutBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, padding: 16, marginTop: 8, borderWidth: 1, borderColor: theme.expense, borderRadius: theme.radius2xl, backgroundColor: "transparent" },
     logoutBtnText: { fontSize: 16, fontWeight: "500", color: theme.expense },
-  }), [theme]);
+  }), [theme, insets.bottom]);
 
   if (loading) {
     return <View style={dynamicStyles.centered}><ActivityIndicator size="large" color={theme.accentMuted} /></View>;
@@ -171,6 +179,22 @@ export default function ProfileScreen({ navigation }: any) {
             <View style={dynamicStyles.settingsItemContent}>
               <Text style={dynamicStyles.settingsItemTitle}>Данные профиля</Text>
               <Text style={dynamicStyles.settingsItemSubtitle}>{displayName}{formattedDate ? ` • ${formattedDate}` : ""}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={dynamicStyles.settingsItem} onPress={() => navigation.navigate("PrivacyPolicy")}>
+            <View style={dynamicStyles.settingsItemIcon}><Ionicons name="shield-checkmark-outline" size={18} color={theme.accentMuted} /></View>
+            <View style={dynamicStyles.settingsItemContent}>
+              <Text style={dynamicStyles.settingsItemTitle}>Политика конфиденциальности</Text>
+              <Text style={dynamicStyles.settingsItemSubtitle}>Как мы обрабатываем ваши данные</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={dynamicStyles.settingsItem} onPress={() => navigation.navigate("Terms")}>
+            <View style={dynamicStyles.settingsItemIcon}><Ionicons name="document-text-outline" size={18} color={theme.accentMuted} /></View>
+            <View style={dynamicStyles.settingsItemContent}>
+              <Text style={dynamicStyles.settingsItemTitle}>Условия использования</Text>
+              <Text style={dynamicStyles.settingsItemSubtitle}>Правила использования приложения</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
           </TouchableOpacity>

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { View } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { setApiBaseUrl, setAnalyticsPlatform, track } from "@finance-assistant/shared";
 import { API_BASE_URL } from "./src/constants/config";
 import { AuthProvider, ThemeProvider, useTheme } from "./src/context";
@@ -29,8 +30,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

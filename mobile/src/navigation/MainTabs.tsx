@@ -1,6 +1,7 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../context";
 import OperationsStack from "./OperationsStack";
 import DashboardStack from "./DashboardStack";
@@ -8,6 +9,8 @@ import SavingsStack from "./SavingsStack";
 import ProfileStack from "./ProfileStack";
 
 const Tab = createBottomTabNavigator();
+const TAB_BAR_TOP_PADDING = 10;
+const TAB_BAR_MIN_HEIGHT = 56;
 
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -20,6 +23,9 @@ const tabIcons: Record<string, { active: IconName; inactive: IconName }> = {
 
 export default function MainTabs() {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+  const bottomInset = insets.bottom > 0 ? insets.bottom : 24;
+  const tabBarHeight = TAB_BAR_MIN_HEIGHT + TAB_BAR_TOP_PADDING + bottomInset;
 
   return (
     <Tab.Navigator
@@ -30,9 +36,9 @@ export default function MainTabs() {
           backgroundColor: theme.bgCard,
           borderTopColor: theme.border,
           borderTopWidth: 1,
-          paddingTop: 10,
-          paddingBottom: 24,
-          height: 80,
+          paddingTop: TAB_BAR_TOP_PADDING,
+          paddingBottom: bottomInset,
+          height: tabBarHeight,
         },
         tabBarActiveTintColor: theme.accent,
         tabBarInactiveTintColor: theme.textSecondary,
