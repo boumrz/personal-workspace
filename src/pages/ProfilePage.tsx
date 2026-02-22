@@ -7,6 +7,7 @@ import {
   Modal,
   Empty,
   message,
+  App,
 } from "antd";
 import dayjs from "dayjs";
 import {
@@ -55,6 +56,7 @@ const VK_ID_APP_ID = typeof __VK_ID_APP_ID__ !== "undefined" ? __VK_ID_APP_ID__ 
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
+  const { modal } = App.useApp();
   const { logout } = useAuth();
   const { transactions } = useFinance();
   const { theme, toggleTheme } = useTheme();
@@ -156,7 +158,7 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleGoalDelete = (id: string) => {
-    Modal.confirm({
+    modal.confirm({
       title: "Удалить цель?",
       content: "Это действие нельзя отменить.",
       okText: "Удалить",
@@ -221,7 +223,7 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleUnlinkTelegram = () => {
-    Modal.confirm({
+    modal.confirm({
       title: "Отвязать Telegram?",
       content: "Вы сможете войти через Telegram снова, только привязав его заново.",
       okText: "Отвязать",
@@ -252,7 +254,7 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleUnlinkVk = () => {
-    Modal.confirm({
+    modal.confirm({
       title: "Отвязать VK?",
       content: "Вы сможете войти через VK снова, только привязав его заново.",
       okText: "Отвязать",

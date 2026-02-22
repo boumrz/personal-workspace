@@ -601,9 +601,28 @@ html[data-theme="dark"] .ant-card-body {
 .ant-tag {
   border-radius: var(--radius-sm) !important;
 }
-.ant-modal-content {
-  border-radius: var(--radius-2xl) !important;
+/* Скругление 12px для всех всплывающих окон */
+/* Ant Design 6: скругление задаём .ant-modal (основной контейнер модалки) */
+.ant-modal,
+body .ant-modal,
+body .ant-modal-container,
+body .ant-modal-content,
+body .ant-modal-confirm,
+body .ant-modal-confirm .ant-modal,
+body .ant-modal-confirm .ant-modal-container,
+body .ant-modal-confirm .ant-modal-content,
+body .ant-modal-confirm .ant-modal-body-wrapper,
+body .ant-popover-inner,
+body .ant-popconfirm .ant-popover-inner,
+body .ant-dropdown-menu,
+body .ant-notification-notice,
+body .ant-message-notice-content,
+body .ant-select-dropdown,
+body .ant-picker-panel-container,
+body .ant-tooltip-inner {
+  border-radius: 12px !important;
 }
+
 .ant-float-btn-circle {
   border-radius: var(--radius-xl) !important;
 }
@@ -693,15 +712,11 @@ html[data-theme="dark"] .ant-card-body {
     bottom: 0 !important;
   }
 
-  .ant-drawer-content {
+  .ant-drawer-content,
+  .ant-drawer-section {
     width: 100% !important;
     max-width: 100% !important;
-    height: 100vh !important;
-    height: 100dvh !important;
-    max-height: 100vh !important;
-    max-height: 100dvh !important;
-    overflow: hidden !important;
-    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0 !important;
+    height: 100% !important;
   }
 
   .ant-drawer-body {
@@ -717,7 +732,6 @@ html[data-theme="dark"] .ant-card-body {
     top: 0 !important;
     z-index: 1 !important;
     background: var(--bg-card) !important;
-    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0 !important;
   }
 }
 

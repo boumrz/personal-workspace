@@ -112,10 +112,6 @@ const TransactionsPage: React.FC = () => {
     return date.format("D MMMM, YYYY");
   };
 
-  const formatTime = (dateStr: string) => {
-    return dayjs(dateStr).format("H:mm");
-  };
-
   const handleDelete = (id: string) => {
     if (activeTab === "actual") {
       deleteTransaction(id);
@@ -229,13 +225,6 @@ const TransactionsPage: React.FC = () => {
                             <span className={styles.transactionWallet}>
                               {category.name}
                             </span>
-                            <span className={styles.transactionTag}>
-                              {activeTab === "planned" 
-                                ? "План" 
-                                : transaction.type === "income"
-                                  ? "Доход"
-                                  : "Расход"}
-                            </span>
                           </div>
                         </div>
 
@@ -256,9 +245,6 @@ const TransactionsPage: React.FC = () => {
                               {transaction.amount.toLocaleString("ru-RU", {
                                 minimumFractionDigits: 2,
                               })}
-                            </span>
-                            <span className={styles.transactionTime}>
-                              {formatTime(transaction.date)}
                             </span>
                           </div>
                           <Popconfirm

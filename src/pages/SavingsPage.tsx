@@ -113,10 +113,6 @@ const SavingsPage: React.FC = () => {
     return date.format("D MMMM, YYYY");
   };
 
-  const formatTime = (dateStr: string) => {
-    return dayjs(dateStr).format("H:mm");
-  };
-
   const handleDelete = (id: string) => {
     Modal.confirm({
       title: "Удалить накопление?",
@@ -246,9 +242,6 @@ const SavingsPage: React.FC = () => {
                           + ₽{saving.amount.toLocaleString("ru-RU", {
                             minimumFractionDigits: 2,
                           })}
-                        </span>
-                        <span className={styles.savingTime}>
-                          {formatTime(saving.date)}
                         </span>
                       </div>
 

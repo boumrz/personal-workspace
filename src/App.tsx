@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ConfigProvider, theme as antdTheme } from "antd";
+import { App as AntdApp, ConfigProvider, theme as antdTheme } from "antd";
 import ruRU from "antd/locale/ru_RU";
 import dayjs from "dayjs";
 import "dayjs/locale/ru";
@@ -291,6 +291,8 @@ const ThemedApp: React.FC = () => {
     fontFamily: '"Helvetica", "Helvetica Neue", Arial, sans-serif',
   };
 
+  const popupStyles = { borderRadius: 12 };
+
   return (
     <ConfigProvider
       locale={ruRU}
@@ -298,10 +300,21 @@ const ThemedApp: React.FC = () => {
         algorithm: theme === "dark" ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
         token: themeTokens,
       }}
+      modal={{ styles: { wrapper: popupStyles, container: popupStyles } }}
+      popover={{ styles: { content: popupStyles } }}
+      popconfirm={{ styles: { content: popupStyles } }}
+      dropdown={{ styles: { content: popupStyles } }}
+      message={{ styles: { content: popupStyles } }}
+      notification={{ styles: { content: popupStyles } }}
+      select={{ styles: { popup: { root: popupStyles } } }}
+      datePicker={{ styles: { popup: { root: popupStyles } } }}
+      tooltip={{ styles: { content: popupStyles } }}
     >
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <AntdApp>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </AntdApp>
     </ConfigProvider>
   );
 };
