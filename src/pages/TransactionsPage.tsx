@@ -222,7 +222,13 @@ const TransactionsPage: React.FC = () => {
                             {transaction.description || "Без описания"}
                           </span>
                           <div className={styles.transactionMeta}>
-                            <span className={styles.transactionWallet}>
+                            <span
+                              className={styles.categoryTag}
+                              style={{
+                                backgroundColor: category.color + "25",
+                                color: category.color,
+                              }}
+                            >
                               {category.name}
                             </span>
                           </div>

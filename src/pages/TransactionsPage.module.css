@@ -217,6 +217,13 @@
   color: var(--text-secondary);
 }
 
+.categoryTag {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+}
+
 .transactionTag {
   font-size: 11px;
   color: var(--text-tertiary);

@@ -10,8 +10,8 @@ import {
   DatePicker,
   Space,
   Tooltip,
-  Popconfirm,
   Alert,
+  App,
 } from "antd";
 import { PlusOutlined, CloseOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -31,6 +31,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   onClose,
   type,
 }) => {
+  const { modal } = App.useApp();
   const {
     addTransaction,
     addPlannedExpense,
@@ -467,12 +468,13 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       )}
 
       <Form.Item label="Категория" required>
-        <Space wrap size={12} className={styles.categoriesContainer}>
+        <Space wrap size={8} className={styles.categoriesContainer}>
           {availableCategories.map((category) => {
             const canDelete = !isDefaultCategory(category.name);
             return (
               <div key={category.id} className={styles.categoryWrapper}>
                 <Button
+                  size="small"
                   type={
                     selectedCategory === category.id ? "primary" : "default"
                   }
@@ -490,33 +492,34 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                       : {}
                   }
                 >
-                  <IconRenderer iconName={category.icon} size={16} />{" "}
+                  <IconRenderer iconName={category.icon} size={12} />{" "}
                   {category.name}
                 </Button>
                 {canDelete && (
-                  <Popconfirm
-                    title="Удалить категорию?"
-                    description="Эта категория будет удалена. Это действие нельзя отменить."
-                    onConfirm={(e) => handleDeleteCategory(category.id, e)}
-                    onCancel={(e) => e?.stopPropagation()}
-                    okText="Да"
-                    cancelText="Нет"
-                    placement="top"
-                  >
-                    <Button
-                      type="text"
-                      danger
-                      size="small"
-                      icon={<CloseOutlined />}
-                      className={styles.deleteCategoryButton}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </Popconfirm>
+                  <Button
+                    type="text"
+                    danger
+                    size="small"
+                    icon={<CloseOutlined />}
+                    className={styles.deleteCategoryButton}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      modal.confirm({
+                        title: "Удалить категорию?",
+                        content: "Эта категория будет удалена. Это действие нельзя отменить.",
+                        okText: "Удалить",
+                        okType: "danger",
+                        cancelText: "Отмена",
+                        onOk: () => handleDeleteCategory(category.id),
+                      });
+                    }}
+                  />
                 )}
               </div>
             );
           })}
           <Button
+            size="small"
             type="dashed"
             icon={<PlusOutlined />}
             onClick={() => setShowCategoryForm(true)}

@@ -99,14 +99,14 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
       }
     >
       <div className={styles.categoriesList}>
-        <Space size={[8, 8]} wrap className={styles.tagsContainer}>
+        <Space size={[6, 6]} wrap className={styles.tagsContainer}>
           <Tag
             className={styles.categoryTag}
             onClick={() => handleCategoryClick(null)}
             style={{
               cursor: "pointer",
-              padding: "8px 16px",
-              fontSize: "14px",
+              padding: "5px 12px",
+              fontSize: "13px",
               margin: 0,
               border: isAllSelected
                 ? "1px solid var(--accent)"
@@ -124,8 +124,8 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
               onClick={() => handleCategoryClick(category.id)}
               style={{
                 cursor: "pointer",
-                padding: "8px 16px",
-                fontSize: "14px",
+                padding: "5px 12px",
+                fontSize: "13px",
                 margin: 0,
                 border: isCategorySelected(category.id)
                   ? `1px solid ${category.color}`
@@ -137,7 +137,7 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
               }}
             >
               <span className={styles.categoryIcon}>
-                <IconRenderer iconName={category.icon} size={14} />
+                <IconRenderer iconName={category.icon} size={12} />
               </span>
               {category.name}
             </Tag>
