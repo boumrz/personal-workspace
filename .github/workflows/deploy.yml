@@ -15,7 +15,7 @@ jobs:
       contents: write
       pages: write
       id-token: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,8 +23,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: "18"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -35,6 +35,9 @@ jobs:
           NODE_ENV: production
           # Используем API URL из секретов, если указан, иначе относительный путь
           VITE_API_URL: ${{ secrets.API_URL || '/api' }}
+          # VK ID и Telegram — для кнопок входа/привязки (см. docs/VK_ID_SETUP.md)
+          VITE_VK_ID_APP_ID: ${{ secrets.VITE_VK_ID_APP_ID || '' }}
+          VITE_TELEGRAM_BOT_USERNAME: ${{ secrets.VITE_TELEGRAM_BOT_USERNAME || '' }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -42,7 +45,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist'
+          path: "./dist"
 
       - name: Deploy to GitHub Pages
         id: deployment
@@ -53,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     # Запускаем параллельно с фронтендом для ускорения
     # needs: deploy-frontend  # Раскомментируйте, если хотите последовательный деплой
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -61,8 +64,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: "18"
+          cache: "npm"
 
       - name: Install SSH key
         uses: webfactory/ssh-agent@v0.9.0
@@ -72,6 +75,47 @@ jobs:
       - name: Add server to known hosts
         run: |
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create and deploy server .env
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_PATH: ${{ secrets.SERVER_PATH }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
+          VK_ID_APP_ID: ${{ secrets.VK_ID_APP_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          VITE_VK_ID_APP_ID: ${{ secrets.VITE_VK_ID_APP_ID }}
+          VITE_TELEGRAM_BOT_USERNAME: ${{ secrets.VITE_TELEGRAM_BOT_USERNAME }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REDIRECT_URI: ${{ secrets.GOOGLE_REDIRECT_URI }}
+        run: |
+          cat > .env.server << EOF
+          PORT=3001
+          NODE_ENV=production
+          DB_HOST=${DB_HOST:-localhost}
+          DB_PORT=${DB_PORT:-5432}
+          DB_NAME=${DB_NAME:-finance_assistant}
+          DB_USER=${DB_USER:-postgres}
+          DB_PASSWORD=${DB_PASSWORD}
+          JWT_SECRET=${JWT_SECRET}
+          CORS_ORIGIN=${CORS_ORIGIN}
+          VK_ID_APP_ID=${VK_ID_APP_ID}
+          TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+          VITE_VK_ID_APP_ID=${VITE_VK_ID_APP_ID}
+          VITE_TELEGRAM_BOT_USERNAME=${VITE_TELEGRAM_BOT_USERNAME}
+          GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+          GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+          GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+          EOF
+          scp -o StrictHostKeyChecking=no .env.server ${SERVER_USER}@${SERVER_HOST}:${SERVER_PATH}/.env
+          rm -f .env.server
 
       - name: Deploy to server
         env:
@@ -83,16 +127,16 @@ jobs:
           cat > deploy-remote.sh << 'DEPLOYSCRIPT'
           #!/bin/bash
           set -e
-          
+
           echo "🚀 Начинаем деплой на сервере..."
-          
+
           # Загружаем переменные окружения для Node.js (если используется nvm)
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" || true
-          
+
           # Или загружаем из стандартных путей
           export PATH="$PATH:/usr/bin:/usr/local/bin:$HOME/.local/bin"
-          
+
           # Проверяем доступность npm
           if ! command -v npm &> /dev/null; then
             echo "⚠️ npm не найден, пытаемся найти в стандартных местах..."
@@ -106,32 +150,32 @@ jobs:
               exit 1
             fi
           fi
-          
+
           echo "📋 Версия Node.js: $(node --version 2>/dev/null || echo 'не найдена')"
           echo "📋 Версия npm: $(npm --version 2>/dev/null || echo 'не найдена')"
-          
+
           # Переходим в директорию проекта
           cd "${SERVER_PATH}" || exit 1
-          
+
           # Обновляем код из репозитория
           echo "📥 Обновление кода из репозитория..."
           git fetch origin
           git reset --hard origin/main || git reset --hard origin/master
-          
+
           # Обновляем зависимости бэкенда
           echo "📦 Установка зависимостей бэкенда..."
           cd server
           npm ci --production || npm install --production
-          
+
           # Запускаем миграции
           echo "🗄️  Запуск миграций базы данных..."
           npm run migrate || echo "⚠️ Миграции пропущены (возможна ошибка)"
-          
+
           # Перезапускаем бэкенд через PM2
           echo "🔄 Перезапуск бэкенда..."
           pm2 restart finance-assistant-api || (pm2 delete finance-assistant-api 2>/dev/null || true; pm2 start ecosystem.config.cjs --env production)
           pm2 save
-          
+
           # Обновляем зависимости фронтенда (если нужно для сборки на сервере)
           cd ..
           if [ -f "package.json" ]; then
@@ -142,18 +186,18 @@ jobs:
             echo "🏗️  Сборка фронтенда для сервера..."
             npm run build || echo "⚠️ Сборка фронтенда пропущена"
           fi
-          
+
           # Перезагружаем Nginx (только если есть права)
           echo "🔄 Перезагрузка Nginx..."
           sudo nginx -t && sudo systemctl reload nginx || echo "⚠️ Nginx не перезагружен (проверьте права)"
-          
+
           echo "✅ Деплой завершен успешно!"
           DEPLOYSCRIPT
-          
+
           # Копируем и выполняем скрипт на сервере
           scp -o StrictHostKeyChecking=no deploy-remote.sh ${SERVER_USER}@${SERVER_HOST}:/tmp/deploy-remote.sh
           ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} "chmod +x /tmp/deploy-remote.sh && SERVER_PATH='${SERVER_PATH}' bash /tmp/deploy-remote.sh && rm -f /tmp/deploy-remote.sh"
-          
+
           # Очищаем временный скрипт
           rm -f deploy-remote.sh
 

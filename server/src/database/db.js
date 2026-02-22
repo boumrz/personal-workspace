@@ -1,7 +1,11 @@
 import pg from "pg";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
-dotenv.config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// .env в корне проекта (server/src/database -> ../../../ = project root)
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 
 const { Pool } = pg;
 

@@ -6,6 +6,7 @@ import {
   Progress,
   Modal,
   Empty,
+  message,
 } from "antd";
 import dayjs from "dayjs";
 import {
@@ -17,10 +18,10 @@ import {
   FileAddOutlined,
   RightOutlined,
   WalletOutlined,
-  SettingOutlined,
   UserOutlined,
   BulbOutlined,
   BulbFilled,
+  DisconnectOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { Goal } from "../store/api";
@@ -34,7 +35,13 @@ import {
   useCreateGoalMutation,
   useUpdateGoalMutation,
   useDeleteGoalMutation,
+  useLinkTelegramMutation,
+  useUnlinkTelegramMutation,
+  useLinkVkIdMutation,
+  useUnlinkVkMutation,
 } from "../store/api";
+import { VKIdWidget } from "../components/VKIdWidget";
+import { TelegramLinkButton } from "../components/TelegramLinkButton";
 import GoalForm from "../components/GoalForm";
 import ProfileEditDrawer from "../components/ProfileEditDrawer";
 import GoalEditDrawer from "../components/GoalEditDrawer";
@@ -42,6 +49,9 @@ import GoalAddDrawer from "../components/GoalAddDrawer";
 import PageHeader from "../components/PageHeader";
 import IconRenderer from "../components/IconRenderer";
 import * as styles from "./ProfilePage.module.css";
+
+const TELEGRAM_BOT_USERNAME = typeof __TELEGRAM_BOT_USERNAME__ !== "undefined" ? __TELEGRAM_BOT_USERNAME__ : "";
+const VK_ID_APP_ID = typeof __VK_ID_APP_ID__ !== "undefined" ? __VK_ID_APP_ID__ : "";
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
@@ -61,6 +71,10 @@ const ProfilePage: React.FC = () => {
     refetch: refetchGoals,
   } = useGetGoalsQuery();
   const [updateProfile] = useUpdateProfileMutation();
+  const [linkTelegram, { isLoading: linkTelegramLoading }] = useLinkTelegramMutation();
+  const [unlinkTelegram, { isLoading: unlinkTelegramLoading }] = useUnlinkTelegramMutation();
+  const [linkVkId, { isLoading: linkVkLoading }] = useLinkVkIdMutation();
+  const [unlinkVk, { isLoading: unlinkVkLoading }] = useUnlinkVkMutation();
   const [createGoal] = useCreateGoalMutation();
   const [updateGoal] = useUpdateGoalMutation();
   const [deleteGoal] = useDeleteGoalMutation();
@@ -186,6 +200,75 @@ const ProfilePage: React.FC = () => {
     } catch (error) {
       console.error("Error updating amount:", error);
     }
+  };
+
+  const handleLinkTelegram = async (telegramData: {
+    id: number;
+    first_name?: string;
+    last_name?: string;
+    username?: string;
+    auth_date: number;
+    hash: string;
+  }) => {
+    try {
+      await linkTelegram(telegramData).unwrap();
+      message.success("Telegram привязан");
+      refetchProfile();
+    } catch (err: unknown) {
+      const e = err as { data?: { error?: string }; message?: string };
+      message.error(e?.data?.error || e?.message || "Ошибка привязки Telegram");
+    }
+  };
+
+  const handleUnlinkTelegram = () => {
+    Modal.confirm({
+      title: "Отвязать Telegram?",
+      content: "Вы сможете войти через Telegram снова, только привязав его заново.",
+      okText: "Отвязать",
+      okType: "danger",
+      cancelText: "Отмена",
+      onOk: async () => {
+        try {
+          await unlinkTelegram().unwrap();
+          message.success("Telegram отвязан");
+          refetchProfile();
+        } catch (err: unknown) {
+          const e = err as { data?: { error?: string }; message?: string };
+          message.error(e?.data?.error || e?.message || "Ошибка отвязки");
+        }
+      },
+    });
+  };
+
+  const handleLinkVkId = async (accessToken: string) => {
+    try {
+      await linkVkId({ access_token: accessToken }).unwrap();
+      message.success("VK привязан");
+      refetchProfile();
+    } catch (err: unknown) {
+      const e = err as { data?: { error?: string }; message?: string };
+      message.error(e?.data?.error || e?.message || "Ошибка привязки VK");
+    }
+  };
+
+  const handleUnlinkVk = () => {
+    Modal.confirm({
+      title: "Отвязать VK?",
+      content: "Вы сможете войти через VK снова, только привязав его заново.",
+      okText: "Отвязать",
+      okType: "danger",
+      cancelText: "Отмена",
+      onOk: async () => {
+        try {
+          await unlinkVk().unwrap();
+          message.success("VK отвязан");
+          refetchProfile();
+        } catch (err: unknown) {
+          const e = err as { data?: { error?: string }; message?: string };
+          message.error(e?.data?.error || e?.message || "Ошибка отвязки");
+        }
+      },
+    });
   };
 
   // Получаем имя пользователя для отображения
@@ -379,6 +462,86 @@ const ProfilePage: React.FC = () => {
             </button>
           </div>
         </section>
+
+        {/* Привязанные аккаунты */}
+        {(TELEGRAM_BOT_USERNAME || VK_ID_APP_ID) && (
+          <section className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h2>Привязанные аккаунты</h2>
+            </div>
+            <div className={styles.linkedAccounts}>
+              {TELEGRAM_BOT_USERNAME && (
+                <div className={styles.linkedAccountItem}>
+                  <div className={styles.linkedAccountInfo}>
+                    <span className={styles.linkedAccountName}>Telegram</span>
+                    <span className={styles.linkedAccountStatus}>
+                      {profile?.telegramId ? "Привязан" : "Не привязан"}
+                    </span>
+                  </div>
+                  <div className={styles.linkedAccountActions}>
+                    {profile?.telegramId ? (
+                      <Button
+                        type="default"
+                        danger
+                        size="small"
+                        icon={<DisconnectOutlined />}
+                        onClick={handleUnlinkTelegram}
+                        loading={unlinkTelegramLoading}
+                      >
+                        Отвязать
+                      </Button>
+                    ) : (
+                      <div className={styles.telegramLinkWrapper}>
+                        <TelegramLinkButton
+                          botUsername={TELEGRAM_BOT_USERNAME}
+                          onAuthCallback={handleLinkTelegram}
+                          loading={linkTelegramLoading}
+                          label="Привязать Telegram"
+                        />
+                        {linkTelegramLoading && (
+                          <span className={styles.linkLoading}>Проверка...</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {VK_ID_APP_ID && (
+                <div className={styles.linkedAccountItem}>
+                  <div className={styles.linkedAccountInfo}>
+                    <span className={styles.linkedAccountName}>VK</span>
+                    <span className={styles.linkedAccountStatus}>
+                      {profile?.vkId ? "Привязан" : "Не привязан"}
+                    </span>
+                  </div>
+                  <div className={styles.linkedAccountActions}>
+                    {profile?.vkId ? (
+                      <Button
+                        type="default"
+                        danger
+                        size="small"
+                        icon={<DisconnectOutlined />}
+                        onClick={handleUnlinkVk}
+                        loading={unlinkVkLoading}
+                      >
+                        Отвязать
+                      </Button>
+                    ) : (
+                      <VKIdWidget
+                        appId={VK_ID_APP_ID}
+                        onSuccess={handleLinkVkId}
+                        onError={(e) => message.error(e?.message || "Ошибка VK ID")}
+                        loading={linkVkLoading}
+                        label="Привязать VK"
+                        redirectUrl={typeof window !== "undefined" ? `${window.location.origin}/vk-id-callback.html` : undefined}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* Кнопка выхода */}
         <button

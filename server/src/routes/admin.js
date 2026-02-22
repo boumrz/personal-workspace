@@ -148,6 +148,7 @@ router.delete(
   "/users/:id",
   asyncHandler(async (req, res) => {
     const { id } = req.params;
+    const currentUserId = req.user?.userId;
 
     // Проверяем, существует ли пользователь
     const userCheck = await pool.query("SELECT id, login FROM users WHERE id = $1", [id]);
@@ -155,7 +156,12 @@ router.delete(
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Не позволяем удалить самого себя (администратора)
+    // Не позволяем удалить самого себя
+    if (Number(id) === currentUserId) {
+      return res.status(400).json({ error: "Cannot delete your own account" });
+    }
+
+    // Не позволяем удалить главного администратора
     if (userCheck.rows[0].login === "boumrz") {
       return res.status(400).json({ error: "Cannot delete admin user" });
     }

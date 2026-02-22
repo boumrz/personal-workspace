@@ -36,6 +36,8 @@ export interface Profile {
   middleName?: string;
   age?: number;
   dateOfBirth?: string;
+  telegramId?: string | null;
+  vkId?: string | null;
 }
 
 export interface Goal {
@@ -80,6 +82,16 @@ export interface RegisterRequest {
   fullName: string;
   login: string;
   password: string;
+}
+
+export interface TelegramAuthData {
+  id: number;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+  auth_date: number;
+  hash: string;
 }
 
 export interface LoginResponse {
@@ -252,6 +264,20 @@ export const api = createApi({
         body: data,
       }),
     }),
+    loginWithTelegram: builder.mutation<LoginResponse, TelegramAuthData>({
+      query: (data) => ({
+        url: "/auth/telegram",
+        method: "POST",
+        body: data,
+      }),
+    }),
+    loginWithVkId: builder.mutation<LoginResponse, { access_token: string }>({
+      query: (data) => ({
+        url: "/auth/vkid",
+        method: "POST",
+        body: data,
+      }),
+    }),
 
     // Categories
     getCategories: builder.query<Category[], void>({
@@ -353,6 +379,36 @@ export const api = createApi({
       }),
       invalidatesTags: ["Profile"],
     }),
+    linkTelegram: builder.mutation<{ success: boolean }, TelegramAuthData>({
+      query: (data) => ({
+        url: "/profile/link/telegram",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Profile"],
+    }),
+    unlinkTelegram: builder.mutation<{ success: boolean }, void>({
+      query: () => ({
+        url: "/profile/unlink/telegram",
+        method: "POST",
+      }),
+      invalidatesTags: ["Profile"],
+    }),
+    linkVkId: builder.mutation<{ success: boolean }, { access_token: string }>({
+      query: (data) => ({
+        url: "/profile/link/vkid",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Profile"],
+    }),
+    unlinkVk: builder.mutation<{ success: boolean }, void>({
+      query: () => ({
+        url: "/profile/unlink/vk",
+        method: "POST",
+      }),
+      invalidatesTags: ["Profile"],
+    }),
 
     // Goals
     getGoals: builder.query<Goal[], void>({
@@ -422,6 +478,8 @@ export const api = createApi({
 export const {
   useLoginMutation,
   useRegisterMutation,
+  useLoginWithTelegramMutation,
+  useLoginWithVkIdMutation,
   useGetCategoriesQuery,
   useCreateCategoryMutation,
   useDeleteCategoryMutation,
@@ -436,6 +494,10 @@ export const {
   useDeleteSavingMutation,
   useGetProfileQuery,
   useUpdateProfileMutation,
+  useLinkTelegramMutation,
+  useUnlinkTelegramMutation,
+  useLinkVkIdMutation,
+  useUnlinkVkMutation,
   useGetGoalsQuery,
   useCreateGoalMutation,
   useUpdateGoalMutation,

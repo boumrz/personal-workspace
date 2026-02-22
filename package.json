@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",
+    "@telegram-auth/react": "^1.0.4",
+    "@vkid/sdk": "^2.0.0",
     "antd": "^6.2.1",
     "chart.js": "^4.5.1",
     "dayjs": "^1.11.13",
@@ -20,15 +22,19 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^6.26.0"
   },
+  "overrides": {
+    "minimatch": ">=10.2.1"
+  },
   "devDependencies": {
     "@rspack/cli": "^1.7.1",
     "@rspack/core": "^1.7.1",
     "@rspack/plugin-react-refresh": "^1.1.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@typescript-eslint/eslint-plugin": "^7.13.1",
-    "@typescript-eslint/parser": "^7.13.1",
+    "@typescript-eslint/eslint-plugin": "^8.56.0",
+    "@typescript-eslint/parser": "^8.56.0",
     "css-loader": "^7.1.2",
+    "dotenv": "^16.3.1",
     "style-loader": "^4.0.0",
     "typescript": "^5.5.3"
   }

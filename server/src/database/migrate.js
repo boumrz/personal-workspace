@@ -4,7 +4,9 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-dotenv.config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// .env в корне проекта (server/src/database -> ../../../ = project root)
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 
 const { Pool } = pg;
 
@@ -235,6 +237,55 @@ async function migrate() {
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS login_count INTEGER DEFAULT 0`);
       console.log("Login tracking columns added");
+    }
+
+    // Check if telegram_id column exists
+    const telegramIdColumnExists = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'users' AND column_name = 'telegram_id'
+    `);
+
+    if (telegramIdColumnExists.rows.length === 0) {
+      console.log("Adding telegram_id column to users table...");
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_id VARCHAR(255)`);
+      await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS users_telegram_id_unique ON users(telegram_id) WHERE telegram_id IS NOT NULL`);
+      // Update CHECK constraint to allow telegram_id
+      await pool.query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_or_login_check`);
+      await pool.query(`
+        ALTER TABLE users ADD CONSTRAINT users_email_or_login_check CHECK (
+          (email IS NOT NULL AND password_hash IS NOT NULL) OR 
+          (login IS NOT NULL AND password_hash IS NOT NULL) OR 
+          (google_id IS NOT NULL) OR 
+          (telegram_id IS NOT NULL)
+        )
+      `);
+      console.log("telegram_id column added");
+    }
+
+    // Check if vk_id column exists
+    const vkIdColumnExists = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'users' AND column_name = 'vk_id'
+    `);
+
+    if (vkIdColumnExists.rows.length === 0) {
+      console.log("Adding vk_id column to users table...");
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS vk_id VARCHAR(255)`);
+      await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS users_vk_id_unique ON users(vk_id) WHERE vk_id IS NOT NULL`);
+      // Update CHECK constraint to allow vk_id
+      await pool.query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_or_login_check`);
+      await pool.query(`
+        ALTER TABLE users ADD CONSTRAINT users_email_or_login_check CHECK (
+          (email IS NOT NULL AND password_hash IS NOT NULL) OR 
+          (login IS NOT NULL AND password_hash IS NOT NULL) OR 
+          (google_id IS NOT NULL) OR 
+          (telegram_id IS NOT NULL) OR 
+          (vk_id IS NOT NULL)
+        )
+      `);
+      console.log("vk_id column added");
     }
     
     console.log("Users table created/verified");
@@ -534,6 +585,8 @@ async function migrate() {
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_login ON users(login) WHERE login IS NOT NULL`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id) WHERE google_id IS NOT NULL`);
+    await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS users_telegram_id_unique ON users(telegram_id) WHERE telegram_id IS NOT NULL`);
+    await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS users_vk_id_unique ON users(vk_id) WHERE vk_id IS NOT NULL`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date)`);

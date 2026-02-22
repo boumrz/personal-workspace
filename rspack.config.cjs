@@ -1,3 +1,4 @@
+require("dotenv").config({ path: require("path").resolve(__dirname, ".env") });
 const rspack = require("@rspack/core");
 const ReactRefreshPlugin = require("@rspack/plugin-react-refresh");
 const path = require("path");
@@ -96,6 +97,8 @@ module.exports = {
       ...(process.env.VITE_API_URL 
         ? { "__API_BASE_URL__": JSON.stringify(process.env.VITE_API_URL) }
         : {}),
+      "__TELEGRAM_BOT_USERNAME__": JSON.stringify(process.env.VITE_TELEGRAM_BOT_USERNAME || process.env.TELEGRAM_BOT_USERNAME || ""),
+      "__VK_ID_APP_ID__": JSON.stringify(process.env.VITE_VK_ID_APP_ID || process.env.VK_ID_APP_ID || ""),
     }),
     new rspack.ProgressPlugin({}),
     new rspack.HtmlRspackPlugin({
@@ -118,7 +121,17 @@ module.exports = {
     chunkIds: process.env.NODE_ENV === "production" ? "deterministic" : "named",
   },
   devServer: {
-    port: 3000,
+    // Порт 443 — для https://127.0.0.1 (на Windows может потребоваться запуск от имени администратора)
+    port: 443,
+    host: "127.0.0.1",
+    server: "https",
+    proxy: [
+      {
+        context: ["/api"],
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+    ],
     historyApiFallback: {
       index: "/index.html",
       disableDotRule: true,

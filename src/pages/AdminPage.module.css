@@ -4,7 +4,8 @@
   margin: 0 auto;
   padding: 24px;
   background-color: var(--bg-base);
-  min-height: 100vh;
+  min-height: 100%;
+  overflow: auto;
 }
 
 .tableContainer {
@@ -13,6 +14,8 @@
   border-radius: var(--radius-lg);
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 .editForm {

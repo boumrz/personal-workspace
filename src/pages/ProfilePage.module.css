@@ -16,7 +16,7 @@
   .profilePage {
     padding: 0;
     padding-top: 56px;
-    padding-bottom: 80px;
+    padding-bottom: 100px;
     background: var(--bg-base);
     min-height: 100%;
   }
@@ -104,7 +104,11 @@
 
 /* Карточка баланса */
 .balanceCard {
-  background: linear-gradient(135deg, var(--income-muted-dark) 0%, var(--income-muted-darker) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--income-muted-dark) 0%,
+    var(--income-muted-darker) 100%
+  );
   border-radius: var(--radius-2xl);
   padding: 24px;
   display: flex;
@@ -210,7 +214,9 @@
   flex-direction: column;
   gap: 12px;
   box-shadow: 0 2px 8px var(--shadow-xs);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .goalCard:hover {
@@ -403,6 +409,85 @@
   flex-shrink: 0;
 }
 
+/* Привязанные аккаунты */
+.linkedAccounts {
+  background: var(--bg-card);
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  box-shadow: 0 2px 8px var(--shadow-xs);
+}
+
+.linkedAccountItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.linkedAccountItem:last-child {
+  border-bottom: none;
+}
+
+.linkedAccountInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.linkedAccountName {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.linkedAccountStatus {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.linkedAccountActions {
+  flex-shrink: 0;
+}
+
+.telegramLinkWrapper,
+.vkLinkWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 140px;
+  /* Улучшение тач-целей на мобильных */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+.telegramLinkWrapper :global(iframe),
+.telegramLinkWrapper :global(button) {
+  min-height: 44px !important;
+  min-width: 44px !important;
+  pointer-events: auto !important;
+  /* Помогает с touch на iOS */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+.vkLinkWrapper button {
+  min-width: 140px;
+  min-height: 44px !important;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.linkLoading {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
 /* Кнопка выхода */
 .logoutBtn {
   width: 100%;
@@ -478,5 +563,34 @@
     padding: 14px;
     font-size: 15px;
     margin-top: 12px;
+  }
+
+  /* Привязанные аккаунты — полная ширина и крупные тач-цели */
+  .linkedAccountItem {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .linkedAccountActions {
+    width: 100%;
+  }
+
+  .telegramLinkWrapper,
+  .vkLinkWrapper {
+    width: 100%;
+    align-items: stretch;
+    min-width: unset;
+  }
+
+  .telegramLinkWrapper :global(iframe),
+  .vkLinkWrapper button {
+    width: 100% !important;
+    min-width: unset !important;
+  }
+
+  /* Доп. отступ снизу, чтобы кнопки не перекрывались нижней навигацией */
+  .linkedAccounts {
+    margin-bottom: 8px;
   }
 }

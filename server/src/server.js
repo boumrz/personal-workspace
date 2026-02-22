@@ -1,8 +1,10 @@
+import "./loadEnv.js";
 import app from "./app.js";
 import config from "./config/config.js";
 
 const server = app.listen(config.port, () => {
   console.log(`Server is running on port ${config.port}`);
+  console.log(`Telegram auth: ${config.telegramBotToken ? "configured" : "NOT configured"}`);
 });
 
 // Handle unhandled promise rejections

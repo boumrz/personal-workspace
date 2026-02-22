@@ -33,7 +33,7 @@ const AdminPage: React.FC = () => {
     refetch,
   } = useGetAdminUsersQuery();
   const [updateUser] = useUpdateAdminUserMutation();
-  const [deleteUser] = useDeleteAdminUserMutation();
+  const [deleteUser, { isLoading: isDeleting }] = useDeleteAdminUserMutation();
 
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -206,14 +206,12 @@ const AdminPage: React.FC = () => {
               title="Удалить пользователя?"
               description="Это действие нельзя отменить. Все данные пользователя будут удалены."
               onConfirm={() => handleDelete(record.id)}
-              okText="Да"
-              cancelText="Нет"
+              okText="Удалить"
+              cancelText="Отмена"
+              okButtonProps={{ danger: true }}
+              confirmLoading={isDeleting}
             >
-              <Button
-                type="link"
-                danger
-                icon={<DeleteOutlined />}
-              >
+              <Button type="link" danger icon={<DeleteOutlined />} htmlType="button">
                 Удалить
               </Button>
             </Popconfirm>
@@ -245,7 +243,7 @@ const AdminPage: React.FC = () => {
           dataSource={users}
           rowKey="id"
           loading={isLoading}
-          scroll={{ x: 1200 }}
+          scroll={{ x: 1200, y: "max(400px, calc(100vh - 320px))" }}
           pagination={{
             pageSize: 20,
             showSizeChanger: true,

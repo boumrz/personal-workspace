@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { getApiBaseUrl } from "../utils/apiConfig";
-import { useLoginMutation, useRegisterMutation, User, api } from "../store/api";
+import { useLoginMutation, useRegisterMutation, useLoginWithTelegramMutation, useLoginWithVkIdMutation, User, api } from "../store/api";
 import { store } from "../store";
 
 export type { User };
@@ -11,6 +11,16 @@ interface AuthContextType {
   login: (login: string, password: string) => Promise<void>;
   register: (fullName: string, login: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
+  loginWithVkId: (accessToken: string) => Promise<void>;
+  loginWithTelegram: (telegramData: {
+    id: number;
+    first_name?: string;
+    last_name?: string;
+    username?: string;
+    photo_url?: string;
+    auth_date: number;
+    hash: string;
+  }) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -35,6 +45,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [loginMutation] = useLoginMutation();
   const [registerMutation] = useRegisterMutation();
+  const [loginWithTelegramMutation] = useLoginWithTelegramMutation();
+  const [loginWithVkIdMutation] = useLoginWithVkIdMutation();
 
   useEffect(() => {
     // Check for stored token on mount (refreshToken хранится в api/store для refresh)
@@ -83,6 +95,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error: any) {
       // Ошибка уже обработана в интерцепторе, но можем пробросить дальше
       throw new Error(error?.data?.error || error?.error || "Registration failed");
+    }
+  };
+
+  const loginWithTelegram = async (telegramData: {
+    id: number;
+    first_name?: string;
+    last_name?: string;
+    username?: string;
+    photo_url?: string;
+    auth_date: number;
+    hash: string;
+  }) => {
+    store.dispatch(api.util.resetApiState());
+    const result = await loginWithTelegramMutation(telegramData).unwrap();
+    setToken(result.token);
+    setUser(result.user);
+    localStorage.setItem("token", result.token);
+    localStorage.setItem("user", JSON.stringify(result.user));
+    if (result.refreshToken) {
+      localStorage.setItem("refreshToken", result.refreshToken);
     }
   };
 
@@ -147,6 +179,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
   };
 
+  const loginWithVkId = async (accessToken: string) => {
+    store.dispatch(api.util.resetApiState());
+    const result = await loginWithVkIdMutation({ access_token: accessToken }).unwrap();
+    setToken(result.token);
+    setUser(result.user);
+    localStorage.setItem("token", result.token);
+    localStorage.setItem("user", JSON.stringify(result.user));
+    if (result.refreshToken) {
+      localStorage.setItem("refreshToken", result.refreshToken);
+    }
+  };
+
   const logout = () => {
     // Очищаем кэш RTK Query при выходе, чтобы данные не остались от предыдущего пользователя
     store.dispatch(api.util.resetApiState());
@@ -159,7 +203,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, loginWithGoogle, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, register, loginWithGoogle, loginWithVkId, loginWithTelegram, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

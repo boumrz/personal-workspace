@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>VK ID</title>
+  </head>
+  <body>
+    <p>Авторизация...</p>
+    <script>
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        var code = params.get("code");
+        var state = params.get("state");
+        var device_id = params.get("device_id");
+        var error = params.get("error");
+
+        if (window.opener) {
+          var action = "oauth2_authorize_response" + (state || "");
+          if (error) {
+            window.opener.postMessage(
+              {
+                action: action,
+                payload: {
+                  error: {
+                    error: error,
+                    error_description: params.get("error_description"),
+                  },
+                },
+              },
+              "*",
+            );
+          } else if (code) {
+            window.opener.postMessage(
+              {
+                action: action,
+                payload: {
+                  type: "code",
+                  code: code,
+                  state: state,
+                  device_id: device_id,
+                },
+              },
+              "*",
+            );
+          }
+          window.close();
+        } else {
+          document.body.innerHTML = "<p>Окно можно закрыть.</p>";
+        }
+      })();
+    </script>
+  </body>
+</html>

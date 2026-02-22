@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { Form, Input, Button, Card, message, Tabs } from "antd";
-// Google OAuth - временно отключено
-// import { Divider } from "antd";
+import { Form, Input, Button, Card, message, Tabs, Divider } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
-// Google OAuth - временно отключено
-// import { GoogleOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { VKIdWidget } from "./VKIdWidget";
+import { TelegramLinkButton } from "./TelegramLinkButton";
 import * as styles from "./Login.module.css";
 
+// DefinePlugin подставляет значение при сборке (из .env или fallback)
+const TELEGRAM_BOT_USERNAME = __TELEGRAM_BOT_USERNAME__ || "";
+const VK_ID_APP_ID = __VK_ID_APP_ID__ || "";
+
 const Login: React.FC = () => {
-  const { login, register, loginWithGoogle, user } = useAuth();
+  const { login, register, loginWithTelegram, loginWithVkId, user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  // Google OAuth - временно отключено
-  // const [googleLoading, setGoogleLoading] = useState(false);
+  const [telegramLoading, setTelegramLoading] = useState(false);
+  const [vkLoading, setVkLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
 
   // Сообщение при редиректе из-за истёкшей сессии (401/403 → refresh не удался)
@@ -45,7 +47,11 @@ const Login: React.FC = () => {
     }
   };
 
-  const onRegister = async (values: { fullName: string; login: string; password: string }) => {
+  const onRegister = async (values: {
+    fullName: string;
+    login: string;
+    password: string;
+  }) => {
     try {
       setLoading(true);
       await register(values.fullName, values.login, values.password);
@@ -58,21 +64,41 @@ const Login: React.FC = () => {
     }
   };
 
-  // Google OAuth - временно отключено
-  /*
-  const handleGoogleLogin = async () => {
+  const handleTelegramAuth = async (telegramData: {
+    id: number;
+    first_name?: string;
+    last_name?: string;
+    username?: string;
+    photo_url?: string;
+    auth_date: number;
+    hash: string;
+  }) => {
     try {
-      setGoogleLoading(true);
-      await loginWithGoogle();
-      message.success("Вход через Google выполнен успешно");
+      setTelegramLoading(true);
+      await loginWithTelegram(telegramData);
+      message.success("Вход через Telegram выполнен успешно");
       navigate("/finance/transactions", { replace: true });
     } catch (error: any) {
-      message.error(error.message || "Ошибка входа через Google");
+      message.error(
+        error?.data?.error || error?.message || "Ошибка входа через Telegram",
+      );
     } finally {
-      setGoogleLoading(false);
+      setTelegramLoading(false);
     }
   };
-  */
+
+  const handleVkIdSuccess = async (accessToken: string) => {
+    try {
+      setVkLoading(true);
+      await loginWithVkId(accessToken);
+      message.success("Вход через VK ID выполнен успешно");
+      navigate("/finance/transactions", { replace: true });
+    } catch (error: any) {
+      message.error(error?.message || "Ошибка входа через VK ID");
+    } finally {
+      setVkLoading(false);
+    }
+  };
 
   const tabItems = [
     {
@@ -99,20 +125,53 @@ const Login: React.FC = () => {
               </Button>
             </Form.Item>
           </Form>
-          {/* Google OAuth - временно отключено
-          <Divider>или</Divider>
-          <Button
-            type="default"
-            icon={<GoogleOutlined />}
-            block
-            size="large"
-            loading={googleLoading}
-            onClick={handleGoogleLogin}
-            className={styles.googleButton}
-          >
-            Войти через Google
-          </Button>
-          */}
+          <>
+            <Divider>или</Divider>
+            <div className={styles.socialButtons}>
+              {TELEGRAM_BOT_USERNAME ? (
+                <div className={styles.telegramWrapper}>
+                  <TelegramLinkButton
+                    botUsername={TELEGRAM_BOT_USERNAME}
+                    onAuthCallback={handleTelegramAuth}
+                    loading={telegramLoading}
+                    label="Войти через Telegram"
+                  />
+                  {telegramLoading && (
+                    <div className={styles.telegramLoading}>Проверка...</div>
+                  )}
+                </div>
+              ) : (
+                <Button
+                  type="default"
+                  size="large"
+                  block
+                  className={styles.telegramPlaceholder}
+                  onClick={() => message.error("Telegram не настроен на сервере")}
+                >
+                  Войти через Telegram
+                </Button>
+              )}
+              {VK_ID_APP_ID ? (
+                <VKIdWidget
+                  appId={VK_ID_APP_ID}
+                  onSuccess={handleVkIdSuccess}
+                  onError={(e) => message.error(e?.message || "Ошибка VK ID")}
+                  loading={vkLoading}
+                  redirectUrl={typeof window !== "undefined" ? `${window.location.origin}/vk-id-callback.html` : undefined}
+                />
+              ) : (
+                <Button
+                  type="default"
+                  size="large"
+                  block
+                  className={styles.vkPlaceholder}
+                  onClick={() => message.error("VK ID не настроен на сервере")}
+                >
+                  Войти через VK
+                </Button>
+              )}
+            </div>
+          </>
         </>
       ),
     },
@@ -132,7 +191,11 @@ const Login: React.FC = () => {
             rules={[
               { required: true, message: "Введите логин" },
               { min: 3, message: "Логин должен быть не менее 3 символов" },
-              { pattern: /^[a-zA-Z0-9_]+$/, message: "Логин может содержать только буквы, цифры и подчеркивание" },
+              {
+                pattern: /^[a-zA-Z0-9_]+$/,
+                message:
+                  "Логин может содержать только буквы, цифры и подчеркивание",
+              },
             ]}
           >
             <Input prefix={<UserOutlined />} placeholder="Логин" />
@@ -159,7 +222,7 @@ const Login: React.FC = () => {
   return (
     <div className={styles.loginContainer}>
       <Card className={styles.loginCard}>
-        <h1 className={styles.title}>💰 Мой бюджет - расходы и доходы</h1>
+        <h1 className={styles.title}>💰 Мой бюджет</h1>
         <Tabs
           activeKey={activeTab}
           onChange={(key) => setActiveTab(key as "login" | "register")}

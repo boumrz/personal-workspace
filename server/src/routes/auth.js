@@ -1,12 +1,29 @@
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import asyncHandler from "express-async-handler";
 import { OAuth2Client } from "google-auth-library";
 import pool from "../database/db.js";
 import config from "../config/config.js";
 
 const router = express.Router();
+
+// Verify Telegram Login Widget data (HMAC-SHA256)
+function verifyTelegramAuth(authData, botToken) {
+  const { hash, ...data } = authData;
+  if (!hash || !botToken) return false;
+  const dataCheckString = Object.keys(data)
+    .sort()
+    .map((k) => `${k}=${data[k]}`)
+    .join("\n");
+  const secretKey = crypto.createHash("sha256").update(botToken).digest();
+  const calculatedHash = crypto
+    .createHmac("sha256", secretKey)
+    .update(dataCheckString)
+    .digest("hex");
+  return calculatedHash === hash;
+}
 
 // Google OAuth client (опционально, только если настроены переменные окружения)
 let googleClient = null;
@@ -147,6 +164,198 @@ router.post(
     );
 
     // Access + refresh tokens
+    const token = jwt.sign(
+      { userId: user.id, login: user.login, type: "access" },
+      config.jwtSecret,
+      { expiresIn: config.accessTokenExpiry }
+    );
+    const refreshToken = jwt.sign(
+      { userId: user.id, type: "refresh" },
+      config.jwtSecret,
+      { expiresIn: config.refreshTokenExpiry }
+    );
+
+    res.json({
+      token,
+      refreshToken,
+      user: {
+        id: user.id,
+        login: user.login,
+        email: user.email,
+        name: user.name,
+      },
+    });
+  })
+);
+
+// GET /api/auth/telegram/bot-id — возвращает bot_id для Telegram.Login.auth() (мобильный flow без iframe)
+router.get(
+  "/telegram/bot-id",
+  asyncHandler(async (req, res) => {
+    const botToken = config.telegramBotToken;
+    if (!botToken) {
+      return res.status(503).json({ error: "Telegram auth is not configured" });
+    }
+    const botId = botToken.split(":")[0];
+    if (!botId) {
+      return res.status(500).json({ error: "Invalid bot token format" });
+    }
+    res.json({ bot_id: botId });
+  })
+);
+
+// Telegram Login Widget
+router.post(
+  "/telegram",
+  asyncHandler(async (req, res) => {
+    const botToken = config.telegramBotToken;
+    if (!botToken) {
+      return res.status(503).json({ error: "Telegram auth is not configured" });
+    }
+
+    const { id, first_name, last_name, username, photo_url, auth_date, hash } = req.body;
+
+    if (!hash || !id) {
+      return res.status(400).json({ error: "Invalid Telegram auth data" });
+    }
+
+    if (!verifyTelegramAuth(req.body, botToken)) {
+      return res.status(401).json({ error: "Invalid Telegram signature" });
+    }
+
+    // Auth data must be fresh (within 24 hours)
+    if (Date.now() / 1000 - auth_date > 86400) {
+      return res.status(401).json({ error: "Telegram auth data expired" });
+    }
+
+    const telegramId = String(id);
+    const name = [first_name, last_name].filter(Boolean).join(" ") || username || "User";
+    const login = username ? `tg_${username}` : `tg_${id}`;
+
+    let userResult = await pool.query(
+      "SELECT id, login, email, name FROM users WHERE telegram_id = $1",
+      [telegramId]
+    );
+
+    let user;
+    if (userResult.rows.length === 0) {
+      const insertResult = await pool.query(
+        "INSERT INTO users (telegram_id, login, name) VALUES ($1, $2, $3) RETURNING id, login, email, name",
+        [telegramId, login, name]
+      );
+      user = insertResult.rows[0];
+
+      const defaultCategories = [
+        { name: "Продукты", color: "#FF8A65", icon: "Utensils" },
+        { name: "Транспорт", color: "#64B5F6", icon: "Car" },
+        { name: "Развлечения", color: "#BA68C8", icon: "Film" },
+        { name: "Здоровье", color: "#81C784", icon: "Hospital" },
+        { name: "Одежда", color: "#FFB74D", icon: "Shirt" },
+        { name: "Жилье", color: "#90CAF9", icon: "Home" },
+        { name: "Зарплата", color: "#66BB6A", icon: "Wallet" },
+        { name: "Другое", color: "#90A4AE", icon: "Package" },
+      ];
+      for (const category of defaultCategories) {
+        await pool.query(
+          "INSERT INTO categories (user_id, name, color, icon) VALUES ($1, $2, $3, $4)",
+          [user.id, category.name, category.color, category.icon]
+        );
+      }
+    } else {
+      user = userResult.rows[0];
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, login: user.login, type: "access" },
+      config.jwtSecret,
+      { expiresIn: config.accessTokenExpiry }
+    );
+    const refreshToken = jwt.sign(
+      { userId: user.id, type: "refresh" },
+      config.jwtSecret,
+      { expiresIn: config.refreshTokenExpiry }
+    );
+
+    res.json({
+      token,
+      refreshToken,
+      user: {
+        id: user.id,
+        login: user.login,
+        email: user.email,
+        name: user.name,
+      },
+    });
+  })
+);
+
+// VK ID — виджет (access_token от клиента, обмен через VKID.Auth.exchangeCode на фронте)
+router.post(
+  "/vkid",
+  asyncHandler(async (req, res) => {
+    const appId = config.vkId?.appId;
+    if (!appId) {
+      return res.status(503).json({ error: "VK ID is not configured" });
+    }
+
+    const { access_token: accessToken } = req.body;
+    if (!accessToken) {
+      return res.status(400).json({ error: "access_token required" });
+    }
+
+    const userInfoRes = await fetch("https://id.vk.ru/oauth2/user_info", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: appId,
+        access_token: accessToken,
+      }),
+    });
+
+    const userInfoData = await userInfoRes.json();
+    if (!userInfoData?.user?.user_id) {
+      return res.status(401).json({ error: "Invalid or expired VK ID token" });
+    }
+
+    const vkUser = userInfoData.user;
+    const vkId = String(vkUser.user_id);
+    const name = [vkUser.first_name, vkUser.last_name].filter(Boolean).join(" ") || "User";
+    const login = `vkid_${vkId}`;
+    const email = vkUser.email || null;
+
+    let userResult = await pool.query(
+      "SELECT id, login, email, name FROM users WHERE vk_id = $1",
+      [vkId]
+    );
+
+    let user;
+    if (userResult.rows.length === 0) {
+      const insertResult = await pool.query(
+        "INSERT INTO users (vk_id, login, name, email) VALUES ($1, $2, $3, $4) RETURNING id, login, email, name",
+        [vkId, login, name, email]
+      );
+      user = insertResult.rows[0];
+
+      const defaultCategories = [
+        { name: "Продукты", color: "#FF8A65", icon: "Utensils" },
+        { name: "Транспорт", color: "#64B5F6", icon: "Car" },
+        { name: "Развлечения", color: "#BA68C8", icon: "Film" },
+        { name: "Здоровье", color: "#81C784", icon: "Hospital" },
+        { name: "Одежда", color: "#FFB74D", icon: "Shirt" },
+        { name: "Жилье", color: "#90CAF9", icon: "Home" },
+        { name: "Зарплата", color: "#66BB6A", icon: "Wallet" },
+        { name: "Другое", color: "#90A4AE", icon: "Package" },
+      ];
+      for (const category of defaultCategories) {
+        await pool.query(
+          "INSERT INTO categories (user_id, name, color, icon) VALUES ($1, $2, $3, $4)",
+          [user.id, category.name, category.color, category.icon]
+        );
+      }
+    } else {
+      user = userResult.rows[0];
+    }
+
     const token = jwt.sign(
       { userId: user.id, login: user.login, type: "access" },
       config.jwtSecret,
