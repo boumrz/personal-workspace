@@ -89,7 +89,26 @@ body {
 
 /* Темная тема для Ant Design компонентов */
 /* Используем html[data-theme="dark"] для модалок, которые рендерятся в body */
+/* Modal: переопределяем CSS-переменные Ant Design (ant-modal-container использует --ant-modal-content-bg) */
+html[data-theme="dark"] .ant-modal-container,
+html[data-theme="dark"] .ant-modal-wrap {
+  --ant-modal-content-bg: #1c1c1e !important;
+}
+
+/* Modal: маска и обёртка (фон за модалкой) */
+html[data-theme="dark"] .ant-modal-mask {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+}
+
+html[data-theme="dark"] .ant-modal-wrap {
+  background-color: transparent !important;
+}
+
 /* Modal основные стили */
+html[data-theme="dark"] .ant-modal-wrap .ant-modal {
+  background-color: #1c1c1e !important;
+}
+
 html[data-theme="dark"] .ant-modal .ant-modal-content {
   background-color: #1c1c1e !important;
   color: #f5f5f7 !important;
@@ -129,7 +148,9 @@ html[data-theme="dark"] .ant-modal-close:hover {
 }
 
 /* Modal.confirm */
-html[data-theme="dark"] .ant-modal-confirm .ant-modal-content {
+html[data-theme="dark"] .ant-modal-confirm .ant-modal-content,
+html[data-theme="dark"] .ant-modal-confirm .ant-modal-body,
+html[data-theme="dark"] .ant-modal-confirm-body {
   background-color: #1c1c1e !important;
 }
 
