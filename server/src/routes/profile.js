@@ -1,9 +1,12 @@
 import express from "express";
 import crypto from "crypto";
+import bcrypt from "bcrypt";
 import asyncHandler from "express-async-handler";
 import pool from "../database/db.js";
 import config from "../config/config.js";
 import { authenticateToken } from "../middleware/auth.js";
+
+const saltRounds = 10;
 
 const router = express.Router();
 
@@ -40,7 +43,13 @@ router.get(
   asyncHandler(async (req, res) => {
     const userId = req.user.userId;
     const result = await pool.query(
-      "SELECT id, login, email, name, last_name, first_name, middle_name, age, date_of_birth, telegram_id, vk_id FROM users WHERE id = $1",
+      `SELECT id, login, email, name, last_name, first_name, middle_name, age, date_of_birth, telegram_id, vk_id,
+        (password_hash IS NOT NULL) AS has_password,
+        (CASE WHEN password_hash IS NOT NULL THEN 1 ELSE 0 END +
+         CASE WHEN google_id IS NOT NULL THEN 1 ELSE 0 END +
+         CASE WHEN telegram_id IS NOT NULL THEN 1 ELSE 0 END +
+         CASE WHEN vk_id IS NOT NULL THEN 1 ELSE 0 END) AS auth_methods_count
+       FROM users WHERE id = $1`,
       [userId]
     );
 
@@ -61,6 +70,8 @@ router.get(
       dateOfBirth: user.date_of_birth ? user.date_of_birth.toISOString().split('T')[0] : null,
       telegramId: user.telegram_id || null,
       vkId: user.vk_id || null,
+      hasPassword: user.has_password,
+      authMethodsCount: parseInt(user.auth_methods_count, 10),
     });
   })
 );
@@ -192,6 +203,46 @@ router.post(
     );
 
     res.json({ success: true, message: "Telegram linked successfully" });
+  })
+);
+
+// Set password (for users who signed up via social login only)
+router.post(
+  "/set-password",
+  asyncHandler(async (req, res) => {
+    const userId = req.user.userId;
+    const { password } = req.body;
+
+    if (!password || typeof password !== "string") {
+      return res.status(400).json({ error: "Password is required" });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters" });
+    }
+
+    const userResult = await pool.query(
+      "SELECT password_hash, login FROM users WHERE id = $1",
+      [userId]
+    );
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const user = userResult.rows[0];
+    if (user.password_hash) {
+      return res.status(400).json({ error: "Password already set. Use change-password to update it." });
+    }
+    if (!user.login) {
+      return res.status(400).json({ error: "Cannot set password: user has no login" });
+    }
+
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+    await pool.query(
+      "UPDATE users SET password_hash = $1 WHERE id = $2",
+      [passwordHash, userId]
+    );
+
+    res.json({ success: true, message: "Password set successfully" });
   })
 );
 

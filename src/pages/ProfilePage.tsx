@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   Form,
   InputNumber,
+  Input,
   Button,
   Progress,
   Modal,
@@ -23,6 +24,7 @@ import {
   BulbOutlined,
   BulbFilled,
   DisconnectOutlined,
+  LockOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { Goal } from "../store/api";
@@ -40,6 +42,7 @@ import {
   useUnlinkTelegramMutation,
   useLinkVkIdMutation,
   useUnlinkVkMutation,
+  useSetPasswordMutation,
 } from "../store/api";
 import { VKIdWidget } from "../components/VKIdWidget";
 import { TelegramLinkButton } from "../components/TelegramLinkButton";
@@ -77,6 +80,7 @@ const ProfilePage: React.FC = () => {
   const [unlinkTelegram, { isLoading: unlinkTelegramLoading }] = useUnlinkTelegramMutation();
   const [linkVkId, { isLoading: linkVkLoading }] = useLinkVkIdMutation();
   const [unlinkVk, { isLoading: unlinkVkLoading }] = useUnlinkVkMutation();
+  const [setPassword, { isLoading: setPasswordLoading }] = useSetPasswordMutation();
   const [createGoal] = useCreateGoalMutation();
   const [updateGoal] = useUpdateGoalMutation();
   const [deleteGoal] = useDeleteGoalMutation();
@@ -96,6 +100,8 @@ const ProfilePage: React.FC = () => {
   const [amountType, setAmountType] = useState<"add" | "subtract">("add");
   const [amountForm] = Form.useForm();
   const [showAllGoals, setShowAllGoals] = useState(false);
+  const [setPasswordModalVisible, setSetPasswordModalVisible] = useState(false);
+  const [setPasswordForm] = Form.useForm();
 
   // Расчёт баланса
   const balance = useMemo(() => {
@@ -223,6 +229,16 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleUnlinkTelegram = () => {
+    const canUnlink = (profile?.authMethodsCount ?? 0) > 1;
+    if (!canUnlink) {
+      modal.info({
+        title: "Нельзя отвязать Telegram",
+        content: "Чтобы отвязать Telegram, сначала добавьте пароль или привяжите VK. Иначе вы не сможете войти в аккаунт.",
+        okText: "Добавить пароль",
+        onOk: () => setSetPasswordModalVisible(true),
+      });
+      return;
+    }
     modal.confirm({
       title: "Отвязать Telegram?",
       content: "Вы сможете войти через Telegram снова, только привязав его заново.",
@@ -254,6 +270,16 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleUnlinkVk = () => {
+    const canUnlink = (profile?.authMethodsCount ?? 0) > 1;
+    if (!canUnlink) {
+      modal.info({
+        title: "Нельзя отвязать VK",
+        content: "Чтобы отвязать VK, сначала добавьте пароль или привяжите Telegram. Иначе вы не сможете войти в аккаунт.",
+        okText: "Добавить пароль",
+        onOk: () => setSetPasswordModalVisible(true),
+      });
+      return;
+    }
     modal.confirm({
       title: "Отвязать VK?",
       content: "Вы сможете войти через VK снова, только привязав его заново.",
@@ -271,6 +297,20 @@ const ProfilePage: React.FC = () => {
         }
       },
     });
+  };
+
+  const handleSetPassword = async () => {
+    try {
+      const values = await setPasswordForm.validateFields();
+      await setPassword({ password: values.password }).unwrap();
+      message.success("Пароль установлен");
+      setSetPasswordModalVisible(false);
+      setPasswordForm.resetFields();
+      refetchProfile();
+    } catch (err: unknown) {
+      const e = err as { data?: { error?: string }; message?: string };
+      message.error(e?.data?.error || e?.message || "Ошибка установки пароля");
+    }
   };
 
   // Получаем имя пользователя для отображения
@@ -465,6 +505,28 @@ const ProfilePage: React.FC = () => {
           </div>
         </section>
 
+        {/* Безопасность: добавить пароль */}
+        {!profile?.hasPassword && (
+          <section className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h2>Безопасность</h2>
+            </div>
+            <div className={styles.linkedAccountItem}>
+              <div className={styles.linkedAccountInfo}>
+                <LockOutlined style={{ marginRight: 8 }} />
+                <span>Пароль не установлен</span>
+              </div>
+              <Button
+                type="primary"
+                size="small"
+                onClick={() => setSetPasswordModalVisible(true)}
+              >
+                Добавить пароль
+              </Button>
+            </div>
+          </section>
+        )}
+
         {/* Привязанные аккаунты */}
         {(TELEGRAM_BOT_USERNAME || VK_ID_APP_ID) && (
           <section className={styles.section}>
@@ -588,6 +650,54 @@ const ProfilePage: React.FC = () => {
         goal={editingGoal}
         onSave={(updates) => handleGoalUpdate(editingGoal!.id, updates)}
       />
+
+      {/* Модалка установки пароля */}
+      <Modal
+        title="Добавить пароль"
+        open={setPasswordModalVisible}
+        onOk={handleSetPassword}
+        onCancel={() => {
+          setSetPasswordModalVisible(false);
+          setPasswordForm.resetFields();
+        }}
+        okText="Установить пароль"
+        cancelText="Отмена"
+        confirmLoading={setPasswordLoading}
+      >
+        <p style={{ marginBottom: 16 }}>
+          Установите пароль, чтобы войти по логину и паролю. Это также позволит отвязать соцсети.
+        </p>
+        <Form form={setPasswordForm} layout="vertical">
+          <Form.Item
+            name="password"
+            label="Пароль"
+            rules={[
+              { required: true, message: "Введите пароль" },
+              { min: 6, message: "Пароль должен быть не менее 6 символов" },
+            ]}
+          >
+            <Input.Password placeholder="Минимум 6 символов" />
+          </Form.Item>
+          <Form.Item
+            name="passwordConfirm"
+            label="Подтвердите пароль"
+            dependencies={["password"]}
+            rules={[
+              { required: true, message: "Подтвердите пароль" },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue("password") === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error("Пароли не совпадают"));
+                },
+              }),
+            ]}
+          >
+            <Input.Password placeholder="Повторите пароль" />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       {/* Модалка для ввода суммы изменения цели */}
       <Modal

@@ -38,6 +38,8 @@ export interface Profile {
   dateOfBirth?: string;
   telegramId?: string | null;
   vkId?: string | null;
+  hasPassword?: boolean;
+  authMethodsCount?: number;
 }
 
 export interface Goal {
@@ -444,6 +446,14 @@ export const api = createApi({
       }),
       invalidatesTags: ["Profile"],
     }),
+    setPassword: builder.mutation<{ success: boolean }, { password: string }>({
+      query: ({ password }) => ({
+        url: "/profile/set-password",
+        method: "POST",
+        body: { password },
+      }),
+      invalidatesTags: ["Profile"],
+    }),
 
     // Goals
     getGoals: builder.query<Goal[], void>({
@@ -536,6 +546,7 @@ export const {
   useUnlinkTelegramMutation,
   useLinkVkIdMutation,
   useUnlinkVkMutation,
+  useSetPasswordMutation,
   useGetGoalsQuery,
   useCreateGoalMutation,
   useUpdateGoalMutation,
