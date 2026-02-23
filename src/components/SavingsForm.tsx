@@ -7,10 +7,11 @@ import * as styles from "./SavingsForm.module.css";
 interface SavingsFormProps {
   open: boolean;
   onClose: () => void;
+  initialSaving?: { id: string; amount: number; description: string; date: string } | null;
 }
 
-const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose }) => {
-  const { addSaving } = useFinance();
+const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving = null }) => {
+  const { addSaving, updateSaving } = useFinance();
   const [form] = Form.useForm();
   const [isMobile, setIsMobile] = useState(false);
 
@@ -23,6 +24,20 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose }) => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  useEffect(() => {
+    if (open) {
+      if (initialSaving) {
+        form.setFieldsValue({
+          amount: initialSaving.amount,
+          description: initialSaving.description,
+          date: dayjs(initialSaving.date),
+        });
+      } else {
+        form.resetFields();
+      }
+    }
+  }, [open, initialSaving, form]);
+
 
 
   const handleSubmit = async () => {
@@ -34,7 +49,11 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose }) => {
         date: values.date.format("YYYY-MM-DD"),
       };
 
-      await addSaving(savingData);
+      if (initialSaving) {
+        await updateSaving(initialSaving.id, savingData);
+      } else {
+        await addSaving(savingData);
+      }
       form.resetFields();
       onClose();
     } catch (error) {
@@ -116,7 +135,7 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose }) => {
           block
           className={styles.submitButton}
         >
-          Добавить накопление
+          {isEditMode ? "Сохранить" : "Добавить накопление"}
         </Button>
         <Button onClick={handleCancel} size="large" block className={styles.cancelButton}>
           Отмена
@@ -125,10 +144,12 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose }) => {
     </Form>
   );
 
+  const isEditMode = !!initialSaving;
+
   if (isMobile) {
     return (
       <Drawer
-        title="Добавить накопление"
+        title={isEditMode ? "Редактировать накопление" : "Добавить накопление"}
         placement="right"
         onClose={handleCancel}
         open={open}
@@ -143,7 +164,7 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose }) => {
 
   return (
     <Modal
-      title="Добавить накопление"
+      title={isEditMode ? "Редактировать накопление" : "Добавить накопление"}
       open={open}
       onCancel={handleCancel}
       footer={null}

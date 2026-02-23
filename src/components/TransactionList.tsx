@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Card, Empty, Tag, Button, Modal } from "antd";
-import { DeleteOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import { Transaction } from "../context/FinanceContext";
 import IconRenderer from "./IconRenderer";
@@ -10,12 +10,14 @@ interface TransactionListProps {
   transactions: Transaction[];
   selectedCategory: string | null;
   plannedExpenses: Transaction[];
+  onEditTransaction?: (transaction: Transaction) => void;
 }
 
 const TransactionList: React.FC<TransactionListProps> = ({
   transactions,
   selectedCategory,
   plannedExpenses,
+  onEditTransaction,
 }) => {
   const { deleteTransaction, categories } = useFinance();
   const [selectedMonth, setSelectedMonth] = useState<string>("");
@@ -244,22 +246,32 @@ const TransactionList: React.FC<TransactionListProps> = ({
                       {transaction.type === "income" ? "+" : "-"}
                       {transaction.amount.toLocaleString("ru-RU")} ₽
                     </div>
-                    <Button
-                      type="text"
-                      danger
-                      icon={<DeleteOutlined />}
-                      onClick={() => {
-                        Modal.confirm({
-                          title: "Удалить операцию?",
-                          content: "Это действие нельзя отменить.",
-                          okText: "Удалить",
-                          okType: "danger",
-                          cancelText: "Отмена",
-                          onOk: () => deleteTransaction(transaction.id),
-                        });
-                      }}
-                      className={styles.deleteButton}
-                    />
+                    <div className={styles.actionButtons}>
+                      {onEditTransaction && (
+                        <Button
+                          type="text"
+                          icon={<EditOutlined />}
+                          onClick={() => onEditTransaction(transaction)}
+                          className={styles.editButton}
+                        />
+                      )}
+                      <Button
+                        type="text"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => {
+                          Modal.confirm({
+                            title: "Удалить операцию?",
+                            content: "Это действие нельзя отменить.",
+                            okText: "Удалить",
+                            okType: "danger",
+                            cancelText: "Отмена",
+                            onOk: () => deleteTransaction(transaction.id),
+                          });
+                        }}
+                        className={styles.deleteButton}
+                      />
+                    </div>
                   </div>
                 </Card>
               </div>

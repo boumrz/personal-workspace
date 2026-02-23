@@ -24,17 +24,21 @@ interface TransactionFormProps {
   open: boolean;
   onClose: () => void;
   type: "actual" | "planned";
+  initialTransaction?: { id: string; type: "income" | "expense"; amount: number; category: { id: string }; description: string; date: string } | null;
 }
 
 const TransactionForm: React.FC<TransactionFormProps> = ({
   open,
   onClose,
   type,
+  initialTransaction = null,
 }) => {
   const { modal } = App.useApp();
   const {
     addTransaction,
     addPlannedExpense,
+    updateTransaction,
+    updatePlannedExpense,
     categories,
     deleteCategory,
     transactions,
@@ -189,6 +193,27 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     }
   }, [categories, availableCategories, selectedCategory]);
 
+  // Заполняем форму при редактировании, сбрасываем при добавлении
+  useEffect(() => {
+    if (open) {
+      if (initialTransaction) {
+        form.setFieldsValue({
+          amount: initialTransaction.amount,
+          description: initialTransaction.description,
+          date: dayjs(initialTransaction.date),
+          type: initialTransaction.type,
+        });
+        setTransactionType(initialTransaction.type);
+        setSelectedCategory(initialTransaction.category.id);
+      } else {
+        form.resetFields();
+        setTransactionType("expense");
+        const firstCat = categories.find((c) => c.name === "Продукты" || c.name === "Другое") || categories[0];
+        setSelectedCategory(firstCat?.id || "");
+      }
+    }
+  }, [open, initialTransaction, categories]);
+
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     try {
@@ -196,7 +221,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       const category = categories.find((c) => c.id === selectedCategory);
       if (!category) return;
 
-      const transaction = {
+      const transactionData = {
         type: transactionType,
         amount: values.amount,
         category,
@@ -204,10 +229,18 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         date: values.date.format("YYYY-MM-DD"),
       };
 
-      if (type === "planned") {
-        await addPlannedExpense(transaction);
+      if (initialTransaction) {
+        if (type === "planned") {
+          await updatePlannedExpense(initialTransaction.id, transactionData);
+        } else {
+          await updateTransaction(initialTransaction.id, transactionData);
+        }
       } else {
-        await addTransaction(transaction);
+        if (type === "planned") {
+          await addPlannedExpense(transactionData);
+        } else {
+          await addTransaction(transactionData);
+        }
       }
 
       form.resetFields();
@@ -223,6 +256,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     setEnteredAmount(null);
     onClose();
   };
+
+  const isEditMode = !!initialTransaction;
 
   // Функция для блокировки дат в зависимости от типа операции
   const disabledDate = (current: dayjs.Dayjs | null) => {
@@ -584,7 +619,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     <>
       {isMobile ? (
         <Drawer
-          title={type === "planned" ? "Планируемая трата" : "Новая операция"}
+          title={isEditMode ? (type === "planned" ? "Редактировать план" : "Редактировать операцию") : (type === "planned" ? "Планируемая трата" : "Новая операция")}
           placement="right"
           className={styles.drawer}
           open={open}
@@ -610,7 +645,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                 type="primary"
                 onClick={handleSubmit}
               >
-                Добавить
+                {isEditMode ? "Сохранить" : "Добавить"}
               </Button>
             </div>
           }
@@ -619,7 +654,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         </Drawer>
       ) : (
         <Modal
-          title={type === "planned" ? "Планируемая трата" : "Новая операция"}
+          title={isEditMode ? (type === "planned" ? "Редактировать план" : "Редактировать операцию") : (type === "planned" ? "Планируемая трата" : "Новая операция")}
           open={open}
           onCancel={handleCancel}
           footer={[
@@ -627,7 +662,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               Отмена
             </Button>,
             <Button key="submit" type="primary" onClick={handleSubmit}>
-              Добавить
+                {isEditMode ? "Сохранить" : "Добавить"}
             </Button>,
           ]}
           width={500}

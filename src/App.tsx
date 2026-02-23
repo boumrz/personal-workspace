@@ -28,6 +28,9 @@ import {
   useCreateTransactionMutation,
   useCreatePlannedExpenseMutation,
   useCreateSavingMutation,
+  useUpdateTransactionMutation,
+  useUpdatePlannedExpenseMutation,
+  useUpdateSavingMutation,
   useDeleteTransactionMutation,
   useDeletePlannedExpenseMutation,
   useDeleteSavingMutation,
@@ -68,6 +71,9 @@ const AppContent: React.FC = () => {
   const [createTransaction] = useCreateTransactionMutation();
   const [createPlannedExpense] = useCreatePlannedExpenseMutation();
   const [createSaving] = useCreateSavingMutation();
+  const [updateTransaction] = useUpdateTransactionMutation();
+  const [updatePlannedExpense] = useUpdatePlannedExpenseMutation();
+  const [updateSaving] = useUpdateSavingMutation();
   const [deleteTransaction] = useDeleteTransactionMutation();
   const [deletePlannedExpense] = useDeletePlannedExpenseMutation();
   const [deleteSaving] = useDeleteSavingMutation();
@@ -108,6 +114,42 @@ const AppContent: React.FC = () => {
       // RTK Query автоматически обновит кэш через invalidatesTags
     } catch (error) {
       console.error("Error adding saving:", error);
+      throw error;
+    }
+  };
+
+  const updateTransactionHandler = async (
+    id: string,
+    data: Partial<Omit<Transaction, "id">>
+  ) => {
+    try {
+      await updateTransaction({ id, data }).unwrap();
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+      throw error;
+    }
+  };
+
+  const updatePlannedExpenseHandler = async (
+    id: string,
+    data: Partial<Omit<Transaction, "id">>
+  ) => {
+    try {
+      await updatePlannedExpense({ id, data }).unwrap();
+    } catch (error) {
+      console.error("Error updating planned expense:", error);
+      throw error;
+    }
+  };
+
+  const updateSavingHandler = async (
+    id: string,
+    data: Partial<Omit<Saving, "id">>
+  ) => {
+    try {
+      await updateSaving({ id, data }).unwrap();
+    } catch (error) {
+      console.error("Error updating saving:", error);
       throw error;
     }
   };
@@ -206,6 +248,9 @@ const AppContent: React.FC = () => {
                   addTransaction,
                   addPlannedExpense,
                   addSaving,
+                  updateTransaction: updateTransactionHandler,
+                  updatePlannedExpense: updatePlannedExpenseHandler,
+                  updateSaving: updateSavingHandler,
                   deleteTransaction: deleteTransactionHandler,
                   deletePlannedExpense: deletePlannedExpenseHandler,
                   deleteSaving: deleteSavingHandler,

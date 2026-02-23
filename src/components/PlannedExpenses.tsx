@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Card, Empty, Tag, Button, Statistic, Modal } from "antd";
-import { DeleteOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import { Transaction } from "../context/FinanceContext";
 import IconRenderer from "./IconRenderer";
@@ -8,9 +8,10 @@ import * as styles from "./PlannedExpenses.module.css";
 
 interface PlannedExpensesProps {
   expenses: Transaction[];
+  onEditExpense?: (expense: Transaction) => void;
 }
 
-const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
+const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses, onEditExpense }) => {
   const { deletePlannedExpense, categories } = useFinance();
   const [selectedMonth, setSelectedMonth] = useState<string>("");
 
@@ -156,22 +157,32 @@ const PlannedExpenses: React.FC<PlannedExpensesProps> = ({ expenses }) => {
                   <div className={styles.expenseAmount}>
                     {expense.amount.toLocaleString("ru-RU")} ₽
                   </div>
-                  <Button
-                    type="text"
-                    danger
-                    icon={<DeleteOutlined />}
-                    onClick={() => {
-                      Modal.confirm({
-                        title: "Удалить планируемый расход?",
-                        content: "Это действие нельзя отменить.",
-                        okText: "Удалить",
-                        okType: "danger",
-                        cancelText: "Отмена",
-                        onOk: () => deletePlannedExpense(expense.id),
-                      });
-                    }}
-                    className={styles.deleteButton}
-                  />
+                  <div className={styles.actionButtons}>
+                    {onEditExpense && (
+                      <Button
+                        type="text"
+                        icon={<EditOutlined />}
+                        onClick={() => onEditExpense(expense)}
+                        className={styles.editButton}
+                      />
+                    )}
+                    <Button
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => {
+                        Modal.confirm({
+                          title: "Удалить планируемый расход?",
+                          content: "Это действие нельзя отменить.",
+                          okText: "Удалить",
+                          okType: "danger",
+                          cancelText: "Отмена",
+                          onOk: () => deletePlannedExpense(expense.id),
+                        });
+                      }}
+                      className={styles.deleteButton}
+                    />
+                  </div>
                 </div>
               </Card>
             </div>

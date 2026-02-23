@@ -5,6 +5,7 @@ import {
   FilterOutlined,
   SearchOutlined,
   DeleteOutlined,
+  EditOutlined,
 } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
 import TransactionForm from "../components/TransactionForm";
@@ -24,6 +25,7 @@ const TransactionsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>("actual");
   const [selectedCategories, setSelectedCategories] = useState<string[]>(["all"]);
   const [showForm, setShowForm] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<typeof transactions[0] | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -253,19 +255,31 @@ const TransactionsPage: React.FC = () => {
                               })}
                             </span>
                           </div>
-                          <Popconfirm
-                            title={activeTab === "actual" ? "Удалить операцию?" : "Удалить планируемый расход?"}
-                            description="Это действие нельзя отменить."
-                            onConfirm={() => handleDelete(transaction.id)}
-                            okText="Удалить"
-                            okType="danger"
-                            cancelText="Отмена"
-                            placement="left"
-                          >
-                            <button className={styles.deleteBtn}>
-                              <DeleteOutlined />
+                          <div className={styles.actionButtons}>
+                            <button
+                              className={styles.editBtn}
+                              onClick={() => {
+                                setEditingTransaction(transaction);
+                                setShowForm(true);
+                              }}
+                              aria-label="Редактировать"
+                            >
+                              <EditOutlined />
                             </button>
-                          </Popconfirm>
+                            <Popconfirm
+                              title={activeTab === "actual" ? "Удалить операцию?" : "Удалить планируемый расход?"}
+                              description="Это действие нельзя отменить."
+                              onConfirm={() => handleDelete(transaction.id)}
+                              okText="Удалить"
+                              okType="danger"
+                              cancelText="Отмена"
+                              placement="left"
+                            >
+                              <button className={styles.deleteBtn}>
+                                <DeleteOutlined />
+                              </button>
+                            </Popconfirm>
+                          </div>
                         </div>
                       </div>
                     );
@@ -302,8 +316,12 @@ const TransactionsPage: React.FC = () => {
       {showForm && (
         <TransactionForm
           open={showForm}
-          onClose={() => setShowForm(false)}
+          onClose={() => {
+            setShowForm(false);
+            setEditingTransaction(null);
+          }}
           type={activeTab}
+          initialTransaction={editingTransaction}
         />
       )}
 

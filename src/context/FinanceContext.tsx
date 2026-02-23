@@ -31,6 +31,9 @@ export interface FinanceContextType {
   addTransaction: (transaction: Omit<Transaction, "id">) => Promise<void>;
   addPlannedExpense: (expense: Omit<Transaction, "id">) => Promise<void>;
   addSaving: (saving: Omit<Saving, "id">) => Promise<void>;
+  updateTransaction: (id: string, data: Partial<Omit<Transaction, "id">>) => Promise<void>;
+  updatePlannedExpense: (id: string, data: Partial<Omit<Transaction, "id">>) => Promise<void>;
+  updateSaving: (id: string, data: Partial<Omit<Saving, "id">>) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   deletePlannedExpense: (id: string) => Promise<void>;
   deleteSaving: (id: string) => Promise<void>;

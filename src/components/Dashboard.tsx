@@ -13,6 +13,7 @@ const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"actual" | "planned">("actual");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<typeof transactions[0] | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
   // Определяем, мобильное ли устройство
@@ -64,13 +65,26 @@ const Dashboard: React.FC = () => {
             transactions={filteredTransactions}
             selectedCategory={selectedCategory}
             plannedExpenses={plannedExpenses}
+            onEditTransaction={(t) => {
+              setEditingTransaction(t);
+              setShowForm(true);
+            }}
           />
         ),
       },
       {
         key: "planned",
         label: "Планируемые",
-        children: <PlannedExpenses expenses={plannedExpenses} />,
+        children: (
+          <PlannedExpenses
+            expenses={plannedExpenses}
+            onEditExpense={(t) => {
+              setEditingTransaction(t);
+              setActiveTab("planned");
+              setShowForm(true);
+            }}
+          />
+        ),
       },
     ],
     [filteredTransactions, selectedCategory, plannedExpenses]
@@ -147,8 +161,12 @@ const Dashboard: React.FC = () => {
       {showForm && (
         <TransactionForm
           open={showForm}
-          onClose={() => setShowForm(false)}
+          onClose={() => {
+            setShowForm(false);
+            setEditingTransaction(null);
+          }}
           type={activeTab === "planned" ? "planned" : "actual"}
+          initialTransaction={editingTransaction}
         />
       )}
     </div>

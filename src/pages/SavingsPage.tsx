@@ -4,6 +4,7 @@ import {
   PlusOutlined,
   SearchOutlined,
   DeleteOutlined,
+  EditOutlined,
   WalletOutlined,
   PieChartOutlined,
   RiseOutlined,
@@ -21,6 +22,7 @@ dayjs.locale("ru");
 const SavingsPage: React.FC = () => {
   const { savings, transactions, deleteSaving } = useFinance();
   const [showForm, setShowForm] = useState(false);
+  const [editingSaving, setEditingSaving] = useState<typeof savings[0] | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -245,12 +247,24 @@ const SavingsPage: React.FC = () => {
                         </span>
                       </div>
 
-                      <button
-                        className={styles.deleteBtn}
-                        onClick={() => handleDelete(saving.id)}
-                      >
-                        <DeleteOutlined />
-                      </button>
+                      <div className={styles.actionButtons}>
+                        <button
+                          className={styles.editBtn}
+                          onClick={() => {
+                            setEditingSaving(saving);
+                            setShowForm(true);
+                          }}
+                          aria-label="Редактировать"
+                        >
+                          <EditOutlined />
+                        </button>
+                        <button
+                          className={styles.deleteBtn}
+                          onClick={() => handleDelete(saving.id)}
+                        >
+                          <DeleteOutlined />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -283,7 +297,14 @@ const SavingsPage: React.FC = () => {
       )}
 
       {showForm && (
-        <SavingsForm open={showForm} onClose={() => setShowForm(false)} />
+        <SavingsForm
+          open={showForm}
+          onClose={() => {
+            setShowForm(false);
+            setEditingSaving(null);
+          }}
+          initialSaving={editingSaving}
+        />
       )}
     </div>
   );

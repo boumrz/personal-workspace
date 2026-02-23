@@ -268,6 +268,13 @@
   color: var(--text-tertiary);
 }
 
+.actionButtons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.editBtn,
 .deleteBtn {
   width: 36px;
   height: 36px;
@@ -281,6 +288,11 @@
   color: var(--text-tertiary);
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.editBtn:hover {
+  background: var(--accent-muted-light);
+  color: var(--accent-muted);
 }
 
 .deleteBtn:hover {

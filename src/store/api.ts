@@ -315,6 +315,17 @@ export const api = createApi({
       }),
       invalidatesTags: ["Transaction"],
     }),
+    updateTransaction: builder.mutation<
+      Transaction,
+      { id: string; data: Partial<Omit<Transaction, "id">> }
+    >({
+      query: ({ id, data }) => ({
+        url: `/transactions/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["Transaction"],
+    }),
     deleteTransaction: builder.mutation<void, string>({
       query: (id) => ({
         url: `/transactions/${id}`,
@@ -339,6 +350,17 @@ export const api = createApi({
       }),
       invalidatesTags: ["PlannedExpense"],
     }),
+    updatePlannedExpense: builder.mutation<
+      Transaction,
+      { id: string; data: Partial<Omit<Transaction, "id">> }
+    >({
+      query: ({ id, data }) => ({
+        url: `/planned-expenses/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["PlannedExpense"],
+    }),
     deletePlannedExpense: builder.mutation<void, string>({
       query: (id) => ({
         url: `/planned-expenses/${id}`,
@@ -357,6 +379,17 @@ export const api = createApi({
         url: "/savings",
         method: "POST",
         body: saving,
+      }),
+      invalidatesTags: ["Saving"],
+    }),
+    updateSaving: builder.mutation<
+      Saving,
+      { id: string; data: Partial<Omit<Saving, "id">> }
+    >({
+      query: ({ id, data }) => ({
+        url: `/savings/${id}`,
+        method: "PUT",
+        body: data,
       }),
       invalidatesTags: ["Saving"],
     }),
@@ -487,12 +520,15 @@ export const {
   useDeleteCategoryMutation,
   useGetTransactionsQuery,
   useCreateTransactionMutation,
+  useUpdateTransactionMutation,
   useDeleteTransactionMutation,
   useGetPlannedExpensesQuery,
   useCreatePlannedExpenseMutation,
+  useUpdatePlannedExpenseMutation,
   useDeletePlannedExpenseMutation,
   useGetSavingsQuery,
   useCreateSavingMutation,
+  useUpdateSavingMutation,
   useDeleteSavingMutation,
   useGetProfileQuery,
   useUpdateProfileMutation,

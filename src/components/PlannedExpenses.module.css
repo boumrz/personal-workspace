@@ -138,6 +138,14 @@
   text-align: right;
 }
 
+.actionButtons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.editButton,
 .deleteButton {
   flex-shrink: 0;
 }
