@@ -10,9 +10,6 @@ dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 
 const { Pool } = pg;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 // Очищаем имя базы данных от лишних символов
 const dbName = (process.env.DB_NAME || "finance_assistant").trim().replace(/[;,\s]+$/, "");
 
