@@ -204,6 +204,14 @@
   justify-content: center !important;
 }
 
+.addButtonMobile:global(.ant-float-btn),
+.addButtonMobile :global(.ant-float-btn-body) {
+  width: 56px !important;
+  height: 56px !important;
+  min-width: 56px !important;
+  min-height: 56px !important;
+}
+
 .addButtonMobile :global(.ant-float-btn-body) {
   background: var(--accent-muted) !important;
 }

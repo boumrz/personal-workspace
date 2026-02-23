@@ -15,8 +15,8 @@
 @media (max-width: 768px) {
   .transactionsPage {
     padding: 0;
-    padding-top: 56px;
-    padding-bottom: 80px;
+    padding-top: 44px;
+    padding-bottom: 60px;
     background: var(--bg-base);
     min-height: 100%;
   }
@@ -334,7 +334,7 @@
 /* Кнопка добавления операции для мобилки */
 .addButtonMobile {
   position: fixed !important;
-  bottom: 88px !important;
+  bottom: 68px !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
   right: auto !important;
@@ -348,6 +348,14 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+}
+
+.addButtonMobile:global(.ant-float-btn),
+.addButtonMobile :global(.ant-float-btn-body) {
+  width: 56px !important;
+  height: 56px !important;
+  min-width: 56px !important;
+  min-height: 56px !important;
 }
 
 .addButtonMobile :global(.ant-float-btn-body) {

@@ -80,6 +80,21 @@ body {
 .ant-progress-bg {
   background-color: var(--accent-muted) !important;
 }
+/* FloatButton — квадратная кнопка 56x56 (плюсик на FinancePage и др.) */
+.ant-float-btn {
+  width: 56px !important;
+  height: 56px !important;
+  min-width: 56px !important;
+  min-height: 56px !important;
+  padding: 0 !important;
+}
+.ant-float-btn .ant-float-btn-body {
+  width: 56px !important;
+  height: 56px !important;
+  min-width: 56px !important;
+  min-height: 56px !important;
+  border-radius: 50% !important;
+}
 .ant-float-btn-primary .ant-float-btn-body {
   background: var(--accent-muted) !important;
 }
@@ -280,6 +295,28 @@ html[data-theme="dark"] .ant-drawer-title {
 
 html[data-theme="dark"] .ant-drawer-close {
   color: #aeaeb2 !important;
+}
+
+/* Компактные шапки для всех drawer */
+.ant-drawer-header {
+  padding: 10px 16px !important;
+  min-height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.ant-drawer-title {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.ant-drawer-close {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 html[data-theme="dark"] .ant-drawer-footer {
@@ -673,6 +710,7 @@ body .ant-tooltip-inner {
 .ant-drawer-footer {
   display: flex !important;
   gap: 8px !important;
+  border-top: none !important;
 }
 .ant-drawer-footer .ant-btn {
   flex: 1 !important;
@@ -722,8 +760,8 @@ body .ant-tooltip-inner {
   .ant-drawer-body {
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    max-height: calc(100vh - 55px) !important;
-    max-height: calc(100dvh - 55px) !important;
+    max-height: calc(100vh - 48px) !important;
+    max-height: calc(100dvh - 48px) !important;
     padding-bottom: max(20px, env(safe-area-inset-bottom)) !important;
   }
 

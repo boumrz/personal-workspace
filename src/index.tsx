@@ -1,7 +1,10 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
+import { setupListeners } from "@reduxjs/toolkit/query";
 import { store } from "./store";
+
+setupListeners(store.dispatch);
 import "antd/dist/reset.css";
 import App from "./App";
 import "./index.css";

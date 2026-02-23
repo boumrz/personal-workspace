@@ -15,8 +15,8 @@
 @media (max-width: 768px) {
   .dashboardPage {
     padding: 0;
-    padding-top: 56px;
-    padding-bottom: 80px;
+    padding-top: 44px;
+    padding-bottom: 60px;
     background: var(--bg-base);
     min-height: 100%;
   }

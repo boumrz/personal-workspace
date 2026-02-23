@@ -6,6 +6,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .swipeHandle {
@@ -13,7 +15,7 @@
   height: 4px;
   background: var(--border-strong);
   border-radius: var(--radius-handle);
-  margin: 0 auto 16px;
+  margin: 0 auto 8px;
   cursor: grab;
 }
 

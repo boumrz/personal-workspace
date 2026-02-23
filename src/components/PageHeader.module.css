@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
+  padding: 10px 16px;
   background-color: var(--bg-card);
   border-bottom: 1px solid var(--border);
   width: 100%;
@@ -12,7 +12,7 @@
 @media (min-width: 769px) {
   .pageHeader {
     margin: 0;
-    padding: 16px 24px;
+    padding: 10px 16px;
     box-shadow: none;
   }
 }
@@ -29,16 +29,16 @@
 }
 
 .title {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
   margin: 0;
   color: var(--text-primary);
 }
 
 .subtitle {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 400;
-  margin: 4px 0 0 0;
+  margin: 2px 0 0 0;
   color: var(--text-secondary);
 }
 
@@ -50,21 +50,21 @@
 
 @media (max-width: 768px) {
   .pageHeader {
-    padding: 16px;
+    padding: 10px 12px;
   }
 
   .title {
-    font-size: 20px;
+    font-size: 18px;
   }
 }
 
 /* Высота шапки для расчета отступов */
 .pageHeader {
-  height: 60px;
+  height: 48px;
 }
 
 @media (max-width: 768px) {
   .pageHeader {
-    height: 56px;
+    height: 44px;
   }
 }

@@ -239,6 +239,8 @@ const baseQueryWithErrorHandling = async (
 export const api = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithErrorHandling,
+  refetchOnFocus: true,
+  refetchOnReconnect: true,
   tagTypes: [
     "Category",
     "Transaction",
