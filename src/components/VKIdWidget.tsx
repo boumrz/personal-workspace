@@ -65,7 +65,9 @@ export const VKIdWidget: React.FC<VKIdWidgetProps> = ({
 
       if (data.payload.error) {
         window.removeEventListener("message", messageHandler);
-        onError?.(new Error(data.payload.error?.error_description || data.payload.error?.error || "Ошибка VK ID"));
+        const errMsg = data.payload.error?.error_description || data.payload.error?.error || "Ошибка VK ID";
+        console.error("[VK ID] Ошибка от VK:", data.payload.error, "redirect_uri:", redirect);
+        onError?.(new Error(errMsg));
         popup.close();
         return;
       }
@@ -95,7 +97,9 @@ export const VKIdWidget: React.FC<VKIdWidgetProps> = ({
             onError?.(new Error("Не удалось получить токен"));
           }
         } catch (err) {
-          onError?.(err instanceof Error ? err : new Error(String(err)));
+          const errObj = err instanceof Error ? err : new Error(String(err));
+          console.error("[VK ID] Ошибка exchangeCode:", err, "redirect_uri:", redirect);
+          onError?.(errObj);
         }
       }
     };
