@@ -39,10 +39,10 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 router.post(
   "/register",
   asyncHandler(async (req, res) => {
-    const { fullName, login, password } = req.body;
+    const { login, password } = req.body;
 
-    if (!fullName || !login || !password) {
-      return res.status(400).json({ error: "Full name, login and password are required" });
+    if (!login || !password) {
+      return res.status(400).json({ error: "Login and password are required" });
     }
 
     // Validate login format
@@ -71,8 +71,8 @@ router.post(
 
       // Create user
       const result = await pool.query(
-        "INSERT INTO users (login, password_hash, name) VALUES ($1, $2, $3) RETURNING id, login, email, name",
-        [login, passwordHash, fullName]
+        "INSERT INTO users (login, password_hash) VALUES ($1, $2) RETURNING id, login, email, name",
+        [login, passwordHash]
       );
 
       const user = result.rows[0];

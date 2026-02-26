@@ -48,13 +48,12 @@ const Login: React.FC = () => {
   };
 
   const onRegister = async (values: {
-    fullName: string;
     login: string;
     password: string;
   }) => {
     try {
       setLoading(true);
-      await register(values.fullName, values.login, values.password);
+      await register(values.login, values.password);
       message.success("Регистрация выполнена успешно");
       navigate("/finance/transactions", { replace: true });
     } catch (error: any) {
@@ -180,12 +179,6 @@ const Login: React.FC = () => {
       label: "Регистрация",
       children: (
         <Form onFinish={onRegister} layout="vertical" size="large">
-          <Form.Item
-            name="fullName"
-            rules={[{ required: true, message: "Введите ФИО" }]}
-          >
-            <Input prefix={<UserOutlined />} placeholder="ФИО" />
-          </Form.Item>
           <Form.Item
             name="login"
             rules={[

@@ -81,7 +81,6 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
-  fullName: string;
   login: string;
   password: string;
 }

@@ -9,7 +9,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (login: string, password: string) => Promise<void>;
-  register: (fullName: string, login: string, password: string) => Promise<void>;
+  register: (login: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   loginWithVkId: (accessToken: string) => Promise<void>;
   loginWithTelegram: (telegramData: {
@@ -79,12 +79,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (fullName: string, loginValue: string, password: string) => {
+  const register = async (loginValue: string, password: string) => {
     try {
       // Очищаем кэш RTK Query перед регистрацией
       store.dispatch(api.util.resetApiState());
       
-      const result = await registerMutation({ fullName, login: loginValue, password }).unwrap();
+      const result = await registerMutation({ login: loginValue, password }).unwrap();
       setToken(result.token);
       setUser(result.user);
       localStorage.setItem("token", result.token);
