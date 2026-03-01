@@ -50,6 +50,7 @@ const Login: React.FC = () => {
   const onRegister = async (values: {
     login: string;
     password: string;
+    confirmPassword: string;
   }) => {
     try {
       setLoading(true);
@@ -201,6 +202,26 @@ const Login: React.FC = () => {
             ]}
           >
             <Input.Password prefix={<LockOutlined />} placeholder="Пароль" />
+          </Form.Item>
+          <Form.Item
+            name="confirmPassword"
+            dependencies={["password"]}
+            rules={[
+              { required: true, message: "Подтвердите пароль" },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue("password") === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error("Пароли не совпадают"));
+                },
+              }),
+            ]}
+          >
+            <Input.Password
+              prefix={<LockOutlined />}
+              placeholder="Подтверждение пароля"
+            />
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" block loading={loading}>

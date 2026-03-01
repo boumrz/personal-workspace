@@ -12,7 +12,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (login: string, password: string) => Promise<void>;
-  register: (fullName: string, login: string, password: string) => Promise<void>;
+  register: (login: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
   api: ApiClient;
@@ -121,8 +121,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     trackMyTrackerLogin(String(res.user.id));
   };
 
-  const register = async (fullName: string, loginValue: string, password: string) => {
-    const res = await api.register({ fullName, login: loginValue, password });
+  const register = async (loginValue: string, password: string) => {
+    // Поле fullName временно заполняем логином, т.к. backend ожидает это поле при регистрации.
+    const res = await api.register({ fullName: loginValue, login: loginValue, password });
     setToken(res.token);
     setUser(res.user);
     if (res.refreshToken) {

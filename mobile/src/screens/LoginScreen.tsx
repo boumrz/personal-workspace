@@ -34,7 +34,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [loginValue, setLoginValue] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const onLogin = async () => {
     if (!loginValue.trim() || !password.trim()) {
@@ -52,7 +52,7 @@ export default function LoginScreen() {
   };
 
   const onRegister = async () => {
-    if (!fullName.trim() || !loginValue.trim() || !password.trim()) {
+    if (!loginValue.trim() || !password.trim() || !confirmPassword.trim()) {
       Alert.alert("Ошибка", "Заполните все поля");
       return;
     }
@@ -68,9 +68,13 @@ export default function LoginScreen() {
       Alert.alert("Ошибка", "Пароль должен быть не менее 6 символов");
       return;
     }
+    if (password !== confirmPassword) {
+      Alert.alert("Ошибка", "Пароли не совпадают");
+      return;
+    }
     try {
       setLoading(true);
-      await register(fullName.trim(), loginValue.trim(), password);
+      await register(loginValue.trim(), password);
     } catch (e: any) {
       Alert.alert(
         "Ошибка регистрации",
@@ -232,13 +236,6 @@ export default function LoginScreen() {
           <View style={styles.form}>
             <TextInput
               style={styles.input}
-              placeholder="ФИО"
-              placeholderTextColor={theme.textTertiary}
-              value={fullName}
-              onChangeText={setFullName}
-            />
-            <TextInput
-              style={styles.input}
               placeholder="Логин (не менее 3 символов)"
               placeholderTextColor={theme.textTertiary}
               value={loginValue}
@@ -252,6 +249,14 @@ export default function LoginScreen() {
               placeholderTextColor={theme.textTertiary}
               value={password}
               onChangeText={setPassword}
+              secureTextEntry
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Подтверждение пароля"
+              placeholderTextColor={theme.textTertiary}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
               secureTextEntry
             />
             <TouchableOpacity
