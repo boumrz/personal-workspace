@@ -22,7 +22,8 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://domiknote.ru/api"
+        "EXPO_PUBLIC_API_URL": "https://domiknote.ru/api",
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       }
     },
     "production-apk": {
@@ -31,7 +32,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://domiknote.ru/api"
+        "EXPO_PUBLIC_API_URL": "https://domiknote.ru/api",
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       }
     }
   },
