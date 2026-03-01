@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, PanResponder, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context";
@@ -23,6 +23,7 @@ export default function SwipeActionRow({ children, onPress, onEdit, onDelete }: 
   const startXRef = useRef(0);
   const currentXRef = useRef(0);
   const rowWidthRef = useRef(0);
+  const [rowWidth, setRowWidth] = useState(0);
   const rowKeyRef = useRef(Symbol("swipe-row"));
   const actionsWidth = onEdit ? 176 : 84;
   const revealTranslate = -actionsWidth;
@@ -42,9 +43,11 @@ export default function SwipeActionRow({ children, onPress, onEdit, onDelete }: 
   };
 
   const getDeleteTriggerTranslate = () => {
-    if (!rowWidthRef.current) return revealTranslate - 84;
-    // Пользователю не нужно доводить до самого края: ~75-80% ширины свайпа достаточно.
-    return getFullSwipeTranslate() + Math.min(96, rowWidthRef.current * 0.24);
+    if (!rowWidthRef.current) return revealTranslate - 36;
+    // Более "легкий" full-swipe: удаление срабатывает примерно после 55-60% ширины карточки.
+    const triggerByWidth = rowWidthRef.current * 0.56;
+    const minSafeTrigger = actionsWidth * 0.9;
+    return -Math.max(triggerByWidth, minSafeTrigger);
   };
 
   const animateTo = (toValue: number) => {
@@ -147,13 +150,25 @@ export default function SwipeActionRow({ children, onPress, onEdit, onDelete }: 
     },
     rightActions: {
       position: "absolute",
+      left: 0,
       right: 0,
       top: 0,
       bottom: 0,
       flexDirection: "row",
+      justifyContent: "flex-end",
       alignItems: "stretch",
       borderRadius: theme.radiusLg,
       overflow: "hidden",
+    },
+    fullWidthDeleteBg: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: theme.expense,
+    },
+    fullWidthDeleteLabel: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 20,
     },
     actionBtn: {
       height: "100%",
@@ -173,21 +188,10 @@ export default function SwipeActionRow({ children, onPress, onEdit, onDelete }: 
     editBtn: {
       backgroundColor: theme.accentMutedLight,
     },
-    deleteBtn: {
-      backgroundColor: theme.expenseLight,
-    },
-    deleteBtnFill: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: theme.expense,
-    },
+    deleteBtn: { backgroundColor: theme.expenseLight },
     actionContent: {
       width: "100%",
       height: "100%",
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    actionLayer: {
-      ...StyleSheet.absoluteFillObject,
       justifyContent: "center",
       alignItems: "center",
     },
@@ -199,6 +203,12 @@ export default function SwipeActionRow({ children, onPress, onEdit, onDelete }: 
     },
     actionTextDanger: {
       color: "#fff",
+    },
+    releaseText: {
+      color: "#fff",
+      fontSize: 14,
+      fontWeight: "600",
+      textAlign: "center",
     },
     divider: {
       width: 1,
@@ -228,10 +238,48 @@ export default function SwipeActionRow({ children, onPress, onEdit, onDelete }: 
       }
     : undefined;
 
+  const deleteBgTranslateX = deepSwipeProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [Math.max(84, rowWidth * 0.82), 0],
+    extrapolate: "clamp",
+  });
+  const deleteNormalTextOpacity = deepSwipeProgress.interpolate({
+    inputRange: [0, 0.65, 1],
+    outputRange: [1, 1, 0],
+    extrapolate: "clamp",
+  });
+  const deleteReleaseTextOpacity = deepSwipeProgress.interpolate({
+    inputRange: [0, 0.35, 1],
+    outputRange: [0, 0.08, 1],
+    extrapolate: "clamp",
+  });
+  const actionsVisibility = deepSwipeProgress.interpolate({
+    inputRange: [0, 0.45, 1],
+    outputRange: [1, 1, 0],
+    extrapolate: "clamp",
+  });
+
   const renderRightActions = () => (
     <View style={styles.rightActions}>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.fullWidthDeleteBg,
+          {
+            opacity: deepSwipeProgress.interpolate({
+              inputRange: [0, 0.12, 1],
+              outputRange: [0, 0.2, 0.9],
+              extrapolate: "clamp",
+            }),
+            transform: [{ translateX: deleteBgTranslateX }],
+          },
+        ]}
+      />
+      <Animated.View pointerEvents="none" style={[styles.fullWidthDeleteLabel, { opacity: deleteReleaseTextOpacity }]}>
+        <Text style={styles.releaseText}>Отпустите для удаления</Text>
+      </Animated.View>
       {onEdit && (
-        <Animated.View style={[styles.actionWrapper, animatedEditButtonStyle]}>
+        <Animated.View style={[styles.actionWrapper, animatedEditButtonStyle, { opacity: actionsVisibility }]}>
           <TouchableOpacity style={[styles.actionBtn, styles.editActionBtn, styles.editBtn]} activeOpacity={0.85} onPress={() => closeAndRun(onEdit)}>
             <Ionicons name="create-outline" size={18} color={theme.accentMuted} />
             <Text style={styles.actionText}>Изменить</Text>
@@ -248,53 +296,17 @@ export default function SwipeActionRow({ children, onPress, onEdit, onDelete }: 
           ]}
         />
       )}
-      <Animated.View style={styles.actionWrapper}>
+      <Animated.View style={[styles.actionWrapper, { opacity: actionsVisibility }]}>
         <TouchableOpacity style={[styles.actionBtn, styles.deleteActionBtn, styles.deleteBtn]} activeOpacity={0.85} onPress={() => closeAndRun(onDelete)}>
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              styles.deleteBtnFill,
-              {
-                opacity: deleteReadyProgress,
-              },
-            ]}
-          />
           <Animated.View
             style={[
               styles.actionContent,
-              {
-                transform: [
-                  {
-                    scale: deleteReadyProgress.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1, 1.08],
-                      extrapolate: "clamp",
-                    }),
-                  },
-                ],
-              },
+              {},
             ]}
           >
-            <Animated.View
-              style={[
-                styles.actionLayer,
-                {
-                  opacity: deleteReadyProgress.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [1, 0],
-                    extrapolate: "clamp",
-                  }),
-                },
-              ]}
-            >
+            <Animated.View style={{ opacity: deleteNormalTextOpacity, alignItems: "center" }}>
               <Ionicons name="trash-outline" size={18} color={theme.expense} />
               <Text style={styles.actionText}>Удалить</Text>
-            </Animated.View>
-            <Animated.View
-              style={[styles.actionLayer, { opacity: deleteReadyProgress }]}
-            >
-              <Ionicons name="trash-outline" size={18} color="#fff" />
-              <Text style={[styles.actionText, styles.actionTextDanger]}>Удалить</Text>
             </Animated.View>
           </Animated.View>
         </TouchableOpacity>
@@ -307,6 +319,7 @@ export default function SwipeActionRow({ children, onPress, onEdit, onDelete }: 
       style={styles.container}
       onLayout={(event) => {
         rowWidthRef.current = event.nativeEvent.layout.width;
+        setRowWidth(event.nativeEvent.layout.width);
       }}
     >
       {renderRightActions()}
