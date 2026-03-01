@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ActivityIndicator, View } from "react-native";
 import { useTheme } from "../context";
+import CompactHeader from "../components/CompactHeader";
 
 const DashboardScreen = lazy(() => import("../screens/DashboardScreen"));
 
@@ -32,10 +33,7 @@ export default function DashboardStack() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerShown: true,
-        headerStyle: { backgroundColor: theme.bgCard },
-        headerTintColor: theme.textPrimary,
-        headerTitleStyle: { fontWeight: "600" as const, fontSize: 18 },
+        header: (props) => <CompactHeader {...props} />,
         contentStyle: { backgroundColor: theme.bgBase },
       }}
     >

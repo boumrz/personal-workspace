@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ActivityIndicator, View } from "react-native";
 import { useTheme } from "../context";
+import CompactHeader from "../components/CompactHeader";
 
 const SavingsScreen = lazy(() => import("../screens/SavingsScreen"));
 const AddSavingScreen = lazy(() => import("../screens/AddSavingScreen"));
@@ -33,10 +34,7 @@ export default function SavingsStack() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerShown: true,
-        headerStyle: { backgroundColor: theme.bgCard },
-        headerTintColor: theme.textPrimary,
-        headerTitleStyle: { fontWeight: "600" as const, fontSize: 18 },
+        header: (props) => <CompactHeader {...props} />,
         contentStyle: { backgroundColor: theme.bgBase },
       }}
     >
@@ -48,7 +46,9 @@ export default function SavingsStack() {
       <Stack.Screen
         name="AddSaving"
         component={withSuspense(AddSavingScreen)}
-        options={{ title: "Новое накопление" }}
+        options={({ route }: any) => ({
+          title: route?.params?.saving ? "Редактировать накопление" : "Новое накопление",
+        })}
       />
     </Stack.Navigator>
   );

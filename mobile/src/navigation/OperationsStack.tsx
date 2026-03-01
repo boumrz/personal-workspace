@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ActivityIndicator, View } from "react-native";
 import { useTheme } from "../context";
+import CompactHeader from "../components/CompactHeader";
 
 const TransactionsScreen = lazy(() => import("../screens/TransactionsScreen"));
 const AddTransactionScreen = lazy(() => import("../screens/AddTransactionScreen"));
@@ -35,10 +36,7 @@ export default function OperationsStack() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerShown: true,
-        headerStyle: { backgroundColor: theme.bgCard },
-        headerTintColor: theme.textPrimary,
-        headerTitleStyle: { fontWeight: "600" as const, fontSize: 18 },
+        header: (props) => <CompactHeader {...props} />,
         contentStyle: { backgroundColor: theme.bgBase },
       }}
     >

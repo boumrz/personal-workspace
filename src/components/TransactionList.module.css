@@ -157,13 +157,13 @@
   .wrapper {
     gap: 12px;
     padding: 0 16px;
-    padding-bottom: 30px;
+    padding-bottom: 40px;
     background: var(--bg-card);
   }
 
   .list {
     gap: 12px;
-    padding-bottom: 30px;
+    padding-bottom: 40px;
     background: var(--bg-card);
   }
 

@@ -10,6 +10,14 @@ const COLOR_PALETTE = [
   "#03A9F4", "#2196F3", "#9C27B0", "#00BCD4", "#607D8B", "#795548",
 ];
 
+let _lastCreatedCategoryId: string | null = null;
+
+export function consumeLastCreatedCategoryId(): string | null {
+  const id = _lastCreatedCategoryId;
+  _lastCreatedCategoryId = null;
+  return id;
+}
+
 export default function AddCategoryScreen({ navigation }: any) {
   const { api } = useAuth();
   const { theme } = useTheme();
@@ -23,7 +31,8 @@ export default function AddCategoryScreen({ navigation }: any) {
     if (!trimmed) { Alert.alert("Ошибка", "Введите название категории"); return; }
     setSaving(true);
     try {
-      await api.createCategory({ name: trimmed, color: selectedColor, icon: selectedIcon });
+      const created = await api.createCategory({ name: trimmed, color: selectedColor, icon: selectedIcon });
+      _lastCreatedCategoryId = created.id;
       navigation.goBack();
     } catch (e: any) { Alert.alert("Ошибка", e?.message ?? "Не удалось создать категорию"); }
     finally { setSaving(false); }

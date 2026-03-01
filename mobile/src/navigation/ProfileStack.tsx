@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { TouchableOpacity, Text, ActivityIndicator, View } from "react-native";
 import { useTheme } from "../context";
+import CompactHeader from "../components/CompactHeader";
 
 const ProfileScreen = lazy(() => import("../screens/ProfileScreen"));
 const CategoriesScreen = lazy(() => import("../screens/CategoriesScreen"));
@@ -39,10 +40,7 @@ export default function ProfileStack() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerShown: true,
-        headerStyle: { backgroundColor: theme.bgCard },
-        headerTintColor: theme.textPrimary,
-        headerTitleStyle: { fontWeight: "600" as const, fontSize: 18 },
+        header: (props) => <CompactHeader {...props} />,
         contentStyle: { backgroundColor: theme.bgBase },
       }}
     >

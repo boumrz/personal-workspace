@@ -19,6 +19,7 @@ import utc from "dayjs/plugin/utc";
 import { useAuth, useTheme } from "../context";
 import { ConfirmModal } from "../components";
 import { getIoniconsName } from "../utils/iconMap";
+import { consumeLastCreatedCategoryId } from "./AddCategoryScreen";
 import type { Category, Transaction } from "@finance-assistant/shared";
 
 // Базовые категории без кнопки удаления (как на веб)
@@ -42,22 +43,25 @@ export default function AddTransactionScreen({ navigation, route }: any) {
   const { api } = useAuth();
   const { theme } = useTheme();
   
-  // Режим: "actual" (обычная операция) или "planned" (планируемая трата)
   const mode = route?.params?.mode ?? "actual";
   const isPlanned = mode === "planned";
+  const editingTransaction: Transaction | null = route?.params?.transaction ?? null;
+  const isEditing = !!editingTransaction;
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [plannedExpenses, setPlannedExpenses] = useState<Transaction[]>([]);
-  const [type, setType] = useState<"income" | "expense">("expense");
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
-  const [date, setDate] = useState(dayjs());
+  const [type, setType] = useState<"income" | "expense">(editingTransaction?.type ?? "expense");
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(editingTransaction?.category ?? null);
+  const [amount, setAmount] = useState(editingTransaction ? String(editingTransaction.amount) : "");
+  const [description, setDescription] = useState(editingTransaction?.description ?? "");
+  const [date, setDate] = useState(editingTransaction ? dayjs(editingTransaction.date) : dayjs());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ visible: boolean; category: Category | null }>({ visible: false, category: null });
+  const [deleteOperationModalVisible, setDeleteOperationModalVisible] = useState(false);
   
   // Генерация списка месяцев для выбора (текущий + 11 будущих)
   // month хранится как 1-12 (не 0-11)
@@ -81,8 +85,12 @@ export default function AddTransactionScreen({ navigation, route }: any) {
   
   // Выбранный месяц для планируемых трат (month хранится как 1-12)
   const [selectedPlannedMonth, setSelectedPlannedMonth] = useState(() => {
+    if (editingTransaction) {
+      const d = new Date(editingTransaction.date);
+      return { year: d.getFullYear(), month: d.getMonth() + 1 };
+    }
     const now = new Date();
-    return { year: now.getFullYear(), month: now.getMonth() + 1 }; // 1-12
+    return { year: now.getFullYear(), month: now.getMonth() + 1 };
   });
   
   // Логируем доступные месяцы при их создании
@@ -98,9 +106,11 @@ export default function AddTransactionScreen({ navigation, route }: any) {
   // Устанавливаем заголовок в зависимости от режима
   useEffect(() => {
     navigation.setOptions({
-      title: isPlanned ? "Планируемая трата" : "Новая операция"
+      title: isEditing
+        ? (isPlanned ? "Редактировать план" : "Редактировать операцию")
+        : (isPlanned ? "Планируемая трата" : "Новая операция"),
     });
-  }, [navigation, isPlanned]);
+  }, [navigation, isPlanned, isEditing]);
 
   // Для планируемых трат — все категории (только расходы), для обычных — фильтруем по типу
   const availableCategories = isPlanned
@@ -109,18 +119,25 @@ export default function AddTransactionScreen({ navigation, route }: any) {
       ? categories.filter((c) => c.name === "Зарплата" || c.name === "Другое")
       : categories);
 
-  // Загрузка данных при фокусе на экране (чтобы обновлять после добавления категории)
   const loadData = useCallback(async () => {
+    const pendingId = consumeLastCreatedCategoryId();
     try {
       const [catData, transData, plannedData] = await Promise.all([
         api.getCategories(),
         api.getTransactions(),
         api.getPlannedExpenses(),
       ]);
+
       setCategories(catData);
       setTransactions(transData);
       setPlannedExpenses(plannedData);
-      if (catData.length > 0 && !selectedCategory) {
+
+      if (pendingId) {
+        const newCat = catData.find((c) => c.id === pendingId);
+        if (newCat) {
+          setSelectedCategory(newCat);
+        }
+      } else if (catData.length > 0 && !selectedCategory) {
         const def =
           type === "income"
             ? catData.find((c) => c.name === "Зарплата") || catData[0]
@@ -274,16 +291,42 @@ export default function AddTransactionScreen({ navigation, route }: any) {
         date: dateString,
       };
       
-      if (isPlanned) {
-        await api.createPlannedExpense(transactionData);
+      if (isEditing) {
+        if (isPlanned) {
+          await api.updatePlannedExpense(editingTransaction.id, transactionData);
+        } else {
+          await api.updateTransaction(editingTransaction.id, transactionData);
+        }
       } else {
-        await api.createTransaction(transactionData);
+        if (isPlanned) {
+          await api.createPlannedExpense(transactionData);
+        } else {
+          await api.createTransaction(transactionData);
+        }
       }
       navigation.goBack();
     } catch (e: any) {
       Alert.alert("Ошибка", e?.message ?? (isPlanned ? "Не удалось добавить планируемую трату" : "Не удалось добавить операцию"));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteOperation = async () => {
+    if (!editingTransaction) return;
+    setDeleting(true);
+    try {
+      if (isPlanned) {
+        await api.deletePlannedExpense(editingTransaction.id);
+      } else {
+        await api.deleteTransaction(editingTransaction.id);
+      }
+      navigation.goBack();
+    } catch (e: any) {
+      Alert.alert("Ошибка", e?.message ?? (isPlanned ? "Не удалось удалить планируемую трату" : "Не удалось удалить операцию"));
+    } finally {
+      setDeleting(false);
+      setDeleteOperationModalVisible(false);
     }
   };
 
@@ -353,19 +396,19 @@ export default function AddTransactionScreen({ navigation, route }: any) {
         categoryChip: {
           flexDirection: "row",
           alignItems: "center",
-          paddingVertical: 8,
-          paddingHorizontal: 14,
+          paddingVertical: 5,
+          paddingHorizontal: 10,
           backgroundColor: theme.bgCard,
-          borderRadius: 20,
+          borderRadius: 16,
           borderWidth: 1,
           borderColor: theme.border,
-          gap: 6,
+          gap: 4,
         },
         categoryChipActive: {
           backgroundColor: theme.accentMuted,
           borderColor: theme.accentMuted,
         },
-        categoryChipText: { fontSize: 14, color: theme.textPrimary },
+        categoryChipText: { fontSize: 13, color: theme.textPrimary },
         categoryChipTextActive: { color: "#fff" },
         categoryChipWrapper: { position: "relative" as const },
         categoryDelBtn: {
@@ -384,16 +427,16 @@ export default function AddTransactionScreen({ navigation, route }: any) {
           flexDirection: "row",
           alignItems: "center",
           alignSelf: "flex-start",
-          paddingVertical: 8,
-          paddingHorizontal: 14,
-          borderRadius: 20,
+          paddingVertical: 5,
+          paddingHorizontal: 10,
+          borderRadius: 16,
           borderWidth: 1,
           borderColor: theme.accentMuted,
           borderStyle: "dashed",
-          gap: 6,
+          gap: 4,
           marginBottom: 16,
         },
-        addCategoryBtnText: { fontSize: 14, color: theme.accentMuted },
+        addCategoryBtnText: { fontSize: 13, color: theme.accentMuted },
         // Inputs
         input: {
           backgroundColor: theme.bgCard,
@@ -426,6 +469,19 @@ export default function AddTransactionScreen({ navigation, route }: any) {
         },
         saveBtnDisabled: { opacity: 0.7 },
         saveBtnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+        deleteOperationBtn: {
+          marginTop: 12,
+          borderRadius: theme.radiusMd,
+          minHeight: theme.btnHeight,
+          borderWidth: 1,
+          borderColor: theme.expense,
+          backgroundColor: theme.expenseLight,
+          justifyContent: "center",
+          alignItems: "center",
+          paddingVertical: 14,
+        },
+        deleteOperationBtnDisabled: { opacity: 0.7 },
+        deleteOperationBtnText: { fontSize: 16, fontWeight: "600", color: theme.expense },
         // Month picker modal
         modalOverlay: {
           flex: 1,
@@ -732,12 +788,32 @@ export default function AddTransactionScreen({ navigation, route }: any) {
       <TouchableOpacity
         style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
         onPress={onSave}
-        disabled={saving}
+        disabled={saving || deleting}
       >
         <Text style={styles.saveBtnText}>
-          {saving ? "Сохранение…" : isPlanned ? "Добавить" : "Сохранить"}
+          {saving ? "Сохранение…" : isEditing ? "Сохранить" : isPlanned ? "Добавить" : "Сохранить"}
         </Text>
       </TouchableOpacity>
+
+      {isEditing && (
+        <TouchableOpacity
+          style={[styles.deleteOperationBtn, deleting && styles.deleteOperationBtnDisabled]}
+          onPress={() => setDeleteOperationModalVisible(true)}
+          disabled={saving || deleting}
+        >
+          <Text style={styles.deleteOperationBtnText}>
+            {deleting ? "Удаление…" : isPlanned ? "Удалить план" : "Удалить операцию"}
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      <ConfirmModal
+        visible={deleteOperationModalVisible}
+        title={isPlanned ? "Удалить планируемую трату?" : "Удалить операцию?"}
+        message="Это действие нельзя отменить."
+        onConfirm={handleDeleteOperation}
+        onCancel={() => setDeleteOperationModalVisible(false)}
+      />
     </ScrollView>
   );
 }

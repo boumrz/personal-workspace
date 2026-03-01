@@ -100,7 +100,7 @@
 
   .savingsList {
     padding: 0 16px;
-    padding-bottom: 20px; /* Отступ снизу для нижней навигации */
+    padding-bottom: 32px;
   }
 
   .savingItem {

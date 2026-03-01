@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, TextInput, AppState, AppStateStatus } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth, useTheme } from "../context";
 import { usePreserveScrollOnThemeChange } from "../hooks";
-import { ConfirmModal } from "../components";
+import { ConfirmModal, ErrorView, SwipeActionRow } from "../components";
 import type { Saving } from "@finance-assistant/shared";
 
 function formatDate(dateStr: string) {
@@ -18,9 +18,6 @@ function formatDate(dateStr: string) {
   return date.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
 }
 
-function formatTime(dateStr: string) {
-  return new Date(dateStr).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-}
 
 interface GroupedData { date: string; savings: Saving[]; totalAmount: number; }
 
@@ -35,23 +32,33 @@ export default function SavingsScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteModal, setDeleteModal] = useState<{ visible: boolean; id: string | null }>({ visible: false, id: null });
+  const [error, setError] = useState(false);
+  const retryTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const load = useCallback(async () => {
+    setError(false);
     try {
       const [savingsData, transactionsData] = await Promise.all([api.getSavings(), api.getTransactions().catch(() => [])]);
       setSavings(savingsData);
       setTransactions(transactionsData);
-    } catch { setSavings([]); setTransactions([]); }
-    finally { setLoading(false); setRefreshing(false); }
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [api]);
 
   useEffect(() => { load(); }, [load]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state: AppStateStatus) => {
-      if (state === "active") load();
+      if (state === "active") {
+        clearTimeout(retryTimer.current);
+        retryTimer.current = setTimeout(load, 300);
+      }
     });
-    return () => sub.remove();
+    return () => { sub.remove(); clearTimeout(retryTimer.current); };
   }, [load]);
   const onRefresh = () => { setRefreshing(true); load(); };
 
@@ -122,13 +129,9 @@ export default function SavingsScreen({ navigation }: any) {
     savingIcon: { width: 48, height: 48, borderRadius: theme.radiusLg, backgroundColor: theme.incomeLight, justifyContent: "center", alignItems: "center" },
     savingInfo: { flex: 1 },
     savingName: { fontSize: 15, fontWeight: "600", color: theme.textPrimary, marginBottom: 4 },
-    savingMeta: { flexDirection: "row", alignItems: "center", gap: 8 },
-    savingTag: { backgroundColor: theme.bgSurface, paddingHorizontal: 8, paddingVertical: 2, borderRadius: theme.radiusSm },
-    savingTagText: { fontSize: 11, color: theme.textTertiary },
-    savingRight: { alignItems: "flex-end", marginRight: 8 },
-    savingAmount: { fontSize: 15, fontWeight: "600", color: theme.income, marginBottom: 4 },
-    savingTime: { fontSize: 12, color: theme.textTertiary },
-    deleteBtn: { width: 36, height: 36, borderRadius: theme.radiusMd, justifyContent: "center", alignItems: "center" },
+    
+    savingRight: { alignItems: "flex-end" },
+    savingAmount: { fontSize: 15, fontWeight: "600", color: theme.income },
     fab: { position: "absolute", bottom: fabBottom, alignSelf: "center", width: 56, height: 56, borderRadius: theme.radiusXl, backgroundColor: theme.accentMuted, justifyContent: "center", alignItems: "center", shadowColor: theme.shadowLg, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 12, elevation: 4 },
   }), [theme, fabBottom, listBottomPadding]);
 
@@ -136,21 +139,31 @@ export default function SavingsScreen({ navigation }: any) {
     return <View style={styles.centered}><ActivityIndicator size="large" color={theme.accentMuted} /></View>;
   }
 
+  if (error && savings.length === 0) {
+    return (
+      <View style={styles.container}>
+        <ErrorView onRetry={load} />
+      </View>
+    );
+  }
+
   const renderSaving = (item: Saving) => (
-    <View key={item.id} style={styles.savingItem}>
-      <View style={styles.savingIcon}><Ionicons name="wallet-outline" size={20} color={theme.income} /></View>
-      <View style={styles.savingInfo}>
-        <Text style={styles.savingName} numberOfLines={1}>{item.description || "Накопление"}</Text>
-        <View style={styles.savingMeta}><View style={styles.savingTag}><Text style={styles.savingTagText}>Сбережение</Text></View></View>
+    <SwipeActionRow
+      key={item.id}
+      onPress={() => navigation.navigate("AddSaving", { saving: item })}
+      onEdit={() => navigation.navigate("AddSaving", { saving: item })}
+      onDelete={() => setDeleteModal({ visible: true, id: item.id })}
+    >
+      <View style={styles.savingItem}>
+        <View style={styles.savingIcon}><Ionicons name="wallet-outline" size={20} color={theme.income} /></View>
+        <View style={styles.savingInfo}>
+          <Text style={styles.savingName} numberOfLines={1}>{item.description || "Накопление"}</Text>
+        </View>
+        <View style={styles.savingRight}>
+          <Text style={styles.savingAmount}>+ ₽{item.amount.toLocaleString("ru-RU", { minimumFractionDigits: 2 })}</Text>
+        </View>
       </View>
-      <View style={styles.savingRight}>
-        <Text style={styles.savingAmount}>+ ₽{item.amount.toLocaleString("ru-RU", { minimumFractionDigits: 2 })}</Text>
-        <Text style={styles.savingTime}>{formatTime(item.date)}</Text>
-      </View>
-      <TouchableOpacity style={styles.deleteBtn} onPress={() => setDeleteModal({ visible: true, id: item.id })}>
-        <Ionicons name="trash-outline" size={18} color={theme.textTertiary} />
-      </TouchableOpacity>
-    </View>
+    </SwipeActionRow>
   );
 
   const renderGroup = ({ item }: { item: GroupedData }) => (

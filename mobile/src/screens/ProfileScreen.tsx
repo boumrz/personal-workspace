@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, Switch, AppState, AppStateStatus } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -6,7 +6,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth, useTheme } from "../context";
 import { usePreserveScrollOnThemeChange } from "../hooks";
-import { ConfirmModal } from "../components";
+import { ConfirmModal, ErrorView } from "../components";
 import type { Profile, Goal } from "@finance-assistant/shared";
 
 export default function ProfileScreen({ navigation }: any) {
@@ -21,6 +21,8 @@ export default function ProfileScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ visible: boolean; goal: Goal | null }>({ visible: false, goal: null });
   const [logoutModal, setLogoutModal] = useState(false);
+  const [error, setError] = useState(false);
+  const retryTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const balance = useMemo(() => {
     const income = transactions.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
@@ -29,6 +31,7 @@ export default function ProfileScreen({ navigation }: any) {
   }, [transactions]);
 
   const loadData = useCallback(async () => {
+    setError(false);
     try {
       const [profileData, transactionsData, goalsData] = await Promise.all([
         api.getProfile(),
@@ -38,17 +41,24 @@ export default function ProfileScreen({ navigation }: any) {
       setProfile(profileData);
       setTransactions(transactionsData);
       setGoals(goalsData);
-    } catch { setProfile(null); }
-    finally { setLoading(false); setRefreshing(false); }
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [api]);
 
   useEffect(() => { loadData(); }, [loadData]);
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state: AppStateStatus) => {
-      if (state === "active") loadData();
+      if (state === "active") {
+        clearTimeout(retryTimer.current);
+        retryTimer.current = setTimeout(loadData, 300);
+      }
     });
-    return () => sub.remove();
+    return () => { sub.remove(); clearTimeout(retryTimer.current); };
   }, [loadData]);
   const onRefresh = () => { setRefreshing(true); loadData(); };
 
@@ -116,6 +126,14 @@ export default function ProfileScreen({ navigation }: any) {
 
   if (loading) {
     return <View style={dynamicStyles.centered}><ActivityIndicator size="large" color={theme.accentMuted} /></View>;
+  }
+
+  if (error && !profile) {
+    return (
+      <View style={dynamicStyles.container}>
+        <ErrorView onRetry={loadData} />
+      </View>
+    );
   }
 
   return (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, TextInput, AppState, AppStateStatus } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -7,7 +7,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/ru";
 import { useAuth, useTheme } from "../context";
 import { usePreserveScrollOnThemeChange } from "../hooks";
-import { ConfirmModal } from "../components";
+import { ConfirmModal, ErrorView, SwipeActionRow } from "../components";
 import { getIoniconsName } from "../utils/iconMap";
 import type { Transaction } from "@finance-assistant/shared";
 
@@ -28,9 +28,6 @@ function formatMonth(dateStr: string) {
   return dayjs(dateStr).format("MMMM YYYY");
 }
 
-function formatTime(dateStr: string) {
-  return dayjs(dateStr).format("HH:mm");
-}
 
 interface GroupedData { date: string; transactions: Transaction[]; totalBalance: number; }
 
@@ -47,8 +44,11 @@ export default function TransactionsScreen({ navigation }: any) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>(["all"]);
   const [deleteModal, setDeleteModal] = useState<{ visible: boolean; id: string | null }>({ visible: false, id: null });
+  const [error, setError] = useState(false);
+  const retryTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const load = useCallback(async () => {
+    setError(false);
     try {
       const [transData, plannedData] = await Promise.all([
         api.getTransactions(),
@@ -56,17 +56,24 @@ export default function TransactionsScreen({ navigation }: any) {
       ]);
       setTransactions(transData);
       setPlannedExpenses(plannedData);
-    } catch { setTransactions([]); setPlannedExpenses([]); }
-    finally { setLoading(false); setRefreshing(false); }
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [api]);
 
   useEffect(() => { load(); }, [load]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state: AppStateStatus) => {
-      if (state === "active") load();
+      if (state === "active") {
+        clearTimeout(retryTimer.current);
+        retryTimer.current = setTimeout(load, 300);
+      }
     });
-    return () => sub.remove();
+    return () => { sub.remove(); clearTimeout(retryTimer.current); };
   }, [load]);
   const onRefresh = () => { setRefreshing(true); load(); };
 
@@ -157,20 +164,11 @@ export default function TransactionsScreen({ navigation }: any) {
     transactionIcon: { width: 48, height: 48, borderRadius: theme.radiusLg, justifyContent: "center", alignItems: "center" },
     transactionInfo: { flex: 1 },
     transactionName: { fontSize: 15, fontWeight: "600", color: theme.textPrimary, marginBottom: 4 },
-    transactionMeta: { flexDirection: "row", alignItems: "center", gap: 8 },
-    transactionCategory: { fontSize: 13, color: theme.textSecondary },
-    transactionTag: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: theme.radiusSm },
-    tagIncome: { backgroundColor: theme.incomeLight },
-    tagExpense: { backgroundColor: theme.expenseLight },
-    transactionTagText: { fontSize: 11 },
-    tagTextIncome: { color: theme.income },
-    tagTextExpense: { color: theme.expense },
-    transactionRight: { alignItems: "flex-end", marginRight: 8 },
+    transactionCategory: { fontSize: 13, color: theme.textSecondary, marginTop: 2 },
+    transactionRight: { alignItems: "flex-end" },
     transactionAmount: { fontSize: 15, fontWeight: "600", marginBottom: 4 },
     amountIncome: { color: theme.income },
     amountExpense: { color: theme.expense },
-    transactionTime: { fontSize: 12, color: theme.textTertiary },
-    deleteBtn: { width: 36, height: 36, borderRadius: theme.radiusMd, justifyContent: "center", alignItems: "center" },
     fab: { position: "absolute", bottom: fabBottom, alignSelf: "center", width: 56, height: 56, borderRadius: theme.radiusXl, backgroundColor: theme.accentMuted, justifyContent: "center", alignItems: "center", shadowColor: theme.shadowLg, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 12, elevation: 4 },
   }), [theme, fabBottom, listBottomPadding]);
 
@@ -178,36 +176,39 @@ export default function TransactionsScreen({ navigation }: any) {
     return <View style={styles.centered}><ActivityIndicator size="large" color={theme.accentMuted} /></View>;
   }
 
+  if (error && transactions.length === 0 && plannedExpenses.length === 0) {
+    return (
+      <View style={styles.container}>
+        <ErrorView onRetry={load} />
+      </View>
+    );
+  }
+
   const renderTransaction = ({ item }: { item: Transaction }) => {
     const isIncome = item.type === "income";
     const categoryColor = item.category.color || theme.textSecondary;
     const categoryIcon = getIoniconsName(item.category.icon);
     return (
-      <View style={styles.transactionItem}>
-        <View style={[styles.transactionIcon, { backgroundColor: categoryColor + "20" }]}>
-          <Ionicons name={categoryIcon} size={22} color={categoryColor} />
-        </View>
-        <View style={styles.transactionInfo}>
-          <Text style={styles.transactionName} numberOfLines={1}>{item.description || "Без описания"}</Text>
-          <View style={styles.transactionMeta}>
+      <SwipeActionRow
+        onPress={() => navigation.navigate("AddTransaction", { mode: activeTab, transaction: item })}
+        onEdit={() => navigation.navigate("AddTransaction", { mode: activeTab, transaction: item })}
+        onDelete={() => setDeleteModal({ visible: true, id: item.id })}
+      >
+        <View style={styles.transactionItem}>
+          <View style={[styles.transactionIcon, { backgroundColor: categoryColor + "20" }]}>
+            <Ionicons name={categoryIcon} size={22} color={categoryColor} />
+          </View>
+          <View style={styles.transactionInfo}>
+            <Text style={styles.transactionName} numberOfLines={1}>{item.description || "Без описания"}</Text>
             <Text style={styles.transactionCategory}>{item.category.name}</Text>
-            <View style={[styles.transactionTag, isIncome ? styles.tagIncome : styles.tagExpense]}>
-              <Text style={[styles.transactionTagText, isIncome ? styles.tagTextIncome : styles.tagTextExpense]}>
-                {activeTab === "planned" ? "План" : isIncome ? "Доход" : "Расход"}
-              </Text>
-            </View>
+          </View>
+          <View style={styles.transactionRight}>
+            <Text style={[styles.transactionAmount, isIncome ? styles.amountIncome : styles.amountExpense]}>
+              {activeTab === "planned" ? "" : isIncome ? "+ " : "- "}₽{item.amount.toLocaleString("ru-RU", { minimumFractionDigits: 2 })}
+            </Text>
           </View>
         </View>
-        <View style={styles.transactionRight}>
-          <Text style={[styles.transactionAmount, isIncome ? styles.amountIncome : styles.amountExpense]}>
-            {activeTab === "planned" ? "" : isIncome ? "+ " : "- "}₽{item.amount.toLocaleString("ru-RU", { minimumFractionDigits: 2 })}
-          </Text>
-          {activeTab !== "planned" && <Text style={styles.transactionTime}>{formatTime(item.date)}</Text>}
-        </View>
-        <TouchableOpacity style={styles.deleteBtn} onPress={() => setDeleteModal({ visible: true, id: item.id })}>
-          <Ionicons name="trash-outline" size={18} color={theme.textTertiary} />
-        </TouchableOpacity>
-      </View>
+      </SwipeActionRow>
     );
   };
 

@@ -175,6 +175,12 @@ export class ApiClient {
       body: JSON.stringify(transaction),
     });
   }
+  async updateTransaction(id: string, transaction: Partial<Omit<Transaction, "id">>): Promise<Transaction> {
+    return this.request<Transaction>(`/transactions/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(transaction),
+    });
+  }
   async deleteTransaction(id: string): Promise<void> {
     return this.request<void>(`/transactions/${id}`, { method: "DELETE" });
   }
@@ -189,6 +195,12 @@ export class ApiClient {
       body: JSON.stringify(expense),
     });
   }
+  async updatePlannedExpense(id: string, expense: Partial<Omit<Transaction, "id">>): Promise<Transaction> {
+    return this.request<Transaction>(`/planned-expenses/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(expense),
+    });
+  }
   async deletePlannedExpense(id: string): Promise<void> {
     return this.request<void>(`/planned-expenses/${id}`, { method: "DELETE" });
   }
@@ -200,6 +212,12 @@ export class ApiClient {
   async createSaving(saving: Omit<Saving, "id">): Promise<Saving> {
     return this.request<Saving>("/savings", {
       method: "POST",
+      body: JSON.stringify(saving),
+    });
+  }
+  async updateSaving(id: string, saving: Partial<Omit<Saving, "id">>): Promise<Saving> {
+    return this.request<Saving>(`/savings/${id}`, {
+      method: "PUT",
       body: JSON.stringify(saving),
     });
   }

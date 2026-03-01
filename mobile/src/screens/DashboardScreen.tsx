@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth, useTheme } from "../context";
 import { usePreserveScrollOnThemeChange } from "../hooks";
+import { ErrorView } from "../components";
 import type { Transaction } from "@finance-assistant/shared";
 import type { ThemeTokens } from "../context";
 
@@ -220,35 +221,41 @@ export default function DashboardScreen() {
   const [chartType, setChartType] = useState<"expense" | "income">("expense");
   const [selectedCategoryIndex, setSelectedCategoryIndex] = useState<number | null>(null);
   const [selectedWeek, setSelectedWeek] = useState(1);
+  const [error, setError] = useState(false);
+  const retryTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
+    setError(false);
     try {
       const data = await api.getTransactions();
       setTransactions(data);
     } catch {
-      setTransactions([]);
+      setError(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [api]);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   useFocusEffect(
     useCallback(() => {
       loadData();
-    }, [])
+    }, [loadData])
   );
 
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state: AppStateStatus) => {
-      if (state === "active") loadData();
+      if (state === "active") {
+        clearTimeout(retryTimer.current);
+        retryTimer.current = setTimeout(loadData, 300);
+      }
     });
-    return () => sub.remove();
-  }, []);
+    return () => { sub.remove(); clearTimeout(retryTimer.current); };
+  }, [loadData]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -513,6 +520,14 @@ export default function DashboardScreen() {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={theme.accentMuted} />
+      </View>
+    );
+  }
+
+  if (error && transactions.length === 0) {
+    return (
+      <View style={styles.container}>
+        <ErrorView onRetry={loadData} />
       </View>
     );
   }

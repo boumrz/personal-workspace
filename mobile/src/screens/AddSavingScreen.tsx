@@ -1,16 +1,23 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Platform } from "react-native";
+import { Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Platform } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAuth, useTheme } from "../context";
+import type { Saving } from "@finance-assistant/shared";
 
 function formatDateForInput(d: Date) { return d.toISOString().slice(0, 10); }
 
-export default function AddSavingScreen({ navigation }: any) {
+function toDateFromIso(isoDate: string) {
+  const parsed = new Date(isoDate);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+export default function AddSavingScreen({ navigation, route }: any) {
   const { api } = useAuth();
   const { theme } = useTheme();
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
-  const [date, setDate] = useState(new Date());
+  const editingSaving = route?.params?.saving as Saving | undefined;
+  const [amount, setAmount] = useState(editingSaving ? String(editingSaving.amount) : "");
+  const [description, setDescription] = useState(editingSaving?.description ?? "");
+  const [date, setDate] = useState(editingSaving ? toDateFromIso(editingSaving.date) : new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -19,9 +26,13 @@ export default function AddSavingScreen({ navigation }: any) {
     if (isNaN(num) || num <= 0) { Alert.alert("Ошибка", "Введите сумму"); return; }
     setSaving(true);
     try {
-      await api.createSaving({ amount: num, description: description.trim() || "", date: formatDateForInput(date) });
+      if (editingSaving) {
+        await api.updateSaving(editingSaving.id, { amount: num, description: description.trim() || "", date: formatDateForInput(date) });
+      } else {
+        await api.createSaving({ amount: num, description: description.trim() || "", date: formatDateForInput(date) });
+      }
       navigation.goBack();
-    } catch (e: any) { Alert.alert("Ошибка", e?.message ?? "Не удалось добавить накопление"); }
+    } catch (e: any) { Alert.alert("Ошибка", e?.message ?? `Не удалось ${editingSaving ? "изменить" : "добавить"} накопление`); }
     finally { setSaving(false); }
   };
 
@@ -52,7 +63,7 @@ export default function AddSavingScreen({ navigation }: any) {
       {showDatePicker && <DateTimePicker value={date} mode="date" display={Platform.OS === "ios" ? "spinner" : "default"} onChange={(_, d) => { setShowDatePicker(false); if (d) setDate(d); }} />}
 
       <TouchableOpacity style={[styles.saveBtn, saving && styles.saveBtnDisabled]} onPress={onSave} disabled={saving}>
-        <Text style={styles.saveBtnText}>{saving ? "Сохранение…" : "Сохранить"}</Text>
+        <Text style={styles.saveBtnText}>{saving ? "Сохранение…" : editingSaving ? "Обновить" : "Сохранить"}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

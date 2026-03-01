@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Modal,
   Drawer,
@@ -193,24 +193,27 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     }
   }, [categories, availableCategories, selectedCategory]);
 
-  // Заполняем форму при редактировании, сбрасываем при добавлении
+  const prevOpenRef = useRef(false);
   useEffect(() => {
-    if (open) {
-      if (initialTransaction) {
-        form.setFieldsValue({
-          amount: initialTransaction.amount,
-          description: initialTransaction.description,
-          date: dayjs(initialTransaction.date),
-          type: initialTransaction.type,
-        });
-        setTransactionType(initialTransaction.type);
-        setSelectedCategory(initialTransaction.category.id);
-      } else {
-        form.resetFields();
-        setTransactionType("expense");
-        const firstCat = categories.find((c) => c.name === "Продукты" || c.name === "Другое") || categories[0];
-        setSelectedCategory(firstCat?.id || "");
-      }
+    const justOpened = open && !prevOpenRef.current;
+    prevOpenRef.current = open;
+
+    if (!justOpened) return;
+
+    if (initialTransaction) {
+      form.setFieldsValue({
+        amount: initialTransaction.amount,
+        description: initialTransaction.description,
+        date: dayjs(initialTransaction.date),
+        type: initialTransaction.type,
+      });
+      setTransactionType(initialTransaction.type);
+      setSelectedCategory(initialTransaction.category.id);
+    } else {
+      form.resetFields();
+      setTransactionType("expense");
+      const firstCat = categories.find((c) => c.name === "Продукты" || c.name === "Другое") || categories[0];
+      setSelectedCategory(firstCat?.id || "");
     }
   }, [open, initialTransaction, categories]);
 
