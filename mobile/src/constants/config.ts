@@ -13,3 +13,17 @@ export const API_BASE_URL =
  */
 export const MYTRACKER_SDK_KEY =
   process.env.EXPO_PUBLIC_MYTRACKER_SDK_KEY ?? "";
+
+/**
+ * VK ID app id for Android OAuth flow.
+ * Set EXPO_PUBLIC_VK_ID_APP_ID in EAS secrets or mobile/.env
+ */
+export const VK_ID_APP_ID =
+  process.env.EXPO_PUBLIC_VK_ID_APP_ID ?? "";
+
+/**
+ * Deep link scheme used by Expo auth redirect.
+ * Must match app.json -> expo.scheme
+ */
+export const VK_ID_REDIRECT_SCHEME =
+  process.env.EXPO_PUBLIC_VK_ID_REDIRECT_SCHEME ?? "financeassistant";

@@ -14,7 +14,9 @@ interface VKIdWidgetProps {
 function generateCodeVerifier(): string {
   const array = new Uint8Array(64);
   crypto.getRandomValues(array);
-  return Array.from(array, (b) => b.toString(16).padStart(2, "0")).join("").slice(0, 128);
+  return Array.from(array, (b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 128);
 }
 
 async function generateCodeChallenge(verifier: string): Promise<string> {
@@ -35,15 +37,23 @@ export const VKIdWidget: React.FC<VKIdWidgetProps> = ({
   loading = false,
   label = "Войти через VK ID",
 }) => {
-  const redirect = redirectUrl || (typeof window !== "undefined" ? `${window.location.origin}/vk-id-callback.html` : "");
+  const redirect =
+    redirectUrl ||
+    (typeof window !== "undefined"
+      ? `${window.location.origin}/vk-id-callback.html`
+      : "");
 
   const handleClick = useCallback(async () => {
     if (!appId) {
-      console.warn("[VK ID] appId не задан. Проверьте VITE_VK_ID_APP_ID в переменных окружения.");
+      console.warn(
+        "[VK ID] appId не задан. Проверьте VITE_VK_ID_APP_ID в переменных окружения.",
+      );
       return;
     }
 
-    const state = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+    const state =
+      crypto.randomUUID().replace(/-/g, "") +
+      crypto.randomUUID().replace(/-/g, "");
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
 
@@ -58,13 +68,23 @@ export const VKIdWidget: React.FC<VKIdWidgetProps> = ({
     console.group("[VK ID] Параметры авторизации");
     console.log("appId:", appId, typeof appId);
     console.log("redirect_uri:", redirect);
-    console.log("window.location.origin:", typeof window !== "undefined" ? window.location.origin : "N/A");
+    console.log(
+      "window.location.origin:",
+      typeof window !== "undefined" ? window.location.origin : "N/A",
+    );
     console.log("state:", state);
-    console.log("code_challenge (первые 20 символов):", codeChallenge?.slice(0, 20) + "...");
+    console.log(
+      "code_challenge (первые 20 символов):",
+      codeChallenge?.slice(0, 20) + "...",
+    );
     console.log("authUrl:", authUrl);
     console.groupEnd();
 
-    const popup = window.open(authUrl, "VK ID", `width=${width},height=${height},left=${left},top=${top}`);
+    const popup = window.open(
+      authUrl,
+      "VK ID",
+      `width=${width},height=${height},left=${left},top=${top}`,
+    );
 
     if (!popup) {
       onError?.(new Error("Всплывающее окно заблокировано"));
@@ -78,7 +98,10 @@ export const VKIdWidget: React.FC<VKIdWidgetProps> = ({
 
       if (data.payload.error) {
         window.removeEventListener("message", messageHandler);
-        const errMsg = data.payload.error?.error_description || data.payload.error?.error || "Ошибка VK ID";
+        const errMsg =
+          data.payload.error?.error_description ||
+          data.payload.error?.error ||
+          "Ошибка VK ID";
         console.group("[VK ID] Ошибка от callback");
         console.error("payload.error:", data.payload.error);
         console.log("redirect_uri:", redirect);
@@ -96,7 +119,11 @@ export const VKIdWidget: React.FC<VKIdWidgetProps> = ({
         console.group("[VK ID] Обработка callback (успех)");
         console.log("code:", code ? `${code.slice(0, 10)}...` : "отсутствует");
         console.log("device_id:", deviceId);
-        console.log("Config.init params:", { appId: Number(appId), redirect, state });
+        console.log("Config.init params:", {
+          appId: Number(appId),
+          redirect,
+          state,
+        });
         console.groupEnd();
 
         try {
@@ -108,12 +135,17 @@ export const VKIdWidget: React.FC<VKIdWidgetProps> = ({
             scope: "email",
           });
           const expires = new Date(Date.now() + 15 * 60 * 1000).toUTCString();
-          const secure = window.location.protocol === "https:" ? "; Secure" : "";
+          const secure =
+            window.location.protocol === "https:" ? "; Secure" : "";
           document.cookie = `vkid_sdk:codeVerifier=${encodeURIComponent(codeVerifier)}; expires=${expires}; path=/; SameSite=Strict${secure}`;
           document.cookie = `vkid_sdk:state=${encodeURIComponent(state)}; expires=${expires}; path=/; SameSite=Strict${secure}`;
           const tokens = await VKID.Auth.exchangeCode(code, deviceId);
           const token = (tokens as { access_token?: string })?.access_token;
-          console.log("[VK ID] exchangeCode результат:", token ? "токен получен" : "токен отсутствует", tokens);
+          console.log(
+            "[VK ID] exchangeCode результат:",
+            token ? "токен получен" : "токен отсутствует",
+            tokens,
+          );
           if (token) {
             await onSuccess(token);
           } else {
@@ -124,7 +156,10 @@ export const VKIdWidget: React.FC<VKIdWidgetProps> = ({
           console.group("[VK ID] Ошибка exchangeCode");
           console.error("err:", err);
           console.log("redirect_uri:", redirect);
-          console.log("code:", code ? `${code.slice(0, 10)}...` : "отсутствует");
+          console.log(
+            "code:",
+            code ? `${code.slice(0, 10)}...` : "отсутствует",
+          );
           console.log("device_id:", deviceId);
           console.groupEnd();
           onError?.(errObj);

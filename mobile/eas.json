@@ -23,6 +23,7 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://domiknote.ru/api",
+        "EXPO_PUBLIC_VK_ID_APP_ID": "54468830",
         "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       }
     },
@@ -33,6 +34,7 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://domiknote.ru/api",
+        "EXPO_PUBLIC_VK_ID_APP_ID": "54468830",
         "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       }
     }

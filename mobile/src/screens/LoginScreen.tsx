@@ -10,16 +10,21 @@ import {
   Platform,
   ScrollView,
   Alert,
+  NativeModules,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth, useTheme } from "../context";
+import { VK_ID_APP_ID } from "../constants/config";
 
 const SESSION_EXPIRED_KEY = "sessionExpired";
 
 type Tab = "login" | "register";
+const VkIdNative = NativeModules.VkIdModule as
+  | { login: () => Promise<string> }
+  | undefined;
 
 export default function LoginScreen() {
-  const { login, register } = useAuth();
+  const { login, register, loginWithVkId } = useAuth();
   const { theme } = useTheme();
   const [tab, setTab] = useState<Tab>("login");
 
@@ -32,6 +37,7 @@ export default function LoginScreen() {
     });
   }, []);
   const [loading, setLoading] = useState(false);
+  const [vkLoading, setVkLoading] = useState(false);
   const [loginValue, setLoginValue] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -48,6 +54,40 @@ export default function LoginScreen() {
       Alert.alert("Ошибка входа", e?.message ?? "Неверный логин или пароль");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onVkLogin = async () => {
+    if (!VK_ID_APP_ID) {
+      Alert.alert(
+        "VK ID не настроен",
+        "Добавьте EXPO_PUBLIC_VK_ID_APP_ID в mobile/.env или EAS secrets.",
+      );
+      return;
+    }
+    if (Platform.OS !== "android") {
+      Alert.alert(
+        "VK ID",
+        "Нативная VK авторизация сейчас поддерживается только на Android.",
+      );
+      return;
+    }
+    if (!VkIdNative?.login) {
+      Alert.alert(
+        "VK ID не настроен",
+        "Нативный модуль VK ID не найден. Пересоберите Android-приложение.",
+      );
+      return;
+    }
+
+    try {
+      setVkLoading(true);
+      const accessToken = await VkIdNative.login();
+      await loginWithVkId(accessToken, VK_ID_APP_ID);
+    } catch (e: any) {
+      Alert.alert("Ошибка VK ID", e?.message || "Не удалось войти через VK");
+    } finally {
+      setVkLoading(false);
     }
   };
 
@@ -161,6 +201,22 @@ export default function LoginScreen() {
         },
         buttonDisabled: { opacity: 0.7 },
         buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+        secondaryButton: {
+          backgroundColor: theme.bgSurface,
+          borderWidth: 1,
+          borderColor: theme.border,
+          borderRadius: theme.radiusMd,
+          paddingVertical: 14,
+          minHeight: theme.btnHeight,
+          justifyContent: "center",
+          alignItems: "center",
+          marginTop: 10,
+        },
+        secondaryButtonText: {
+          color: theme.textPrimary,
+          fontSize: 16,
+          fontWeight: "600",
+        },
       }),
     [theme],
   );
@@ -229,6 +285,22 @@ export default function LoginScreen() {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.buttonText}>Войти</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.secondaryButton,
+                vkLoading && styles.buttonDisabled,
+              ]}
+              onPress={onVkLogin}
+              disabled={vkLoading}
+            >
+              {vkLoading ? (
+                <ActivityIndicator color={theme.textPrimary} />
+              ) : (
+                <Text style={styles.secondaryButtonText}>
+                  Войти через VK ID
+                </Text>
               )}
             </TouchableOpacity>
           </View>

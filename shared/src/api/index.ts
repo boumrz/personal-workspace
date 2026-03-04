@@ -23,6 +23,16 @@ export interface RefreshResponse {
   user?: { id: number; login?: string; email?: string; name?: string };
 }
 
+export interface VkIdLoginRequest {
+  access_token: string;
+  app_id?: string;
+}
+
+export interface VkIdLinkRequest {
+  access_token: string;
+  app_id?: string;
+}
+
 export interface ApiClientOptions {
   baseUrl?: string;
   getToken: GetTokenFn;
@@ -148,6 +158,36 @@ export class ApiClient {
     return this.request<LoginResponse>("/auth/register", {
       method: "POST",
       body: JSON.stringify(data),
+    });
+  }
+
+  async loginWithVkId(data: VkIdLoginRequest): Promise<LoginResponse> {
+    return this.request<LoginResponse>("/auth/vkid", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async linkVkId(data: VkIdLinkRequest): Promise<{ success: boolean; message?: string }> {
+    return this.request<{ success: boolean; message?: string }>("/profile/link/vkid", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async unlinkVk(): Promise<{ success: boolean; message?: string }> {
+    return this.request<{ success: boolean; message?: string }>("/profile/unlink/vk", {
+      method: "POST",
+    });
+  }
+
+  async setPassword(
+    password: string,
+    login: string
+  ): Promise<{ success: boolean; message?: string }> {
+    return this.request<{ success: boolean; message?: string }>("/profile/set-password", {
+      method: "POST",
+      body: JSON.stringify({ password, login }),
     });
   }
 

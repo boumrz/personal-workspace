@@ -2,6 +2,7 @@
   "expo": {
     "name": "Мой бюджет - расходы и доходы",
     "slug": "finance-assistant",
+    "scheme": "financeassistant",
     "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -43,7 +44,10 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["@react-native-community/datetimepicker"],
+    "plugins": [
+      "@react-native-community/datetimepicker",
+      "expo-font"
+    ],
     "extra": {
       "eas": {
         "projectId": "2b33387c-b419-4f89-add1-8ccec47abd52"

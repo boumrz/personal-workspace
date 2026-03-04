@@ -35,6 +35,43 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   );
 }
 
+async function fetchVkUserInfo(appId, accessToken) {
+  const endpoints = [
+    "https://id.vk.ru/oauth2/user_info",
+    "https://id.vk.com/oauth2/user_info",
+  ];
+
+  let lastError = null;
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          client_id: appId,
+          access_token: accessToken,
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (payload?.user?.user_id) {
+        return { user: payload.user, endpoint, error: null };
+      }
+
+      const providerError =
+        payload?.error_description ||
+        payload?.error ||
+        payload?.description ||
+        `HTTP ${response.status}`;
+      lastError = `${endpoint}: ${providerError}`;
+    } catch (error) {
+      lastError = `${endpoint}: ${error.message || "network error"}`;
+    }
+  }
+
+  return { user: null, endpoint: null, error: lastError };
+}
+
 // Register
 router.post(
   "/register",
@@ -293,31 +330,55 @@ router.post(
 router.post(
   "/vkid",
   asyncHandler(async (req, res) => {
-    const appId = config.vkId?.appId;
-    if (!appId) {
+    const requestedAppId = req.body?.app_id ? String(req.body.app_id) : null;
+    const configuredAppIds = Array.isArray(config.vkId?.appIds)
+      ? config.vkId.appIds
+      : [config.vkId?.appId].filter(Boolean);
+
+    if (configuredAppIds.length === 0) {
       return res.status(503).json({ error: "VK ID is not configured" });
     }
 
-    const { access_token: accessToken } = req.body;
+    if (requestedAppId && !configuredAppIds.includes(requestedAppId)) {
+      return res.status(400).json({ error: "Unsupported VK app_id" });
+    }
+
+    const appIdsToTry = requestedAppId ? [requestedAppId] : configuredAppIds;
+    if (appIdsToTry.length === 0) {
+      if (req.body?.app_id) {
+        return res.status(400).json({ error: "Unsupported VK app_id" });
+      }
+      return res.status(503).json({ error: "VK ID is not configured" });
+    }
+
+    const accessToken = String(req.body?.access_token || "").trim();
     if (!accessToken) {
       return res.status(400).json({ error: "access_token required" });
     }
 
-    const userInfoRes = await fetch("https://id.vk.ru/oauth2/user_info", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_id: appId,
-        access_token: accessToken,
-      }),
-    });
+    let vkUser = null;
+    let usedAppId = null;
+    let vkError = null;
 
-    const userInfoData = await userInfoRes.json();
-    if (!userInfoData?.user?.user_id) {
+    for (const appId of appIdsToTry) {
+      const result = await fetchVkUserInfo(appId, accessToken);
+      if (result.user?.user_id) {
+        vkUser = result.user;
+        usedAppId = appId;
+        break;
+      }
+      vkError = result.error;
+    }
+
+    if (!vkUser?.user_id) {
+      console.warn("[auth/vkid] VK user_info failed", {
+        requestedAppId,
+        appIdsTried: appIdsToTry,
+        details: vkError,
+      });
       return res.status(401).json({ error: "Invalid or expired VK ID token" });
     }
 
-    const vkUser = userInfoData.user;
     const vkId = String(vkUser.user_id);
     const name = [vkUser.first_name, vkUser.last_name].filter(Boolean).join(" ") || "User";
     const login = `vkid_${vkId}`;

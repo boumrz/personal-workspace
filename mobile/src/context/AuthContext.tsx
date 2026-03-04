@@ -13,6 +13,7 @@ interface AuthContextType {
   token: string | null;
   login: (login: string, password: string) => Promise<void>;
   register: (login: string, password: string) => Promise<void>;
+  loginWithVkId: (accessToken: string, appId?: string) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
   api: ApiClient;
@@ -137,8 +138,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     trackMyTrackerRegistration(String(res.user.id));
   };
 
+  const loginWithVkId = async (accessToken: string, appId?: string) => {
+    const res = await api.loginWithVkId({
+      access_token: accessToken,
+      app_id: appId,
+    });
+    setToken(res.token);
+    setUser(res.user);
+    if (res.refreshToken) {
+      refreshTokenRef.current = res.refreshToken;
+      await AsyncStorage.setItem(REFRESH_TOKEN_KEY, res.refreshToken);
+    }
+    setAnalyticsAuthToken(res.token);
+    await AsyncStorage.setItem(TOKEN_KEY, res.token);
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(res.user));
+    track("login_vkid_success");
+    trackMyTrackerLogin(String(res.user.id));
+  };
+
   const value: AuthContextType = useMemo(
-    () => ({ user, token, login, register, logout, loading, api }),
+    () => ({ user, token, login, register, loginWithVkId, logout, loading, api }),
     [user, token, loading, api]
   );
 

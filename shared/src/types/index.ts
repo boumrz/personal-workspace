@@ -36,6 +36,10 @@ export interface Profile {
   middleName?: string;
   age?: number;
   dateOfBirth?: string;
+  telegramId?: string | null;
+  vkId?: string | null;
+  hasPassword?: boolean;
+  authMethodsCount?: number;
 }
 
 export interface Goal {

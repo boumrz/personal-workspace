@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, Switch, AppState, AppStateStatus } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, Switch, AppState, AppStateStatus, Modal, TextInput, NativeModules, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -7,7 +7,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth, useTheme } from "../context";
 import { usePreserveScrollOnThemeChange } from "../hooks";
 import { ConfirmModal, ErrorView } from "../components";
+import { VK_ID_APP_ID } from "../constants/config";
 import type { Profile, Goal } from "@finance-assistant/shared";
+
+const VkIdNative = NativeModules.VkIdModule as
+  | { login: () => Promise<string> }
+  | undefined;
 
 export default function ProfileScreen({ navigation }: any) {
   const { api, logout } = useAuth();
@@ -21,6 +26,14 @@ export default function ProfileScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ visible: boolean; goal: Goal | null }>({ visible: false, goal: null });
   const [logoutModal, setLogoutModal] = useState(false);
+  const [unlinkVkModal, setUnlinkVkModal] = useState(false);
+  const [setPasswordModalVisible, setSetPasswordModalVisible] = useState(false);
+  const [setPasswordLoading, setSetPasswordLoading] = useState(false);
+  const [linkVkLoading, setLinkVkLoading] = useState(false);
+  const [unlinkVkLoading, setUnlinkVkLoading] = useState(false);
+  const [newLoginValue, setNewLoginValue] = useState("");
+  const [passwordValue, setPasswordValue] = useState("");
+  const [passwordConfirmValue, setPasswordConfirmValue] = useState("");
   const [error, setError] = useState(false);
   const retryTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -69,6 +82,122 @@ export default function ProfileScreen({ navigation }: any) {
       setGoals((prev) => prev.filter((g) => g.id !== deleteModal.goal?.id));
     } catch (e: any) { Alert.alert("Ошибка", e?.message ?? "Не удалось удалить цель"); }
     finally { setDeleteModal({ visible: false, goal: null }); }
+  };
+
+  const canUnlinkVk = (profile?.authMethodsCount ?? 0) > 1;
+
+  const onVkLink = async () => {
+    if (!VK_ID_APP_ID) {
+      Alert.alert(
+        "VK ID не настроен",
+        "Добавьте EXPO_PUBLIC_VK_ID_APP_ID в mobile/.env или EAS secrets.",
+      );
+      return;
+    }
+    if (Platform.OS !== "android") {
+      Alert.alert(
+        "VK ID",
+        "Нативная VK авторизация сейчас поддерживается только на Android.",
+      );
+      return;
+    }
+    if (!VkIdNative?.login) {
+      Alert.alert(
+        "VK ID не настроен",
+        "Нативный модуль VK ID не найден. Пересоберите Android-приложение.",
+      );
+      return;
+    }
+
+    try {
+      setLinkVkLoading(true);
+      const accessToken = await VkIdNative.login();
+      await api.linkVkId({ access_token: accessToken, app_id: VK_ID_APP_ID });
+      Alert.alert("Успешно", "VK привязан");
+      await loadData();
+    } catch (e: any) {
+      Alert.alert("Ошибка привязки VK", e?.message || "Не удалось привязать VK ID");
+    } finally {
+      setLinkVkLoading(false);
+    }
+  };
+
+  const onVkUnlinkPress = () => {
+    if (!canUnlinkVk) {
+      Alert.alert(
+        "Нельзя отвязать VK",
+        "Чтобы отвязать VK, сначала добавьте пароль. Иначе вы не сможете войти в аккаунт.",
+        [
+          { text: "Отмена", style: "cancel" },
+          { text: "Добавить пароль", onPress: () => setSetPasswordModalVisible(true) },
+        ],
+      );
+      return;
+    }
+    setUnlinkVkModal(true);
+  };
+
+  const onVkUnlinkConfirm = async () => {
+    try {
+      setUnlinkVkLoading(true);
+      await api.unlinkVk();
+      setUnlinkVkModal(false);
+      Alert.alert("Успешно", "VK отвязан");
+      await loadData();
+    } catch (e: any) {
+      Alert.alert("Ошибка отвязки", e?.message || "Не удалось отвязать VK");
+    } finally {
+      setUnlinkVkLoading(false);
+    }
+  };
+
+  const closeSetPasswordModal = () => {
+    setSetPasswordModalVisible(false);
+    setNewLoginValue("");
+    setPasswordValue("");
+    setPasswordConfirmValue("");
+  };
+
+  const onSetPassword = async () => {
+    const newLogin = newLoginValue.trim();
+    const password = passwordValue.trim();
+    const passwordConfirm = passwordConfirmValue.trim();
+    if (!newLogin) {
+      Alert.alert("Ошибка", "Введите логин");
+      return;
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(newLogin)) {
+      Alert.alert("Ошибка", "Логин может содержать только буквы, цифры и подчеркивание");
+      return;
+    }
+    if (newLogin.length < 3) {
+      Alert.alert("Ошибка", "Логин должен быть не менее 3 символов");
+      return;
+    }
+    if (!password) {
+      Alert.alert("Ошибка", "Введите пароль");
+      return;
+    }
+    if (password.length < 6) {
+      Alert.alert("Ошибка", "Пароль должен быть не менее 6 символов");
+      return;
+    }
+    if (password !== passwordConfirm) {
+      Alert.alert("Ошибка", "Пароли не совпадают");
+      return;
+    }
+
+    try {
+      setSetPasswordLoading(true);
+      await api.setPassword(password, newLogin);
+      closeSetPasswordModal();
+      Alert.alert("Успешно", "Логин и пароль сохранены");
+      await loadData();
+    } catch (e: any) {
+      Alert.alert("Ошибка", e?.message || "Не удалось сохранить данные входа");
+    } finally {
+      setSetPasswordLoading(false);
+    }
   };
 
   const displayName = useMemo(() => {
@@ -122,6 +251,35 @@ export default function ProfileScreen({ navigation }: any) {
     settingsItemSubtitle: { fontSize: 13, color: theme.textSecondary },
     logoutBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, padding: 16, marginTop: 8, borderWidth: 1, borderColor: theme.expense, borderRadius: theme.radius2xl, backgroundColor: "transparent" },
     logoutBtnText: { fontSize: 16, fontWeight: "500", color: theme.expense },
+    linkedAccounts: { backgroundColor: theme.bgCard, borderRadius: theme.radius2xl, overflow: "hidden", shadowColor: theme.shadowSm, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8, elevation: 2 },
+    linkedAccountItem: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16, gap: 12, borderBottomWidth: 1, borderBottomColor: theme.border },
+    linkedAccountItemLast: { borderBottomWidth: 0 },
+    linkedAccountInfo: { flex: 1 },
+    linkedAccountName: { fontSize: 16, fontWeight: "600", color: theme.textPrimary, marginBottom: 2 },
+    linkedAccountStatus: { fontSize: 13, color: theme.textSecondary },
+    linkedActionBtn: { minWidth: 106, height: 36, borderRadius: theme.radiusMd, justifyContent: "center", alignItems: "center", paddingHorizontal: 12, backgroundColor: theme.accentMuted },
+    linkedActionBtnDanger: { backgroundColor: theme.expenseLight, borderWidth: 1, borderColor: theme.expense },
+    linkedActionBtnDisabled: { opacity: 0.7 },
+    linkedActionBtnText: { color: "#fff", fontSize: 14, fontWeight: "600" },
+    linkedActionBtnDangerText: { color: theme.expense, fontSize: 14, fontWeight: "600" },
+    securityCard: { backgroundColor: theme.bgCard, borderRadius: theme.radius2xl, padding: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, shadowColor: theme.shadowSm, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8, elevation: 2 },
+    securityInfo: { flexDirection: "row", alignItems: "center", flex: 1, gap: 10 },
+    securityText: { fontSize: 15, color: theme.textPrimary, fontWeight: "500" },
+    securityHint: { fontSize: 12, color: theme.textSecondary, marginTop: 2 },
+    securityBtn: { backgroundColor: theme.accentMuted, borderRadius: theme.radiusMd, paddingHorizontal: 14, height: 36, justifyContent: "center", alignItems: "center" },
+    securityBtnText: { color: "#fff", fontSize: 14, fontWeight: "600" },
+    modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", padding: 24 },
+    modalCard: { width: "100%", maxWidth: 360, borderRadius: theme.radiusXl, backgroundColor: theme.bgCard, padding: 18, borderWidth: 1, borderColor: theme.border },
+    modalTitle: { fontSize: 18, fontWeight: "700", color: theme.textPrimary, marginBottom: 8 },
+    modalText: { fontSize: 14, lineHeight: 20, color: theme.textSecondary, marginBottom: 14 },
+    modalLabel: { fontSize: 13, fontWeight: "600", color: theme.textPrimary, marginBottom: 6, marginTop: 6 },
+    modalInput: { borderWidth: 1, borderColor: theme.border, borderRadius: theme.radiusMd, backgroundColor: theme.bgSurface, color: theme.textPrimary, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15 },
+    modalActions: { flexDirection: "row", gap: 10, marginTop: 16 },
+    modalAction: { flex: 1, height: 40, borderRadius: theme.radiusMd, justifyContent: "center", alignItems: "center" },
+    modalCancel: { backgroundColor: theme.bgSurface, borderWidth: 1, borderColor: theme.border },
+    modalConfirm: { backgroundColor: theme.accentMuted },
+    modalCancelText: { color: theme.textPrimary, fontSize: 14, fontWeight: "600" },
+    modalConfirmText: { color: "#fff", fontSize: 14, fontWeight: "600" },
   }), [theme, insets.bottom]);
 
   if (loading) {
@@ -227,6 +385,70 @@ export default function ProfileScreen({ navigation }: any) {
         </View>
       </View>
 
+      {!profile?.hasPassword && (
+        <View style={dynamicStyles.section}>
+          <Text style={dynamicStyles.sectionTitle}>Безопасность</Text>
+          <View style={dynamicStyles.securityCard}>
+            <View style={dynamicStyles.securityInfo}>
+              <Ionicons name="lock-closed-outline" size={18} color={theme.accentMuted} />
+              <View>
+                <Text style={dynamicStyles.securityText}>Пароль не установлен</Text>
+                <Text style={dynamicStyles.securityHint}>Добавьте пароль для входа по логину и паролю</Text>
+              </View>
+            </View>
+            <TouchableOpacity style={dynamicStyles.securityBtn} onPress={() => setSetPasswordModalVisible(true)}>
+              <Text style={dynamicStyles.securityBtnText}>Добавить</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      <View style={dynamicStyles.section}>
+        <Text style={dynamicStyles.sectionTitle}>Привязанные аккаунты</Text>
+        <View style={dynamicStyles.linkedAccounts}>
+          <View style={[dynamicStyles.linkedAccountItem, dynamicStyles.linkedAccountItemLast]}>
+            <View style={dynamicStyles.linkedAccountInfo}>
+              <Text style={dynamicStyles.linkedAccountName}>VK</Text>
+              <Text style={dynamicStyles.linkedAccountStatus}>
+                {profile?.vkId ? "Привязан" : "Не привязан"}
+              </Text>
+            </View>
+            {profile?.vkId ? (
+              <TouchableOpacity
+                style={[
+                  dynamicStyles.linkedActionBtn,
+                  dynamicStyles.linkedActionBtnDanger,
+                  unlinkVkLoading && dynamicStyles.linkedActionBtnDisabled,
+                ]}
+                onPress={onVkUnlinkPress}
+                disabled={unlinkVkLoading}
+              >
+                {unlinkVkLoading ? (
+                  <ActivityIndicator size="small" color={theme.expense} />
+                ) : (
+                  <Text style={dynamicStyles.linkedActionBtnDangerText}>Отвязать</Text>
+                )}
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[
+                  dynamicStyles.linkedActionBtn,
+                  linkVkLoading && dynamicStyles.linkedActionBtnDisabled,
+                ]}
+                onPress={onVkLink}
+                disabled={linkVkLoading}
+              >
+                {linkVkLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={dynamicStyles.linkedActionBtnText}>Привязать VK</Text>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </View>
+
       <TouchableOpacity style={dynamicStyles.logoutBtn} onPress={() => setLogoutModal(true)}>
         <Ionicons name="log-out-outline" size={20} color={theme.expense} />
         <Text style={dynamicStyles.logoutBtnText}>Выйти из аккаунта</Text>
@@ -247,6 +469,70 @@ export default function ProfileScreen({ navigation }: any) {
         onConfirm={() => { setLogoutModal(false); logout(); }}
         onCancel={() => setLogoutModal(false)}
       />
+      <ConfirmModal
+        visible={unlinkVkModal}
+        title="Отвязать VK?"
+        message="Вы сможете войти через VK снова, только привязав его заново."
+        confirmText="Отвязать"
+        onConfirm={onVkUnlinkConfirm}
+        onCancel={() => setUnlinkVkModal(false)}
+      />
+      <Modal visible={setPasswordModalVisible} transparent animationType="fade" onRequestClose={closeSetPasswordModal}>
+        <View style={dynamicStyles.modalOverlay}>
+          <View style={dynamicStyles.modalCard}>
+            <Text style={dynamicStyles.modalTitle}>Добавить пароль</Text>
+            <Text style={dynamicStyles.modalText}>
+              Задайте новый логин и пароль. После этого вы сможете входить без VK.
+            </Text>
+            <Text style={dynamicStyles.modalLabel}>Логин</Text>
+            <TextInput
+              style={dynamicStyles.modalInput}
+              value={newLoginValue}
+              onChangeText={setNewLoginValue}
+              autoCapitalize="none"
+              autoCorrect={false}
+              placeholder="Например: ivan_123"
+              placeholderTextColor={theme.textTertiary}
+            />
+            <Text style={dynamicStyles.modalLabel}>Пароль</Text>
+            <TextInput
+              style={dynamicStyles.modalInput}
+              value={passwordValue}
+              onChangeText={setPasswordValue}
+              secureTextEntry
+              autoCapitalize="none"
+              placeholder="Минимум 6 символов"
+              placeholderTextColor={theme.textTertiary}
+            />
+            <Text style={dynamicStyles.modalLabel}>Подтвердите пароль</Text>
+            <TextInput
+              style={dynamicStyles.modalInput}
+              value={passwordConfirmValue}
+              onChangeText={setPasswordConfirmValue}
+              secureTextEntry
+              autoCapitalize="none"
+              placeholder="Повторите пароль"
+              placeholderTextColor={theme.textTertiary}
+            />
+            <View style={dynamicStyles.modalActions}>
+              <TouchableOpacity style={[dynamicStyles.modalAction, dynamicStyles.modalCancel]} onPress={closeSetPasswordModal}>
+                <Text style={dynamicStyles.modalCancelText}>Отмена</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[dynamicStyles.modalAction, dynamicStyles.modalConfirm]}
+                onPress={onSetPassword}
+                disabled={setPasswordLoading}
+              >
+                {setPasswordLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={dynamicStyles.modalConfirmText}>Установить</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }

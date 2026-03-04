@@ -445,11 +445,11 @@ export const api = createApi({
       }),
       invalidatesTags: ["Profile"],
     }),
-    setPassword: builder.mutation<{ success: boolean }, { password: string }>({
-      query: ({ password }) => ({
+    setPassword: builder.mutation<{ success: boolean }, { password: string; login: string }>({
+      query: ({ password, login }) => ({
         url: "/profile/set-password",
         method: "POST",
-        body: { password },
+        body: { password, login },
       }),
       invalidatesTags: ["Profile"],
     }),

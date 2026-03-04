@@ -10,6 +10,17 @@ if (result.error) {
   console.error("[config] Failed to load .env from", envPath, result.error.message);
 }
 
+function parseVkAppIds() {
+  const fromList = (process.env.VK_ID_APP_IDS || "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+  const fromSingle = process.env.VK_ID_APP_ID ? [process.env.VK_ID_APP_ID] : [];
+  return Array.from(new Set([...fromList, ...fromSingle]));
+}
+
+const vkAppIds = parseVkAppIds();
+
 export default {
   port: process.env.PORT || 3001,
   nodeEnv: process.env.NODE_ENV || "development",
@@ -19,6 +30,7 @@ export default {
   refreshTokenExpiry: process.env.REFRESH_TOKEN_EXPIRY || "30d",
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
   vkId: {
-    appId: process.env.VK_ID_APP_ID,
+    appId: vkAppIds[0] || null,
+    appIds: vkAppIds,
   },
 };

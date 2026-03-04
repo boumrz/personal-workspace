@@ -302,8 +302,8 @@ const ProfilePage: React.FC = () => {
   const handleSetPassword = async () => {
     try {
       const values = await setPasswordForm.validateFields();
-      await setPassword({ password: values.password }).unwrap();
-      message.success("Пароль установлен");
+      await setPassword({ password: values.password, login: values.login }).unwrap();
+      message.success("Логин и пароль сохранены");
       setSetPasswordModalVisible(false);
       setPasswordForm.resetFields();
       refetchProfile();
@@ -665,9 +665,23 @@ const ProfilePage: React.FC = () => {
         confirmLoading={setPasswordLoading}
       >
         <p style={{ marginBottom: 16 }}>
-          Установите пароль, чтобы войти по логину и паролю. Это также позволит отвязать соцсети.
+          Задайте новый логин и пароль. После этого вы сможете входить без соцсети.
         </p>
         <Form form={setPasswordForm} layout="vertical">
+          <Form.Item
+            name="login"
+            label="Новый логин"
+            rules={[
+              { required: true, message: "Введите логин" },
+              { min: 3, message: "Логин должен быть не менее 3 символов" },
+              {
+                pattern: /^[a-zA-Z0-9_]+$/,
+                message: "Логин может содержать только буквы, цифры и подчеркивание",
+              },
+            ]}
+          >
+            <Input placeholder="Например: ivan_123" autoComplete="username" />
+          </Form.Item>
           <Form.Item
             name="password"
             label="Пароль"
