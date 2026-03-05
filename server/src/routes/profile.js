@@ -71,13 +71,6 @@ async function fetchVkUserInfo(appId, accessToken) {
   return { user: null, endpoint: null, error: lastError };
 }
 
-function buildVkAppIdsToTry(requestedAppId, configuredAppIds) {
-  const ids = [];
-  if (requestedAppId) ids.push(requestedAppId);
-  if (Array.isArray(configuredAppIds)) ids.push(...configuredAppIds);
-  return Array.from(new Set(ids.filter(Boolean)));
-}
-
 // All routes require authentication
 router.use(authenticateToken);
 
@@ -347,17 +340,21 @@ router.post(
     const configuredAppIds = Array.isArray(config.vkId?.appIds)
       ? config.vkId.appIds
       : [config.vkId?.appId].filter(Boolean);
-    const appIdsToTry = buildVkAppIdsToTry(requestedAppId, configuredAppIds);
 
-    if (appIdsToTry.length === 0) {
+    if (configuredAppIds.length === 0) {
       return res.status(503).json({ error: "VK ID is not configured" });
     }
 
-    if (requestedAppId && configuredAppIds.length > 0 && !configuredAppIds.includes(requestedAppId)) {
-      console.warn("[profile/link/vkid] requested app_id is not in configured list, using fallback", {
-        requestedAppId,
-        configuredAppIds,
-      });
+    if (requestedAppId && !configuredAppIds.includes(requestedAppId)) {
+      return res.status(400).json({ error: "Unsupported VK app_id" });
+    }
+
+    const appIdsToTry = requestedAppId ? [requestedAppId] : configuredAppIds;
+    if (appIdsToTry.length === 0) {
+      if (req.body?.app_id) {
+        return res.status(400).json({ error: "Unsupported VK app_id" });
+      }
+      return res.status(503).json({ error: "VK ID is not configured" });
     }
 
     const accessToken = String(req.body?.access_token || "").trim();

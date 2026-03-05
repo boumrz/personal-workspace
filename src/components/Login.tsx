@@ -90,7 +90,7 @@ const Login: React.FC = () => {
   const handleVkIdSuccess = async (accessToken: string) => {
     try {
       setVkLoading(true);
-      await loginWithVkId(accessToken);
+      await loginWithVkId(accessToken, VK_ID_APP_ID);
       message.success("Вход через VK ID выполнен успешно");
       navigate("/finance/transactions", { replace: true });
     } catch (error: any) {

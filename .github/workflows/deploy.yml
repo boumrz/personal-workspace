@@ -89,6 +89,7 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
           VK_ID_APP_ID: ${{ secrets.VK_ID_APP_ID }}
+          VK_ID_APP_IDS: ${{ secrets.VK_ID_APP_IDS }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           VITE_VK_ID_APP_ID: ${{ secrets.VITE_VK_ID_APP_ID }}
           VITE_TELEGRAM_BOT_USERNAME: ${{ secrets.VITE_TELEGRAM_BOT_USERNAME }}
@@ -107,6 +108,7 @@ jobs:
           JWT_SECRET=${JWT_SECRET}
           CORS_ORIGIN=${CORS_ORIGIN}
           VK_ID_APP_ID=${VK_ID_APP_ID}
+          VK_ID_APP_IDS=${VK_ID_APP_IDS}
           TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
           VITE_VK_ID_APP_ID=${VITE_VK_ID_APP_ID}
           VITE_TELEGRAM_BOT_USERNAME=${VITE_TELEGRAM_BOT_USERNAME}

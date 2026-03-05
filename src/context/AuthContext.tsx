@@ -5,13 +5,15 @@ import { store } from "../store";
 
 export type { User };
 
+const VK_ID_APP_ID = typeof __VK_ID_APP_ID__ !== "undefined" ? __VK_ID_APP_ID__ : "";
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (login: string, password: string) => Promise<void>;
   register: (login: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
-  loginWithVkId: (accessToken: string) => Promise<void>;
+  loginWithVkId: (accessToken: string, appId?: string) => Promise<void>;
   loginWithTelegram: (telegramData: {
     id: number;
     first_name?: string;
@@ -179,9 +181,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
   };
 
-  const loginWithVkId = async (accessToken: string) => {
+  const loginWithVkId = async (accessToken: string, appId?: string) => {
     store.dispatch(api.util.resetApiState());
-    const result = await loginWithVkIdMutation({ access_token: accessToken }).unwrap();
+    const result = await loginWithVkIdMutation({
+      access_token: accessToken,
+      app_id: appId || VK_ID_APP_ID || undefined,
+    }).unwrap();
     setToken(result.token);
     setUser(result.user);
     localStorage.setItem("token", result.token);
