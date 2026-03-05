@@ -19,6 +19,33 @@ export interface Transaction {
   date: string;
 }
 
+export interface SpeechParseContext {
+  locale?: string;
+  timezone?: string;
+}
+
+export interface ParsedSpeechTransactionItem {
+  type: "income" | "expense";
+  amount: number;
+  description: string;
+  categoryHint?: string;
+  date?: string;
+  confidence?: number;
+}
+
+export interface ParseTransactionsFromSpeechRequest {
+  text: string;
+  mode?: "actual" | "planned";
+  context?: SpeechParseContext;
+}
+
+export interface ParseTransactionsFromSpeechResponse {
+  items: ParsedSpeechTransactionItem[];
+  confidence: number;
+  warnings: string[];
+  unparsedText?: string;
+}
+
 export interface Saving {
   id: string;
   amount: number;

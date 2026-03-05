@@ -12,6 +12,8 @@ import type {
   LoginRequest,
   RegisterRequest,
   LoginResponse,
+  ParseTransactionsFromSpeechRequest,
+  ParseTransactionsFromSpeechResponse,
 } from "../types";
 import { getApiBaseUrl } from "../utils";
 
@@ -223,6 +225,15 @@ export class ApiClient {
   }
   async deleteTransaction(id: string): Promise<void> {
     return this.request<void>(`/transactions/${id}`, { method: "DELETE" });
+  }
+
+  async parseTransactionsFromSpeech(
+    payload: ParseTransactionsFromSpeechRequest
+  ): Promise<ParseTransactionsFromSpeechResponse> {
+    return this.request<ParseTransactionsFromSpeechResponse>("/v2/transactions/parse", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   }
 
   // Planned Expenses

@@ -13,6 +13,7 @@ import profileRouter from "./routes/profile.js";
 import goalsRouter from "./routes/goals.js";
 import adminRouter from "./routes/admin.js";
 import analyticsRouter from "./routes/analytics.js";
+import transactionsParseV2Router from "./routes/v2/transactionsParse.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import { handleDbError } from "./middleware/dbErrorHandler.js";
 
@@ -63,6 +64,7 @@ app.use("/api/profile", profileRouter);
 app.use("/api/goals", goalsRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/analytics", analyticsRouter);
+app.use("/api/v2/transactions", transactionsParseV2Router);
 
 // Health check
 app.get("/api/health", (req, res) => {

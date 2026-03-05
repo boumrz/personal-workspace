@@ -33,4 +33,11 @@ export default {
     appId: vkAppIds[0] || null,
     appIds: vkAppIds,
   },
+  llm: {
+    provider: process.env.LLM_PROVIDER || "heuristic",
+    apiKey: process.env.LLM_API_KEY || "",
+    model: process.env.LLM_MODEL || "",
+    baseUrl: process.env.LLM_BASE_URL || "",
+    timeoutMs: Number(process.env.LLM_TIMEOUT_MS || 12000),
+  },
 };
