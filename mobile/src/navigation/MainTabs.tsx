@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { navigateToOperations } from "./rootNavigation";
 import { Ionicons } from "@expo/vector-icons";
 import {
   ActivityIndicator,
@@ -60,6 +61,7 @@ export default function MainTabs() {
   const [parsedItems, setParsedItems] = useState<ParsedSpeechTransactionItem[]>([]);
   const [categoryDrafts, setCategoryDrafts] = useState<string[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [showVoiceUpgradeHint, setShowVoiceUpgradeHint] = useState(false);
   const pulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -80,9 +82,7 @@ export default function MainTabs() {
       ])
     );
     loop.start();
-    return () => {
-      loop.stop();
-    };
+    return () => loop.stop();
   }, [pulse]);
 
   const today = useMemo(() => {
@@ -190,10 +190,15 @@ export default function MainTabs() {
     }
 
     try {
-      const [permissionState, userCategories] = await Promise.all([
+      const [permissionState, userCategories, profile] = await Promise.all([
         speechRecognitionService.ensureMicrophonePermission(),
         api.getCategories(),
+        api.getProfile().catch(() => null),
       ]);
+      const hasCustomVoiceLlm =
+        (profile?.voiceLlmProvider && profile.voiceLlmProvider.trim()) ||
+        (Array.isArray(profile?.voiceLlmProviderChain) && profile.voiceLlmProviderChain.length > 0);
+      setShowVoiceUpgradeHint(!hasCustomVoiceLlm);
       if (!permissionState.granted) {
         if (!permissionState.canAskAgain) {
           Alert.alert(
@@ -327,6 +332,7 @@ export default function MainTabs() {
 
       emitRefresh("transactions");
       resetVoiceFlow();
+      navigateToOperations();
       Alert.alert(
         "Готово",
         skipped > 0
@@ -418,6 +424,23 @@ export default function MainTabs() {
           fontWeight: "700",
           color: theme.textPrimary,
           marginBottom: 8,
+        },
+        voiceAssistantDescription: {
+          color: theme.textSecondary,
+          fontSize: 14,
+          lineHeight: 20,
+          marginBottom: 12,
+        },
+        voiceUpgradeHint: {
+          backgroundColor: theme.warningLight,
+          borderRadius: theme.radiusMd,
+          padding: 12,
+          marginBottom: 12,
+        },
+        voiceUpgradeHintText: {
+          color: theme.textPrimary,
+          fontSize: 13,
+          lineHeight: 18,
         },
         subtitle: {
           color: theme.textSecondary,
@@ -632,6 +655,16 @@ export default function MainTabs() {
               showsVerticalScrollIndicator={true}
             >
               <Text style={styles.title}>Голосовой помощник</Text>
+              <Text style={styles.voiceAssistantDescription}>
+                Добавляйте доходы и расходы голосом. Продиктуйте сумму и описание — например: «Потратил 500 рублей на кофе» или «Получил 3000 зарплата». Помощник распознает операции и добавит их в учёт.
+              </Text>
+              {showVoiceUpgradeHint && (
+                <View style={styles.voiceUpgradeHint}>
+                  <Text style={styles.voiceUpgradeHintText}>
+                    Обратитесь к разработчику для получения полной версии голосового помощника.
+                  </Text>
+                </View>
+              )}
               <Text style={styles.subtitle}>
                 {isListening
                   ? "Скажите операции вслух. Можно перечислять несколько транзакций подряд."

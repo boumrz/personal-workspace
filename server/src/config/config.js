@@ -25,9 +25,9 @@ function parseProviderChain() {
     .map((value) => value.trim().toLowerCase())
     .filter(Boolean);
   const singleProvider = (process.env.LLM_PROVIDER || "").trim().toLowerCase();
-  const fallback = "heuristic";
-  const raw = fromChain.length > 0 ? fromChain : singleProvider ? [singleProvider] : [fallback];
-  const withFallback = raw.includes(fallback) ? raw : [...raw, fallback];
+  const defaultChain = ["gpt4free", "heuristic"];
+  const raw = fromChain.length > 0 ? fromChain : singleProvider ? [singleProvider] : defaultChain;
+  const withFallback = raw.includes("heuristic") ? raw : [...raw, "heuristic"];
   return Array.from(new Set(withFallback));
 }
 
@@ -56,7 +56,7 @@ export default {
     appIds: vkAppIds,
   },
   llm: {
-    provider: llmProviderChain[0] || "heuristic",
+    provider: llmProviderChain[0] || "gpt4free",
     providerChain: llmProviderChain,
     enabledProviders: llmEnabledProviders,
     apiKey: process.env.LLM_API_KEY || "",

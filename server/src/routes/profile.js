@@ -123,7 +123,7 @@ router.put(
   "/",
   asyncHandler(async (req, res) => {
     const userId = req.user.userId;
-    const { lastName, firstName, middleName, age, dateOfBirth, voiceLlmProvider, voiceLlmProviderChain } = req.body;
+    const { lastName, firstName, middleName, age, dateOfBirth } = req.body;
 
     // Validate age if provided
     if (age !== undefined && age !== null) {
@@ -169,22 +169,6 @@ router.put(
     if (dateOfBirth !== undefined) {
       updates.push(`date_of_birth = $${paramCount++}`);
       values.push(dateOfBirth && dateOfBirth !== "" ? dateOfBirth : null);
-    }
-
-    if (voiceLlmProvider !== undefined) {
-      updates.push(`voice_llm_provider = $${paramCount++}`);
-      values.push(voiceLlmProvider && String(voiceLlmProvider).trim() ? String(voiceLlmProvider).trim() : null);
-    }
-
-    if (voiceLlmProviderChain !== undefined) {
-      const chain =
-        Array.isArray(voiceLlmProviderChain)
-          ? voiceLlmProviderChain.map((p) => String(p).trim()).filter(Boolean).join(",")
-          : typeof voiceLlmProviderChain === "string"
-            ? voiceLlmProviderChain.split(",").map((p) => p.trim()).filter(Boolean).join(",")
-            : "";
-      updates.push(`voice_llm_provider_chain = $${paramCount++}`);
-      values.push(chain || null);
     }
 
     if (updates.length === 0) {

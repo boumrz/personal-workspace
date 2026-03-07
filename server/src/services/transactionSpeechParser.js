@@ -58,15 +58,34 @@ function normalizeText(value) {
     .trim();
 }
 
+// Типичные русские окончания существительных/прилагательных — для сопоставления с категориями
+const RU_COMMON_ENDINGS = [
+  "иями", "ями", "ами", "иях", "иям", "ием", "ого", "ему", "ому", "ыми", "ими",
+  "ой", "ий", "ый", "ая", "ое", "ые", "ам", "ям", "ах", "ях", "ов", "ев", "ом", "ем",
+  "а", "я", "ы", "и", "е", "у", "ю", "о",
+].sort((a, b) => b.length - a.length);
+
 function stemRu(word) {
   const normalized = normalizeText(word);
   if (!normalized) return "";
   return normalized
     .replace(
-      /(иями|ями|ами|иях|иях|иям|ием|иях|ого|ему|ому|ыми|ими|ой|ий|ый|ая|ое|ые|ам|ям|ах|ях|ов|ев|ом|ем|а|я|ы|и|е|у|ю|о)$/i,
+      new RegExp(`(${RU_COMMON_ENDINGS.map((e) => e.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})$`, "i"),
       ""
     )
     .trim();
+}
+
+function stripEnding(word) {
+  const normalized = normalizeText(word);
+  if (!normalized || normalized.length < 3) return normalized;
+  for (const ending of RU_COMMON_ENDINGS) {
+    if (ending.length >= normalized.length) continue;
+    if (normalized.endsWith(ending)) {
+      return normalized.slice(0, -ending.length);
+    }
+  }
+  return normalized;
 }
 
 function tokenize(value) {
@@ -234,6 +253,42 @@ function scoreCategoryMatch(chunkTokens, categoryTokens) {
   return score;
 }
 
+function matchByEnding(candidate, categories) {
+  const normalized = normalizeText(candidate);
+  if (!normalized || normalized.length < 2) return null;
+  const tokensToCheck = tokenize(candidate).filter((t) => !RU_STOPWORDS.has(t));
+  for (const token of tokensToCheck) {
+    const base = stripEnding(token);
+    if (base === normalizeText(token)) continue;
+    for (const category of categories) {
+      const catNorm = normalizeText(category.name);
+      const catBase = stripEnding(category.name);
+      const catStem = stemRu(category.name);
+      const candStem = stemRu(token);
+      if (
+        catNorm === normalizeText(token) ||
+        catBase === base ||
+        (catStem && candStem && catStem === candStem)
+      ) {
+        return category.name;
+      }
+    }
+  }
+  const base = stripEnding(candidate);
+  if (base !== normalized) {
+    for (const category of categories) {
+      const catNorm = normalizeText(category.name);
+      const catBase = stripEnding(category.name);
+      const catStem = stemRu(category.name);
+      const candStem = stemRu(candidate);
+      if (catNorm === normalized || catBase === base || (catStem && candStem && catStem === candStem)) {
+        return category.name;
+      }
+    }
+  }
+  return null;
+}
+
 function findCategoryHint(text, categories) {
   const chunkTokens = tokenize(text).filter((token) => !RU_STOPWORDS.has(token));
   let best = null;
@@ -252,6 +307,10 @@ function findCategoryHint(text, categories) {
 
   const candidate = extractCategoryCandidate(text);
   if (candidate) {
+    const byEnding = matchByEnding(candidate, categories);
+    if (byEnding) {
+      return { hint: byEnding, matched: true };
+    }
     return { hint: candidate, matched: false };
   }
   return { hint: undefined, matched: false };
