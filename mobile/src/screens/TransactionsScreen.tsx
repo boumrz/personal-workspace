@@ -8,6 +8,7 @@ import "dayjs/locale/ru";
 import { useAuth, useTheme } from "../context";
 import { usePreserveScrollOnThemeChange } from "../hooks";
 import { ConfirmModal, ErrorView, SwipeActionRow } from "../components";
+import { subscribeToRefresh } from "../services/dataRefresh";
 import { getIoniconsName } from "../utils/iconMap";
 import type { Transaction } from "@finance-assistant/shared";
 
@@ -75,6 +76,7 @@ export default function TransactionsScreen({ navigation }: any) {
     });
     return () => { sub.remove(); clearTimeout(retryTimer.current); };
   }, [load]);
+  useEffect(() => subscribeToRefresh("transactions", load), [load]);
   const onRefresh = () => { setRefreshing(true); load(); };
 
   const handleDeleteConfirm = async () => {

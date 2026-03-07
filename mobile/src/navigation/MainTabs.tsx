@@ -18,6 +18,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth, useTheme } from "../context";
+import { SPEECH_PARSE_PROVIDER } from "../constants/config";
+import { emitRefresh } from "../services/dataRefresh";
 import OperationsStack from "./OperationsStack";
 import DashboardStack from "./DashboardStack";
 import SavingsStack from "./SavingsStack";
@@ -157,6 +159,16 @@ export default function MainTabs() {
           locale: "ru-RU",
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         },
+        ...(SPEECH_PARSE_PROVIDER
+          ? {
+              provider: SPEECH_PARSE_PROVIDER as
+                | "gigachat"
+                | "gemini"
+                | "groq"
+                | "openrouter"
+                | "heuristic",
+            }
+          : {}),
       });
       setParsedItems(parsed.items);
       setCategoryDrafts(parsed.items.map((item) => item.categoryHint ?? ""));
@@ -313,6 +325,7 @@ export default function MainTabs() {
         added += 1;
       }
 
+      emitRefresh("transactions");
       resetVoiceFlow();
       Alert.alert(
         "Готово",
@@ -383,13 +396,22 @@ export default function MainTabs() {
           backgroundColor: "rgba(0, 0, 0, 0.45)",
           justifyContent: "flex-end",
         },
+        voiceModalDimmer: {
+          flex: 1,
+        },
         voiceModalCard: {
           backgroundColor: theme.bgCard,
           borderTopLeftRadius: theme.radius2xl,
           borderTopRightRadius: theme.radius2xl,
+          height: "78%",
+          overflow: "hidden",
+        },
+        voiceModalScroll: {
+          flex: 1,
+        },
+        voiceModalScrollContent: {
           padding: 16,
-          paddingBottom: 20 + bottomInset,
-          maxHeight: "78%",
+          paddingBottom: 12,
         },
         title: {
           fontSize: 18,
@@ -426,7 +448,6 @@ export default function MainTabs() {
           marginBottom: 8,
         },
         parsedList: {
-          maxHeight: 220,
           marginBottom: 12,
         },
         parsedItem: {
@@ -461,6 +482,10 @@ export default function MainTabs() {
         actionsRow: {
           flexDirection: "row",
           gap: 8,
+          paddingHorizontal: 16,
+          paddingBottom: 20 + bottomInset,
+          paddingTop: 12,
+          backgroundColor: theme.bgCard,
         },
         button: {
           flex: 1,
@@ -594,70 +619,83 @@ export default function MainTabs() {
         animationType="slide"
         onRequestClose={resetVoiceFlow}
       >
-        <TouchableOpacity
-          activeOpacity={1}
-          style={styles.voiceModalBackdrop}
-          onPress={resetVoiceFlow}
-        >
-          <TouchableOpacity activeOpacity={1} style={styles.voiceModalCard} onPress={(event) => event.stopPropagation()}>
-            <Text style={styles.title}>Голосовой помощник</Text>
-            <Text style={styles.subtitle}>
-              {isListening
-                ? "Скажите операции вслух. Можно перечислять несколько транзакций подряд."
-                : "Проверьте распознанный текст и подтвердите добавление."}
-            </Text>
-
-            <View style={styles.transcriptBox}>
-              {transcript ? (
-                <Text style={styles.transcriptText}>{transcript}</Text>
-              ) : (
-                <Text style={styles.transcriptPlaceholder}>Нажмите на микрофон и продиктуйте операцию.</Text>
-              )}
-            </View>
-
-            {isParsing && <ActivityIndicator size="small" color={theme.accentMuted} style={{ marginBottom: 12 }} />}
-
-            {parseWarnings.map((warning) => (
-              <Text key={warning} style={styles.warningText}>
-                {warning}
+        <View style={styles.voiceModalBackdrop}>
+          <TouchableOpacity
+            activeOpacity={1}
+            style={styles.voiceModalDimmer}
+            onPress={resetVoiceFlow}
+          />
+          <View style={styles.voiceModalCard}>
+            <ScrollView
+              style={styles.voiceModalScroll}
+              contentContainerStyle={styles.voiceModalScrollContent}
+              showsVerticalScrollIndicator={true}
+            >
+              <Text style={styles.title}>Голосовой помощник</Text>
+              <Text style={styles.subtitle}>
+                {isListening
+                  ? "Скажите операции вслух. Можно перечислять несколько транзакций подряд."
+                  : "Проверьте распознанный текст и подтвердите добавление."}
               </Text>
-            ))}
 
-            {parsedItems.length > 0 && (
-              <ScrollView style={styles.parsedList}>
-                {parsedItems.map((item, index) => {
-                  const category = resolveCategory(item, index);
-                  const suggestion = categoryDrafts[index] || item.categoryHint || "";
-                  return (
-                    <View key={`${item.type}-${item.amount}-${index}`} style={styles.parsedItem}>
-                      <Text style={styles.parsedItemTitle}>
-                        {item.type === "income" ? "Доход" : "Расход"} · ₽{item.amount.toLocaleString("ru-RU")}
-                      </Text>
-                      <Text style={styles.parsedItemMeta}>
-                        {item.description || "Без описания"}
-                      </Text>
-                      <Text style={styles.parsedItemMeta}>
-                        Категория: {category?.name ?? "Не определена"}
-                      </Text>
-                      {!category && (
-                        <>
-                          <Text style={styles.parsedItemMeta}>
-                            Предположение алгоритма: {suggestion || "не удалось определить"}
-                          </Text>
-                          <TextInput
-                            style={styles.categoryInput}
-                            value={categoryDrafts[index] ?? ""}
-                            onChangeText={(value) => updateCategoryDraft(index, value)}
-                            placeholder="Введите категорию (создадим автоматически)"
-                            placeholderTextColor={theme.textTertiary}
-                          />
-                        </>
-                      )}
-                    </View>
-                  );
-                })}
-              </ScrollView>
-            )}
+              <View style={styles.transcriptBox}>
+                {transcript ? (
+                  <Text style={styles.transcriptText}>{transcript}</Text>
+                ) : (
+                  <Text style={styles.transcriptPlaceholder}>Нажмите на микрофон и продиктуйте операцию.</Text>
+                )}
+              </View>
+
+              {isParsing && <ActivityIndicator size="small" color={theme.accentMuted} style={{ marginBottom: 12 }} />}
+
+              {parseWarnings.map((warning) => (
+                <Text key={warning} style={styles.warningText}>
+                  {warning}
+                </Text>
+              ))}
+
+              {parsedItems.length > 0 && (
+                <View style={styles.parsedList}>
+                  {parsedItems.map((item, index) => {
+                    const category = resolveCategory(item, index);
+                    const suggestion =
+                      categoryDrafts[index] ||
+                      item.suggestedCategoryToCreate ||
+                      item.categoryHint ||
+                      "";
+                    return (
+                      <View key={`${item.type}-${item.amount}-${index}`} style={styles.parsedItem}>
+                        <Text style={styles.parsedItemTitle}>
+                          {item.type === "income" ? "Доход" : "Расход"} · ₽{item.amount.toLocaleString("ru-RU")}
+                        </Text>
+                        <Text style={styles.parsedItemMeta}>
+                          {item.description || "Без описания"}
+                        </Text>
+                        <Text style={styles.parsedItemMeta}>
+                          Категория: {category?.name ?? "Не определена"}
+                        </Text>
+                        {!category && (
+                          <>
+                            <Text style={styles.parsedItemMeta}>
+                              {item.categoryResolution === "suggest_create"
+                                ? `Предложение: создать категорию «${suggestion || "Новая категория"}»`
+                                : `Предположение алгоритма: ${suggestion || "не удалось определить"}`}
+                            </Text>
+                            <TextInput
+                              style={styles.categoryInput}
+                              value={categoryDrafts[index] ?? ""}
+                              onChangeText={(value) => updateCategoryDraft(index, value)}
+                              placeholder="Введите категорию (создадим автоматически)"
+                              placeholderTextColor={theme.textTertiary}
+                            />
+                          </>
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </ScrollView>
 
             <View style={styles.actionsRow}>
               <TouchableOpacity style={[styles.button, styles.buttonSecondary]} onPress={resetVoiceFlow} disabled={isSaving}>
@@ -692,8 +730,8 @@ export default function MainTabs() {
                 </TouchableOpacity>
               )}
             </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
     </>
   );

@@ -81,6 +81,7 @@ router.get(
     const userId = req.user.userId;
     const result = await pool.query(
       `SELECT id, login, email, name, last_name, first_name, middle_name, age, date_of_birth, telegram_id, vk_id,
+        voice_llm_provider, voice_llm_provider_chain,
         (password_hash IS NOT NULL) AS has_password,
         (CASE WHEN password_hash IS NOT NULL THEN 1 ELSE 0 END +
          CASE WHEN google_id IS NOT NULL THEN 1 ELSE 0 END +
@@ -107,6 +108,10 @@ router.get(
       dateOfBirth: user.date_of_birth ? user.date_of_birth.toISOString().split('T')[0] : null,
       telegramId: user.telegram_id || null,
       vkId: user.vk_id || null,
+      voiceLlmProvider: user.voice_llm_provider || null,
+      voiceLlmProviderChain: user.voice_llm_provider_chain
+        ? user.voice_llm_provider_chain.split(",").map((p) => p.trim()).filter(Boolean)
+        : null,
       hasPassword: user.has_password,
       authMethodsCount: parseInt(user.auth_methods_count, 10),
     });
@@ -118,7 +123,7 @@ router.put(
   "/",
   asyncHandler(async (req, res) => {
     const userId = req.user.userId;
-    const { lastName, firstName, middleName, age, dateOfBirth } = req.body;
+    const { lastName, firstName, middleName, age, dateOfBirth, voiceLlmProvider, voiceLlmProviderChain } = req.body;
 
     // Validate age if provided
     if (age !== undefined && age !== null) {
@@ -166,6 +171,22 @@ router.put(
       values.push(dateOfBirth && dateOfBirth !== "" ? dateOfBirth : null);
     }
 
+    if (voiceLlmProvider !== undefined) {
+      updates.push(`voice_llm_provider = $${paramCount++}`);
+      values.push(voiceLlmProvider && String(voiceLlmProvider).trim() ? String(voiceLlmProvider).trim() : null);
+    }
+
+    if (voiceLlmProviderChain !== undefined) {
+      const chain =
+        Array.isArray(voiceLlmProviderChain)
+          ? voiceLlmProviderChain.map((p) => String(p).trim()).filter(Boolean).join(",")
+          : typeof voiceLlmProviderChain === "string"
+            ? voiceLlmProviderChain.split(",").map((p) => p.trim()).filter(Boolean).join(",")
+            : "";
+      updates.push(`voice_llm_provider_chain = $${paramCount++}`);
+      values.push(chain || null);
+    }
+
     if (updates.length === 0) {
       return res.status(400).json({ error: "No fields to update" });
     }
@@ -175,7 +196,7 @@ router.put(
       UPDATE users 
       SET ${updates.join(", ")}
       WHERE id = $${paramCount}
-      RETURNING id, login, email, name, last_name, first_name, middle_name, age, date_of_birth, telegram_id, vk_id
+      RETURNING id, login, email, name, last_name, first_name, middle_name, age, date_of_birth, telegram_id, vk_id, voice_llm_provider, voice_llm_provider_chain
     `;
 
     const result = await pool.query(query, values);
@@ -196,6 +217,10 @@ router.put(
       age: user.age,
       dateOfBirth: user.date_of_birth ? user.date_of_birth.toISOString().split('T')[0] : null,
       telegramId: user.telegram_id || null,
+      voiceLlmProvider: user.voice_llm_provider || null,
+      voiceLlmProviderChain: user.voice_llm_provider_chain
+        ? user.voice_llm_provider_chain.split(",").map((p) => p.trim()).filter(Boolean)
+        : null,
       vkId: user.vk_id || null,
     });
   })

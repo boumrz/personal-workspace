@@ -260,7 +260,7 @@ const ProfilePage: React.FC = () => {
 
   const handleLinkVkId = async (accessToken: string) => {
     try {
-      await linkVkId({ access_token: accessToken }).unwrap();
+      await linkVkId({ access_token: accessToken, app_id: VK_ID_APP_ID || undefined }).unwrap();
       message.success("VK привязан");
       refetchProfile();
     } catch (err: unknown) {

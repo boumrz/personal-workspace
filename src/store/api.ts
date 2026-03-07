@@ -274,7 +274,7 @@ export const api = createApi({
         body: data,
       }),
     }),
-    loginWithVkId: builder.mutation<LoginResponse, { access_token: string }>({
+    loginWithVkId: builder.mutation<LoginResponse, { access_token: string; app_id?: string }>({
       query: (data) => ({
         url: "/auth/vkid",
         method: "POST",
@@ -430,7 +430,7 @@ export const api = createApi({
       }),
       invalidatesTags: ["Profile"],
     }),
-    linkVkId: builder.mutation<{ success: boolean }, { access_token: string }>({
+    linkVkId: builder.mutation<{ success: boolean }, { access_token: string; app_id?: string }>({
       query: (data) => ({
         url: "/profile/link/vkid",
         method: "POST",

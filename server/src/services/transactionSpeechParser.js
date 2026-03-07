@@ -1,9 +1,13 @@
 import config from "../config/config.js";
+import crypto from "crypto";
 
 const DEFAULT_MODEL_BY_PROVIDER = {
   openrouter: "google/gemini-2.0-flash-exp:free",
   groq: "llama-3.1-8b-instant",
   gemini: "gemini-2.0-flash",
+  "gemini-flash-lite": "gemini-2.0-flash-lite",
+  gigachat: "GigaChat-2",
+  gpt4free: "gpt-4o-mini",
 };
 
 const RU_STOPWORDS = new Set([
@@ -302,16 +306,60 @@ function extractJson(text) {
   return null;
 }
 
-async function callOpenAiCompatible({ baseUrl, apiKey, model, prompt, timeoutMs }) {
+function normalizeProvider(provider) {
+  return String(provider || "")
+    .trim()
+    .toLowerCase();
+}
+
+function resolveProviderChain(requestedProviders, userOverride) {
+  const enabled = config.llm.enabledProviders;
+  const filterByEnabled = (list) =>
+    enabled ? list.filter((p) => enabled.includes(p)) : list;
+
+  let raw = [];
+  if (userOverride?.providerChain?.length) {
+    raw = userOverride.providerChain.map(normalizeProvider).filter(Boolean);
+  } else if (userOverride?.provider) {
+    raw = [normalizeProvider(userOverride.provider)];
+  } else if (requestedProviders?.length) {
+    raw = (Array.isArray(requestedProviders) ? requestedProviders : [requestedProviders])
+      .map(normalizeProvider)
+      .filter(Boolean);
+  }
+  if (raw.length === 0) {
+    raw = Array.isArray(config.llm.providerChain)
+      ? config.llm.providerChain.map(normalizeProvider).filter(Boolean)
+      : [normalizeProvider(config.llm.provider || "heuristic")];
+  }
+  raw = filterByEnabled(raw);
+  const withFallback = raw.includes("heuristic") ? raw : [...raw, "heuristic"];
+  return Array.from(new Set(withFallback));
+}
+
+function logVoiceParse(stage, details = {}) {
+  const payload = JSON.stringify(details);
+  console.info(`[voice-parse] ${stage} ${payload}`);
+}
+
+if (config.llm.gigaChat?.allowInsecureTls) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  console.warn(
+    "[voice-parse] GIGACHAT_ALLOW_INSECURE_TLS=true: TLS certificate validation is disabled (dev-only)."
+  );
+}
+
+async function callOpenAiCompatible({ baseUrl, apiKey, model, prompt, timeoutMs, skipAuth }) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const headers = { "Content-Type": "application/json" };
+  if (!skipAuth && apiKey) {
+    headers.Authorization = `Bearer ${apiKey}`;
+  }
   try {
-    const response = await fetch(`${baseUrl}/chat/completions`, {
+    const response = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers,
       body: JSON.stringify({
         model,
         temperature: 0.1,
@@ -364,7 +412,216 @@ async function callGemini({ apiKey, model, prompt, timeoutMs }) {
   }
 }
 
-function normalizeResult(result, fallbackText) {
+let cachedGigaChatToken = null;
+let cachedGigaChatTokenExpiresAt = 0;
+
+async function getGigaChatAccessToken({ timeoutMs }) {
+  if (cachedGigaChatToken && Date.now() < cachedGigaChatTokenExpiresAt) {
+    return cachedGigaChatToken;
+  }
+
+  const authKey = config.llm.gigaChat?.authKey || "";
+  const scope = config.llm.gigaChat?.scope || "GIGACHAT_API_PERS";
+  const authUrl = config.llm.gigaChat?.authUrl || "https://ngw.devices.sberbank.ru:9443/api/v2/oauth";
+  if (!authKey) {
+    throw new Error("GigaChat auth key is not configured");
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(authUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+        Authorization: `Basic ${authKey}`,
+        RqUID: crypto.randomUUID(),
+      },
+      body: new URLSearchParams({ scope }),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      throw new Error(`GigaChat auth failed: ${response.status}`);
+    }
+    const data = await response.json();
+    const accessToken = String(data?.access_token || "").trim();
+    if (!accessToken) {
+      throw new Error("GigaChat auth response has no access_token");
+    }
+    const expiresInMs = Math.max(30_000, Number(data?.expires_in || 0));
+    cachedGigaChatToken = accessToken;
+    cachedGigaChatTokenExpiresAt = Date.now() + expiresInMs - 30_000;
+    return accessToken;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function callGigaChat({ model, prompt, timeoutMs }) {
+  const accessToken = await getGigaChatAccessToken({ timeoutMs });
+  const baseUrl = config.llm.gigaChat?.baseUrl || "https://gigachat.devices.sberbank.ru/api/v1";
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0.1,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You parse Russian finance speech to JSON. Return only JSON object with keys: items, confidence, warnings, unparsedText.",
+          },
+          { role: "user", content: prompt },
+        ],
+      }),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      throw new Error(`GigaChat request failed: ${response.status}`);
+    }
+    const data = await response.json();
+    return data?.choices?.[0]?.message?.content ?? "";
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function callProvider({ provider, prompt, timeoutMs }) {
+  if (provider === "openrouter") {
+    const apiKey = config.llm.apiKey;
+    if (!apiKey) {
+      throw new Error("OpenRouter API key is not configured");
+    }
+    return callOpenAiCompatible({
+      baseUrl: config.llm.baseUrl || "https://openrouter.ai/api/v1",
+      apiKey,
+      model: config.llm.model || DEFAULT_MODEL_BY_PROVIDER.openrouter,
+      prompt,
+      timeoutMs,
+    });
+  }
+
+  if (provider === "groq") {
+    const apiKey = config.llm.apiKey;
+    if (!apiKey) {
+      throw new Error("Groq API key is not configured");
+    }
+    return callOpenAiCompatible({
+      baseUrl: config.llm.baseUrl || "https://api.groq.com/openai/v1",
+      apiKey,
+      model: config.llm.model || DEFAULT_MODEL_BY_PROVIDER.groq,
+      prompt,
+      timeoutMs,
+    });
+  }
+
+  if (provider === "gemini") {
+    const apiKey = config.llm.gemini?.apiKey || config.llm.apiKey;
+    if (!apiKey) {
+      throw new Error("Gemini API key is not configured");
+    }
+    return callGemini({
+      apiKey,
+      model: config.llm.gemini?.model || config.llm.model || DEFAULT_MODEL_BY_PROVIDER.gemini,
+      prompt,
+      timeoutMs,
+    });
+  }
+
+  if (provider === "gemini-flash-lite") {
+    const apiKey = config.llm.gemini?.apiKey || config.llm.apiKey;
+    if (!apiKey) {
+      throw new Error("Gemini API key is not configured");
+    }
+    return callGemini({
+      apiKey,
+      model: config.llm.gemini?.flashLiteModel || DEFAULT_MODEL_BY_PROVIDER["gemini-flash-lite"],
+      prompt,
+      timeoutMs,
+    });
+  }
+
+  if (provider === "gpt4free") {
+    const baseUrl = config.llm.gpt4free?.baseUrl || "http://localhost:1337/v1";
+    const apiKey = config.llm.gpt4free?.apiKey || "";
+    return callOpenAiCompatible({
+      baseUrl,
+      apiKey,
+      model: config.llm.gpt4free?.model || DEFAULT_MODEL_BY_PROVIDER.gpt4free,
+      prompt,
+      timeoutMs,
+      skipAuth: !apiKey,
+    });
+  }
+
+  if (provider === "gigachat") {
+    return callGigaChat({
+      model: config.llm.gigaChat?.model || DEFAULT_MODEL_BY_PROVIDER.gigachat,
+      prompt,
+      timeoutMs,
+    });
+  }
+
+  if (provider === "heuristic") {
+    throw new Error("Heuristic provider should be handled as local fallback");
+  }
+
+  throw new Error(`Unsupported LLM provider: ${provider}`);
+}
+
+function normalizeResult(result, fallbackText, categories) {
+  const suggestionToTitle = (value) => {
+    const trimmed = String(value || "").trim();
+    if (!trimmed) return "";
+    return trimmed[0].toUpperCase() + trimmed.slice(1);
+  };
+
+  const resolveCategoryOutcome = (item, categories) => {
+    const fromLlm = String(item?.categoryHint || item?.category || "").trim();
+    const createSuggestion =
+      String(item?.suggestedCategoryToCreate || item?.categorySuggestion || "").trim();
+
+    const normalizedFromLlm = normalizeText(fromLlm);
+    if (normalizedFromLlm) {
+      const exact = categories.find((category) => normalizeText(category.name) === normalizedFromLlm);
+      if (exact) {
+        return {
+          categoryHint: exact.name,
+          categoryResolution: "matched_existing",
+          suggestedCategoryToCreate: undefined,
+        };
+      }
+    }
+
+    // LLM-first strategy:
+    // if model did not return exact existing category, treat it as suggestion to create.
+    const suggested = suggestionToTitle(
+      createSuggestion || fromLlm || extractCategoryCandidate(item?.description || "")
+    );
+    if (suggested) {
+      return {
+        categoryHint: suggested,
+        categoryResolution: "suggest_create",
+        suggestedCategoryToCreate: suggested,
+      };
+    }
+
+    return {
+      categoryHint: undefined,
+      categoryResolution: "unknown",
+      suggestedCategoryToCreate: undefined,
+    };
+  };
+
   const items = Array.isArray(result?.items)
     ? result.items
         .map((item) => {
@@ -373,11 +630,14 @@ function normalizeResult(result, fallbackText) {
             return null;
           }
           const type = item?.type === "income" ? "income" : "expense";
+          const categoryOutcome = resolveCategoryOutcome(item, categories);
           return {
             type,
             amount: Math.round(amount * 100) / 100,
             description: String(item?.description || "Голосовая операция").trim(),
-            categoryHint: item?.categoryHint ? String(item.categoryHint).trim() : undefined,
+            categoryHint: categoryOutcome.categoryHint,
+            categoryResolution: categoryOutcome.categoryResolution,
+            suggestedCategoryToCreate: categoryOutcome.suggestedCategoryToCreate,
             date: item?.date ? String(item.date) : undefined,
             confidence: Number.isFinite(Number(item?.confidence)) ? Number(item.confidence) : undefined,
           };
@@ -398,26 +658,52 @@ export async function parseTransactionsFromSpeech({
   mode = "actual",
   categories = [],
   timezone,
+  providers,
+  userOverride,
 }) {
-  const provider = String(config.llm.provider || "heuristic").toLowerCase();
-  const apiKey = config.llm.apiKey;
   const timeoutMs = config.llm.timeoutMs || 12000;
+  const providerChain = resolveProviderChain(providers, userOverride);
+  logVoiceParse("start", {
+    mode,
+    providers: providerChain,
+    timezone: timezone || "Europe/Moscow",
+    categoriesCount: categories.length,
+  });
 
   const prompt = JSON.stringify(
     {
       instruction:
-        "Convert speech text into finance operations JSON. Preserve multiple operations. Prefer expense unless clearly income.",
+        "You are a finance voice parser assistant. Convert Russian speech into structured finance operations JSON.",
+      agentProtocol: [
+        "Step 1: Split utterance into one or more operations.",
+        "Step 2: Determine operation type. Use 'income' only when intent is clearly income (salary, cashback, refund, transfer-in). Otherwise 'expense'.",
+        "Step 3: Choose category from user's existing categories only.",
+        "Step 4: If no existing category fits, suggest one short category name to create.",
+        "Step 5: Return strictly valid JSON object by schema.",
+      ],
+      categoryPolicy: {
+        allowedExistingCategoriesOnly: true,
+        matchingRules: [
+          "First prefer exact category name match.",
+          "Then prefer semantic match (merchant/item -> category).",
+          "If confidence is low, do not invent an existing category.",
+          "If existing match is only very generic (e.g. 'Другое') and expense has a clear specific intent, prefer suggest_create.",
+        ],
+        whenNoMatch: "Set categoryResolution='suggest_create' and provide suggestedCategoryToCreate.",
+      },
       locale: "ru-RU",
       mode,
       timezone: timezone || "Europe/Moscow",
-      categories: categories.map((c) => c.name),
+      userCategories: categories.map((c) => c.name),
       schema: {
         items: [
           {
             type: "income | expense",
             amount: "number > 0",
             description: "string",
-            categoryHint: "optional string",
+            categoryHint: "string from userCategories when matched_existing, otherwise optional",
+            categoryResolution: "matched_existing | suggest_create | unknown",
+            suggestedCategoryToCreate: "required when categoryResolution=suggest_create",
             date: "optional YYYY-MM-DD",
             confidence: "optional number 0..1",
           },
@@ -432,53 +718,89 @@ export async function parseTransactionsFromSpeech({
     2
   );
 
-  if (!apiKey || provider === "heuristic") {
-    return heuristicParse({ text, mode, categories, timezone });
-  }
-
-  try {
-    let raw = "";
-    if (provider === "openrouter") {
-      raw = await callOpenAiCompatible({
-        baseUrl: config.llm.baseUrl || "https://openrouter.ai/api/v1",
-        apiKey,
-        model: config.llm.model || DEFAULT_MODEL_BY_PROVIDER.openrouter,
-        prompt,
-        timeoutMs,
+  const providerErrors = [];
+  for (const provider of providerChain) {
+    if (provider === "heuristic") {
+      const fallback = heuristicParse({ text, mode, categories, timezone });
+      const normalizedFallback = normalizeResult(
+        {
+          items: fallback.items,
+          confidence: fallback.confidence,
+          warnings: fallback.warnings,
+          unparsedText: fallback.unparsedText,
+        },
+        text,
+        categories
+      );
+      logVoiceParse("fallback.heuristic", {
+        reason: providerErrors.length > 0 ? "providers_failed" : "heuristic_selected",
+        previousErrors: providerErrors,
+        items: normalizedFallback.items.length,
       });
-    } else if (provider === "groq") {
-      raw = await callOpenAiCompatible({
-        baseUrl: config.llm.baseUrl || "https://api.groq.com/openai/v1",
-        apiKey,
-        model: config.llm.model || DEFAULT_MODEL_BY_PROVIDER.groq,
-        prompt,
-        timeoutMs,
-      });
-    } else if (provider === "gemini") {
-      raw = await callGemini({
-        apiKey,
-        model: config.llm.model || DEFAULT_MODEL_BY_PROVIDER.gemini,
-        prompt,
-        timeoutMs,
-      });
-    } else {
-      return heuristicParse({ text, mode, categories, timezone });
-    }
-
-    const parsedJson = extractJson(raw);
-    if (!parsedJson) {
       return {
-        ...heuristicParse({ text, mode, categories, timezone }),
-        warnings: ["Модель вернула невалидный JSON, использован fallback."],
+        ...normalizedFallback,
+        warnings:
+          providerErrors.length > 0
+            ? [
+                ...normalizedFallback.warnings,
+                `LLM недоступна (${providerErrors.join("; ")}), использован fallback-парсер.`,
+              ]
+            : normalizedFallback.warnings,
       };
     }
 
-    return normalizeResult(parsedJson, text);
-  } catch (error) {
-    console.error("[voice-parse] LLM parse failed:", error?.message || error);
-    return {
-      ...heuristicParse({ text, mode, categories, timezone }),
-      warnings: ["LLM временно недоступна, использован fallback-парсер."],
-    };
+    try {
+      logVoiceParse("provider.attempt", { provider });
+      const raw = await callProvider({ provider, prompt, timeoutMs });
+      const parsedJson = extractJson(raw);
+      if (!parsedJson) {
+        providerErrors.push(`${provider}: invalid JSON`);
+        logVoiceParse("provider.invalid_json", { provider });
+        continue;
+      }
+      const normalized = normalizeResult(parsedJson, text, categories);
+      if (normalized.items.length === 0) {
+        providerErrors.push(`${provider}: empty items`);
+        logVoiceParse("provider.empty_items", { provider });
+        continue;
+      }
+      logVoiceParse("provider.success", {
+        provider,
+        items: normalized.items.length,
+        confidence: normalized.confidence,
+      });
+      return {
+        ...normalized,
+        warnings:
+          providerErrors.length > 0
+            ? [`Использован провайдер ${provider} после fallback (${providerErrors.join("; ")}).`, ...normalized.warnings]
+            : normalized.warnings,
+      };
+    } catch (error) {
+      providerErrors.push(`${provider}: ${error?.message || "request failed"}`);
+      logVoiceParse("provider.failed", {
+        provider,
+        error: error?.message || "request failed",
+      });
+    }
   }
+
+  logVoiceParse("fallback.heuristic_all_failed", {
+    errors: providerErrors,
+  });
+  const finalFallback = heuristicParse({ text, mode, categories, timezone });
+  const normalizedFinalFallback = normalizeResult(
+    {
+      items: finalFallback.items,
+      confidence: finalFallback.confidence,
+      warnings: finalFallback.warnings,
+      unparsedText: finalFallback.unparsedText,
+    },
+    text,
+    categories
+  );
+  return {
+    ...normalizedFinalFallback,
+    warnings: ["Все провайдеры недоступны, использован fallback-парсер."],
+  };
 }

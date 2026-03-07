@@ -284,6 +284,20 @@ async function migrate() {
       `);
       console.log("vk_id column added");
     }
+
+    // Check if voice_llm_provider column exists
+    const voiceLlmColumnExists = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'users' AND column_name = 'voice_llm_provider'
+    `);
+
+    if (voiceLlmColumnExists.rows.length === 0) {
+      console.log("Adding voice_llm_provider and voice_llm_provider_chain columns to users table...");
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS voice_llm_provider VARCHAR(50)`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS voice_llm_provider_chain TEXT`);
+      console.log("voice_llm columns added");
+    }
     
     console.log("Users table created/verified");
 

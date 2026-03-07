@@ -89,6 +89,7 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
           VK_ID_APP_ID: ${{ secrets.VK_ID_APP_ID }}
+          VK_ID_APP_IDS: ${{ secrets.VK_ID_APP_IDS }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           VITE_VK_ID_APP_ID: ${{ secrets.VITE_VK_ID_APP_ID }}
           VITE_TELEGRAM_BOT_USERNAME: ${{ secrets.VITE_TELEGRAM_BOT_USERNAME }}
@@ -107,6 +108,7 @@ jobs:
           JWT_SECRET=${JWT_SECRET}
           CORS_ORIGIN=${CORS_ORIGIN}
           VK_ID_APP_ID=${VK_ID_APP_ID}
+          VK_ID_APP_IDS=${VK_ID_APP_IDS}
           TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
           VITE_VK_ID_APP_ID=${VITE_VK_ID_APP_ID}
           VITE_TELEGRAM_BOT_USERNAME=${VITE_TELEGRAM_BOT_USERNAME}
@@ -208,3 +210,65 @@ jobs:
         run: |
           echo "🔍 Проверка статуса сервера..."
           ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} "pm2 status || echo 'PM2 не запущен'"
+
+  # Проверяем, изменились ли версии мобильного приложения
+  detect-mobile-version-change:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      version_changed: ${{ steps.check.outputs.version_changed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check mobile version changes
+        id: check
+        shell: bash
+        run: |
+          BEFORE_SHA="${{ github.event.before }}"
+          AFTER_SHA="${{ github.sha }}"
+
+          if [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            echo "version_changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          DIFF=$(git diff --unified=0 "$BEFORE_SHA" "$AFTER_SHA" -- mobile/app.json mobile/package.json || true)
+          echo "$DIFF"
+
+          if printf "%s\n" "$DIFF" | grep -E '^[+-].*"version(Code)?"[[:space:]]*:' >/dev/null; then
+            echo "version_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "version_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Сборка Android AAB запускается только при изменении версии мобильного приложения
+  build-android-aab:
+    if: needs.detect-mobile-version-change.outputs.version_changed == 'true'
+    needs: detect-mobile-version-change
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm ci --legacy-peer-deps
+
+      - name: Setup EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Build Android AAB
+        working-directory: mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npm run build:android:aab
