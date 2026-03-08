@@ -111,6 +111,8 @@ export interface AdminUser {
 export interface LoginRequest {
   login: string;
   password: string;
+  /** Платформа входа: web | android | ios — для учёта статистики */
+  platform?: "web" | "android" | "ios";
 }
 
 export interface RegisterRequest {

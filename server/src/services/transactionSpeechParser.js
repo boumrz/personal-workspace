@@ -372,9 +372,14 @@ function normalizeProvider(provider) {
 }
 
 function resolveProviderChain(requestedProviders, userOverride) {
-  const enabled = config.llm.enabledProviders;
-  const filterByEnabled = (list) =>
-    enabled ? list.filter((p) => enabled.includes(p)) : list;
+  const globalEnabled = config.llm.enabledProviders;
+  const userEnabled = userOverride?.enabledProviders;
+  const filterByEnabled = (list) => {
+    if (userEnabled?.length) {
+      return list.filter((p) => userEnabled.includes(p));
+    }
+    return globalEnabled ? list.filter((p) => globalEnabled.includes(p)) : list;
+  };
 
   let raw = [];
   if (userOverride?.providerChain?.length) {

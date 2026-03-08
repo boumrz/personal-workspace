@@ -183,9 +183,11 @@ const Header: React.FC<HeaderProps> = () => {
       )}
       <AntHeader className={`${styles.header} ${isMobile ? styles.mobileHeader : ""}`} ref={containerRef}>
         <div className={styles.headerContent}>
-          {!isMobile && <div className={styles.logo}>💼 Рабочее пространство</div>}
-          {isMobile && <div className={styles.mobileLogo}>💼</div>}
-          <div className={styles.menuContainer}>
+          <div className={styles.headerLeft}>
+            {!isMobile && <div className={styles.logo}>💼 Рабочее пространство</div>}
+            {isMobile && <div className={styles.mobileLogo}>💼</div>}
+          </div>
+          <div className={`${styles.menuContainer} ${!isMobile ? styles.headerRight : ""}`}>
             {/* Меню разделов - показываем только если помещается (для десктопа) */}
             {!isMobile && !showBurger && (
               <div ref={menuRef} className={styles.menu}>

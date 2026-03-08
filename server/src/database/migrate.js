@@ -298,6 +298,39 @@ async function migrate() {
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS voice_llm_provider_chain TEXT`);
       console.log("voice_llm columns added");
     }
+
+    // voice_llm_enabled_providers — список разрешённых провайдеров для пользователя (через запятую)
+    const voiceLlmEnabledExists = await pool.query(`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_name = 'users' AND column_name = 'voice_llm_enabled_providers'
+    `);
+    if (voiceLlmEnabledExists.rows.length === 0) {
+      console.log("Adding voice_llm_enabled_providers column...");
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS voice_llm_enabled_providers TEXT`);
+      console.log("voice_llm_enabled_providers column added");
+    }
+
+    // Platform-specific login tracking (web vs mobile)
+    const colsToAdd = [
+      "first_login_at",
+      "first_login_web_at",
+      "first_login_mobile_at",
+      "last_login_web_at",
+      "last_login_mobile_at",
+      "login_count_web",
+      "login_count_mobile",
+    ];
+    for (const col of colsToAdd) {
+      const exists = await pool.query(`
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = $1
+      `, [col]);
+      if (exists.rows.length === 0) {
+        const type = col.startsWith("login_count") ? "INTEGER DEFAULT 0" : "TIMESTAMP";
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ${col} ${type}`);
+        console.log(`Added column users.${col}`);
+      }
+    }
     
     console.log("Users table created/verified");
 

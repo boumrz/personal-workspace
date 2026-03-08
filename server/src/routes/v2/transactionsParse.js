@@ -22,16 +22,21 @@ router.use(authenticateToken);
 router.get(
   "/llm-options",
   asyncHandler(async (req, res) => {
-    const enabled = config.llm.enabledProviders;
-    const providers = enabled
-      ? ALL_PROVIDERS.filter((p) => enabled.includes(p.id))
-      : ALL_PROVIDERS;
     const userId = req.user.userId;
     const userResult = await pool.query(
-      "SELECT voice_llm_provider, voice_llm_provider_chain FROM users WHERE id = $1",
+      "SELECT voice_llm_provider, voice_llm_provider_chain, voice_llm_enabled_providers FROM users WHERE id = $1",
       [userId]
     );
     const user = userResult.rows[0];
+    const userEnabled = user?.voice_llm_enabled_providers
+      ? user.voice_llm_enabled_providers.split(",").map((p) => p.trim()).filter(Boolean)
+      : null;
+    const globalEnabled = config.llm.enabledProviders;
+    const providers = userEnabled?.length
+      ? ALL_PROVIDERS.filter((p) => userEnabled.includes(p.id))
+      : globalEnabled
+        ? ALL_PROVIDERS.filter((p) => globalEnabled.includes(p.id))
+        : ALL_PROVIDERS;
     res.json({
       providers,
       defaultChain: config.llm.providerChain,
@@ -39,6 +44,9 @@ router.get(
         provider: user?.voice_llm_provider || null,
         providerChain: user?.voice_llm_provider_chain
           ? user.voice_llm_provider_chain.split(",").map((p) => p.trim()).filter(Boolean)
+          : null,
+        enabledProviders: user?.voice_llm_enabled_providers
+          ? user.voice_llm_enabled_providers.split(",").map((p) => p.trim()).filter(Boolean)
           : null,
       },
     });
@@ -82,19 +90,25 @@ router.post(
     }));
 
     const userLlmResult = await pool.query(
-      "SELECT voice_llm_provider, voice_llm_provider_chain FROM users WHERE id = $1",
+      "SELECT voice_llm_provider, voice_llm_provider_chain, voice_llm_enabled_providers FROM users WHERE id = $1",
       [userId]
     );
     const userRow = userLlmResult.rows[0];
-    const userOverride =
-      userRow?.voice_llm_provider || userRow?.voice_llm_provider_chain
-        ? {
-            provider: userRow.voice_llm_provider || undefined,
-            providerChain: userRow.voice_llm_provider_chain
-              ? userRow.voice_llm_provider_chain.split(",").map((p) => p.trim()).filter(Boolean)
-              : undefined,
-          }
-        : undefined;
+    const hasLlmSettings =
+      userRow?.voice_llm_provider ||
+      userRow?.voice_llm_provider_chain ||
+      userRow?.voice_llm_enabled_providers;
+    const userOverride = hasLlmSettings
+      ? {
+          provider: userRow?.voice_llm_provider || undefined,
+          providerChain: userRow?.voice_llm_provider_chain
+            ? userRow.voice_llm_provider_chain.split(",").map((p) => p.trim()).filter(Boolean)
+            : undefined,
+          enabledProviders: userRow?.voice_llm_enabled_providers
+            ? userRow.voice_llm_enabled_providers.split(",").map((p) => p.trim().toLowerCase()).filter(Boolean)
+            : undefined,
+        }
+      : undefined;
 
     const parsed = await parseTransactionsFromSpeech({
       text: normalizedText,

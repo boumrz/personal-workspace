@@ -28,6 +28,7 @@ export interface RefreshResponse {
 export interface VkIdLoginRequest {
   access_token: string;
   app_id?: string;
+  platform?: "web" | "android" | "ios";
 }
 
 export interface VkIdLinkRequest {

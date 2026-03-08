@@ -1,54 +1,364 @@
+/* Admin Panel — современный дизайн */
+
 .adminPage {
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
   padding: 24px;
-  background-color: var(--bg-base);
   min-height: 100%;
-  overflow: auto;
+  background-color: var(--bg-base);
+  box-sizing: border-box;
 }
 
-.tableContainer {
-  margin-top: 24px;
-  background-color: var(--bg-card);
-  border-radius: var(--radius-lg);
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  overflow-x: auto;
-  overflow-y: visible;
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-.editForm {
-  margin-top: 24px;
+.headerContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-/* Стили для таблицы */
-.tableContainer :global(.ant-table) {
-  background-color: transparent;
-}
-
-.tableContainer :global(.ant-table-thead > tr > th) {
-  background-color: var(--bg-elevated);
-  font-weight: 600;
+.headerTitle {
+  font-size: 24px;
+  font-weight: 700;
   color: var(--text-primary);
-  border-bottom: 2px solid var(--border);
+  letter-spacing: -0.02em;
+  margin: 0;
 }
 
-.tableContainer :global(.ant-table-tbody > tr > td) {
+.headerSubtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.refreshBtn {
+  height: 40px;
+  padding: 0 20px;
+  font-weight: 500;
+  border-radius: var(--radius-lg);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Tabs */
+.tabsWrapper {
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: 0 1px 3px var(--shadow-sm);
+}
+
+.tabsWrapper :global(.ant-tabs) {
+  padding: 0;
+}
+
+.tabsWrapper :global(.ant-tabs-nav) {
+  margin: 0;
+  padding: 0 20px;
+  background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
 }
 
+.tabsWrapper :global(.ant-tabs-nav-list) {
+  gap: 4px;
+}
+
+.tabsWrapper :global(.ant-tabs-tab) {
+  padding: 16px 20px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.tabsWrapper :global(.ant-tabs-tab:hover) {
+  color: var(--text-primary);
+}
+
+.tabsWrapper :global(.ant-tabs-tab-active .ant-tabs-tab-btn) {
+  color: var(--accent);
+}
+
+.tabsWrapper :global(.ant-tabs-ink-bar) {
+  background: var(--accent);
+  height: 3px;
+}
+
+.tabsWrapper :global(.ant-tabs-content-holder) {
+  padding: 0;
+}
+
+.tabsWrapper :global(.ant-tabs-tabpane) {
+  padding: 0;
+}
+
+/* Table container — без overflow:hidden, чтобы горизонтальный скролл таблицы был виден */
+.tableContainer {
+  padding: 20px 24px 24px;
+  overflow: visible;
+  width: 100%;
+}
+
+.tableContainer :global(.ant-table-wrapper) {
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  /* Единое скругление всех углов — контент обрезается по границе */
+}
+
+/* Скроллбар для горизонтального скролла таблицы (Ant Design создаёт его внутри) */
+.tableContainer :global(.ant-table-body),
+.tableContainer :global(.ant-table-content) {
+  scrollbar-width: thin;
+}
+
+.tableContainer :global(.ant-table-body)::-webkit-scrollbar,
+.tableContainer :global(.ant-table-content)::-webkit-scrollbar {
+  display: block;
+  height: 8px;
+}
+
+.tableContainer :global(.ant-table-body)::-webkit-scrollbar-track,
+.tableContainer :global(.ant-table-content)::-webkit-scrollbar-track {
+  background: var(--bg-surface);
+  border-radius: 4px;
+}
+
+.tableContainer :global(.ant-table-body)::-webkit-scrollbar-thumb,
+.tableContainer :global(.ant-table-content)::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+
+.tableContainer :global(.ant-table) {
+  background: transparent;
+  font-size: 14px;
+}
+
+.tableContainer :global(.ant-table-thead > tr > th) {
+  background: var(--bg-surface) !important;
+  color: var(--text-secondary) !important;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tableContainer :global(.ant-table-tbody > tr > td) {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
 .tableContainer :global(.ant-table-tbody > tr:hover > td) {
-  background-color: var(--bg-elevated);
+  background: var(--bg-elevated) !important;
+}
+
+.tableContainer :global(.ant-table-tbody > tr:last-child > td) {
+  border-bottom: none;
 }
 
 .tableContainer :global(.ant-pagination) {
-  margin-top: 16px;
+  margin-top: 20px;
+  padding: 0 4px;
 }
 
-/* Адаптивность только для десктопа */
+.tableContainer :global(.ant-pagination-item) {
+  border-radius: var(--radius-md);
+}
+
+.tableContainer :global(.ant-pagination-item-active) {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+.tableContainer :global(.ant-pagination-item-active a) {
+  color: #fff !important;
+}
+
+/* Action buttons */
+.actionsCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.actionBtn:active {
+  transform: scale(0.98);
+}
+
+.actionBtnEdit {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.actionBtnEdit:hover {
+  background: var(--accent);
+  color: #fff !important;
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(10, 132, 255, 0.35);
+}
+
+.actionBtnLlm {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+.actionBtnLlm:hover {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent) !important;
+  box-shadow: 0 2px 8px var(--shadow-md);
+}
+
+.actionBtnDelete {
+  background: var(--expense-light);
+  color: var(--expense);
+}
+
+.actionBtnDelete:hover {
+  background: var(--expense);
+  color: #fff !important;
+  border-color: var(--expense);
+  box-shadow: 0 2px 8px rgba(255, 105, 97, 0.35);
+}
+
+/* LLM tab */
+.llmTab {
+  padding: 32px 24px;
+}
+
+.llmCard {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.llmCardTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.llmHint {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
+}
+
+.llmHint:last-child {
+  margin-bottom: 0;
+}
+
+.providersList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.providerTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+/* Form */
+.editForm {
+  margin-top: 8px;
+}
+
+.editForm :global(.ant-form-item) {
+  margin-bottom: 20px;
+}
+
+.editForm :global(.ant-form-item-label > label) {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.fioRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+.fioRow .fioItem {
+  min-width: 0;
+}
+
+/* Modal overrides */
+.modal :global(.ant-modal-content) {
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.modal :global(.ant-modal-header) {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal :global(.ant-modal-title) {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.modal :global(.ant-modal-body) {
+  padding: 24px;
+}
+
+.modal :global(.ant-modal-footer) {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+}
+
+/* Empty state for dates */
+.emptyDate {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
   .adminPage {
     display: none;
+  }
+}
+
+@media (max-width: 1200px) {
+  .fioRow {
+    grid-template-columns: 1fr 1fr;
   }
 }

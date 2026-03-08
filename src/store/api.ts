@@ -70,14 +70,29 @@ export interface AdminUser {
   age?: number;
   date_of_birth?: string;
   created_at: string;
+  first_login_at?: string;
   last_login_at?: string;
+  last_login_web_at?: string;
+  last_login_mobile_at?: string;
   login_count?: number;
+  login_count_web?: number;
+  login_count_mobile?: number;
+  voice_llm_provider?: string | null;
+  voice_llm_provider_chain?: string | null;
+  voice_llm_enabled_providers?: string | null;
   google_id?: string;
+}
+
+export interface LlmProvider {
+  id: string;
+  label: string;
+  model: string | null;
 }
 
 export interface LoginRequest {
   login: string;
   password: string;
+  platform?: "web" | "android" | "ios";
 }
 
 export interface RegisterRequest {
@@ -93,6 +108,7 @@ export interface TelegramAuthData {
   photo_url?: string;
   auth_date: number;
   hash: string;
+  platform?: "web" | "android" | "ios";
 }
 
 export interface LoginResponse {
@@ -274,7 +290,10 @@ export const api = createApi({
         body: data,
       }),
     }),
-    loginWithVkId: builder.mutation<LoginResponse, { access_token: string; app_id?: string }>({
+    loginWithVkId: builder.mutation<
+      LoginResponse,
+      { access_token: string; app_id?: string; platform?: "web" | "android" | "ios" }
+    >({
       query: (data) => ({
         url: "/auth/vkid",
         method: "POST",
@@ -516,6 +535,20 @@ export const api = createApi({
       }),
       invalidatesTags: ["AdminUser"],
     }),
+    getAdminLlmProviders: builder.query<{ providers: LlmProvider[] }, void>({
+      query: () => "/admin/llm-providers",
+    }),
+    updateAdminUserLlm: builder.mutation<
+      { user: { id: number; voice_llm_provider_chain?: string; voice_llm_enabled_providers?: string } },
+      { id: number; voice_llm_provider_chain?: string[]; voice_llm_enabled_providers?: string[] }
+    >({
+      query: ({ id, voice_llm_provider_chain, voice_llm_enabled_providers }) => ({
+        url: `/admin/users/${id}/llm`,
+        method: "PUT",
+        body: { voice_llm_provider_chain, voice_llm_enabled_providers },
+      }),
+      invalidatesTags: ["AdminUser"],
+    }),
   }),
 });
 
@@ -553,4 +586,6 @@ export const {
   useGetAdminUsersQuery,
   useUpdateAdminUserMutation,
   useDeleteAdminUserMutation,
+  useGetAdminLlmProvidersQuery,
+  useUpdateAdminUserLlmMutation,
 } = api;

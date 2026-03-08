@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ApiClient, setAnalyticsAuthToken, track } from "@finance-assistant/shared";
+import { ApiClient, setAnalyticsAuthToken, track, getAnalyticsPlatform } from "@finance-assistant/shared";
 import { trackMyTrackerLogin, trackMyTrackerRegistration, clearMyTrackerUserId } from "../analytics";
 import type { User } from "@finance-assistant/shared";
 
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (loginValue: string, password: string) => {
-    const res = await api.login({ login: loginValue, password });
+    const res = await api.login({ login: loginValue, password, platform: getAnalyticsPlatform() });
     setToken(res.token);
     setUser(res.user);
     if (res.refreshToken) {
@@ -142,6 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await api.loginWithVkId({
       access_token: accessToken,
       app_id: appId,
+      platform: getAnalyticsPlatform(),
     });
     setToken(res.token);
     setUser(res.user);

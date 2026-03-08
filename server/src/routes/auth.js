@@ -9,6 +9,46 @@ import config from "../config/config.js";
 
 const router = express.Router();
 
+/** platform: "web" | "android" | "ios" — откуда пришёл вход (опционально) */
+async function updateLoginStats(userId, platform) {
+  const now = new Date();
+  const isMobile = platform === "android" || platform === "ios";
+  const isWeb = platform === "web";
+
+  if (isMobile) {
+    await pool.query(
+      `UPDATE users SET
+        last_login_at = $1,
+        first_login_at = COALESCE(first_login_at, $1),
+        last_login_mobile_at = $1,
+        first_login_mobile_at = COALESCE(first_login_mobile_at, $1),
+        login_count = COALESCE(login_count, 0) + 1,
+        login_count_mobile = COALESCE(login_count_mobile, 0) + 1
+      WHERE id = $2`,
+      [now, userId]
+    );
+  } else if (isWeb) {
+    await pool.query(
+      `UPDATE users SET
+        last_login_at = $1,
+        first_login_at = COALESCE(first_login_at, $1),
+        last_login_web_at = $1,
+        first_login_web_at = COALESCE(first_login_web_at, $1),
+        login_count = COALESCE(login_count, 0) + 1,
+        login_count_web = COALESCE(login_count_web, 0) + 1
+      WHERE id = $2`,
+      [now, userId]
+    );
+  } else {
+    // platform не передан — обновляем только глобальные поля (обратная совместимость)
+    await pool.query(
+      `UPDATE users SET last_login_at = $1, first_login_at = COALESCE(first_login_at, $1),
+       login_count = COALESCE(login_count, 0) + 1 WHERE id = $2`,
+      [now, userId]
+    );
+  }
+}
+
 // Verify Telegram Login Widget data (HMAC-SHA256)
 function verifyTelegramAuth(authData, botToken) {
   const { hash, ...data } = authData;
@@ -171,7 +211,7 @@ router.post(
 router.post(
   "/login",
   asyncHandler(async (req, res) => {
-    const { login, password } = req.body;
+    const { login, password, platform } = req.body;
 
     if (!login || !password) {
       return res.status(400).json({ error: "Login and password are required" });
@@ -194,11 +234,7 @@ router.post(
       return res.status(401).json({ error: "Invalid login or password" });
     }
 
-    // Update last login and login count
-    await pool.query(
-      "UPDATE users SET last_login_at = CURRENT_TIMESTAMP, login_count = COALESCE(login_count, 0) + 1 WHERE id = $1",
-      [user.id]
-    );
+    await updateLoginStats(user.id, platform);
 
     // Access + refresh tokens
     const token = jwt.sign(
@@ -301,6 +337,8 @@ router.post(
     } else {
       user = userResult.rows[0];
     }
+
+    await updateLoginStats(user.id, req.body?.platform);
 
     const token = jwt.sign(
       { userId: user.id, login: user.login, type: "access" },
@@ -416,6 +454,8 @@ router.post(
     } else {
       user = userResult.rows[0];
     }
+
+    await updateLoginStats(user.id, req.body?.platform);
 
     const token = jwt.sign(
       { userId: user.id, login: user.login, type: "access" },

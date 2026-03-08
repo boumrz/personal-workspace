@@ -8,16 +8,22 @@
 }
 
 .content {
-  margin-top: 48px; /* Отступ для фиксированного Header на десктопе */
-  padding: 24px;
+  margin-top: 56px; /* Отступ для фиксированного Header на десктопе */
+  padding: 32px 40px 48px;
   flex: 1;
   background: var(--bg-base);
   width: 100%;
   max-width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
-  min-height: 0; /* Важно для правильной работы flex */
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+}
+
+@media (min-width: 769px) {
+  .content {
+    padding: 32px 48px 64px;
+  }
 }
 
 .mobileContent {
