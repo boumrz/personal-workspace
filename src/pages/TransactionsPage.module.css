@@ -78,6 +78,11 @@
   color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
+  outline: none;
+}
+
+.filterBtn:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 
 .filterBtn:hover {
@@ -174,6 +179,11 @@
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  outline: none;
+}
+
+.searchBtn:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 
 .searchBtn:hover {
@@ -389,6 +399,15 @@
   color: var(--text-tertiary);
   cursor: pointer;
   transition: all 0.2s ease;
+  outline: none;
+}
+
+.editBtn:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent-muted);
+}
+
+.deleteBtn:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--expense);
 }
 
 .editBtn:hover {
@@ -447,7 +466,7 @@
 /* Кнопка добавления операции для мобилки */
 .addButtonMobile {
   position: fixed !important;
-  bottom: 68px !important;
+  bottom: 96px !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
   right: auto !important;

@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   height: 56px;
-  background: var(--bg-card);
+  background: var(--bg-card) !important;
   border-bottom: 1px solid var(--border);
   z-index: 1001;
   padding: 0;
@@ -107,6 +107,22 @@
 
 .menuItems :global(.ant-menu-item-selected) {
   background: var(--accent-light);
+  color: var(--accent);
+}
+
+.voiceButton {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+}
+
+.voiceButton:hover {
+  background: var(--bg-surface);
   color: var(--accent);
 }
 

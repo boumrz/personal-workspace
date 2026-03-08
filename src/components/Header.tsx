@@ -7,9 +7,11 @@ import {
   LogoutOutlined,
   SettingOutlined,
   SafetyOutlined,
+  AudioOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { VoiceAssistModal } from "./VoiceAssistModal";
 import * as styles from "./Header.module.css";
 
 const { Header: AntHeader } = Layout;
@@ -26,6 +28,7 @@ const Header: React.FC<HeaderProps> = () => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [showBurger, setShowBurger] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const closingFromClick = useRef(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -200,6 +203,14 @@ const Header: React.FC<HeaderProps> = () => {
                 />
               </div>
             )}
+            {/* Кнопка голосового ввода */}
+            <Button
+              type="text"
+              icon={<AudioOutlined />}
+              className={styles.voiceButton}
+              onClick={() => setVoiceModalOpen(true)}
+              aria-label="Голосовой ввод"
+            />
             {/* Меню пользователя */}
             <Dropdown
               menu={{
@@ -247,6 +258,11 @@ const Header: React.FC<HeaderProps> = () => {
       </AntHeader>
 
       {/* Drawer для мобильного - убираем, так как навигация теперь внизу */}
+
+      <VoiceAssistModal
+        open={voiceModalOpen}
+        onClose={() => setVoiceModalOpen(false)}
+      />
     </>
   );
 };

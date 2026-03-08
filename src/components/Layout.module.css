@@ -1,23 +1,25 @@
 .layout {
+  height: 100vh;
   min-height: 100vh;
   width: 100%;
   background: var(--bg-base);
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow: hidden;
 }
 
 .content {
   margin-top: 56px; /* Отступ для фиксированного Header на десктопе */
   padding: 32px 40px 48px;
   flex: 1;
+  min-height: 0;
   background: var(--bg-base);
   width: 100%;
   max-width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  min-height: 0;
 }
 
 @media (min-width: 769px) {
@@ -30,11 +32,11 @@
   margin-top: 0;
   padding: 0;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
+  -webkit-overflow-scrolling: touch;
   box-sizing: border-box;
-  min-height: 0; /* Важно для правильной работы flex */
 }
 
 @media (max-width: 768px) {

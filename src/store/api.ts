@@ -89,6 +89,37 @@ export interface LlmProvider {
   model: string | null;
 }
 
+export interface SpeechParseContext {
+  locale?: string;
+  timezone?: string;
+}
+
+export interface ParsedSpeechTransactionItem {
+  type: "income" | "expense";
+  amount: number;
+  description: string;
+  categoryHint?: string;
+  categoryResolution?: "matched_existing" | "suggest_create" | "unknown";
+  suggestedCategoryToCreate?: string;
+  date?: string;
+  confidence?: number;
+}
+
+export interface ParseTransactionsFromSpeechRequest {
+  text: string;
+  mode?: "actual" | "planned";
+  context?: SpeechParseContext;
+  provider?: "gigachat" | "gemini" | "groq" | "openrouter" | "heuristic";
+  providerChain?: ("gigachat" | "gemini" | "groq" | "openrouter" | "heuristic")[];
+}
+
+export interface ParseTransactionsFromSpeechResponse {
+  items: ParsedSpeechTransactionItem[];
+  confidence: number;
+  warnings: string[];
+  unparsedText?: string;
+}
+
 export interface LoginRequest {
   login: string;
   password: string;
@@ -353,6 +384,16 @@ export const api = createApi({
       }),
       invalidatesTags: ["Transaction"],
     }),
+    parseTransactionsFromSpeech: builder.mutation<
+      ParseTransactionsFromSpeechResponse,
+      ParseTransactionsFromSpeechRequest
+    >({
+      query: (payload) => ({
+        url: "/v2/transactions/parse",
+        method: "POST",
+        body: payload,
+      }),
+    }),
 
     // Planned Expenses
     getPlannedExpenses: builder.query<Transaction[], void>({
@@ -564,6 +605,7 @@ export const {
   useCreateTransactionMutation,
   useUpdateTransactionMutation,
   useDeleteTransactionMutation,
+  useParseTransactionsFromSpeechMutation,
   useGetPlannedExpensesQuery,
   useCreatePlannedExpenseMutation,
   useUpdatePlannedExpenseMutation,

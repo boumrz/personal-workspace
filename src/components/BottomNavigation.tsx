@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   WalletOutlined,
   DashboardOutlined,
   DollarOutlined,
   UserOutlined,
+  AudioOutlined,
 } from "@ant-design/icons";
+import { VoiceAssistModal } from "./VoiceAssistModal";
 import * as styles from "./BottomNavigation.module.css";
 
 interface NavItem {
@@ -18,6 +20,7 @@ interface NavItem {
 const BottomNavigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
 
   const navItems: NavItem[] = [
     {
@@ -31,6 +34,12 @@ const BottomNavigation: React.FC = () => {
       label: "Дашборд",
       icon: <DashboardOutlined />,
       path: "/finance/dashboard",
+    },
+    {
+      key: "voice",
+      label: "Голос",
+      icon: <AudioOutlined />,
+      path: "__voice__",
     },
     {
       key: "savings",
@@ -52,7 +61,6 @@ const BottomNavigation: React.FC = () => {
     if (path.includes("/transactions")) return "transactions";
     if (path.includes("/dashboard")) return "dashboard";
     if (path.includes("/savings")) return "savings";
-    // По умолчанию показываем транзакции
     if (path.includes("/finance") || path === "/") return "transactions";
     return "transactions";
   };
@@ -60,13 +68,35 @@ const BottomNavigation: React.FC = () => {
   const activeKey = getActiveKey();
 
   const handleNavClick = (item: NavItem) => {
+    if (item.path === "__voice__") {
+      setVoiceModalOpen(true);
+      return;
+    }
     navigate(item.path);
   };
 
   return (
+    <>
     <nav className={styles.bottomNav}>
       {navItems.map((item) => {
         const isActive = activeKey === item.key;
+        const isVoice = item.key === "voice";
+        if (isVoice) {
+          return (
+            <div key={item.key} className={styles.voiceTabWrapper}>
+              <span className={styles.voicePulse} />
+              <button
+                className={styles.voiceButton}
+                onClick={() => handleNavClick(item)}
+                aria-label={item.label}
+              >
+                <span className={styles.voiceButtonCore}>
+                  <AudioOutlined className={styles.voiceButtonIcon} />
+                </span>
+              </button>
+            </div>
+          );
+        }
         return (
           <button
             key={item.key}
@@ -80,6 +110,12 @@ const BottomNavigation: React.FC = () => {
         );
       })}
     </nav>
+
+    <VoiceAssistModal
+      open={voiceModalOpen}
+      onClose={() => setVoiceModalOpen(false)}
+    />
+  </>
   );
 };
 

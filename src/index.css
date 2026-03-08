@@ -38,6 +38,12 @@ body {
   display: none; /* Chrome, Safari, Opera */
 }
 
+/* Шапка — непрозрачный фон */
+.ant-layout-header {
+  background: var(--bg-card) !important;
+  background-color: var(--bg-card) !important;
+}
+
 /* Ant Design global overrides — приглушённая палитра */
 .ant-btn-primary {
   background: var(--accent-muted) !important;
