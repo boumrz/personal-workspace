@@ -8,7 +8,7 @@ import { parseTransactionsFromSpeech } from "../../services/transactionSpeechPar
 const router = express.Router();
 
 const ALL_PROVIDERS = [
-  { id: "gigachat", label: "GigaChat", model: "GigaChat-2" },
+  { id: "gigachat", label: "GigaChat", model: "GigaChat" },
   { id: "gpt4free", label: "GPT4Free", model: "gpt-4o-mini" },
   { id: "gemini", label: "Gemini", model: "gemini-2.0-flash" },
   { id: "gemini-flash-lite", label: "Gemini Flash Lite", model: "gemini-2.0-flash-lite" },

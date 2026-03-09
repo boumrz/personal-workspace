@@ -74,9 +74,16 @@ export default {
       flashLiteModel: process.env.GEMINI_FLASH_LITE_MODEL || "gemini-2.0-flash-lite",
     },
     gigaChat: {
-      authKey: process.env.GIGACHAT_AUTH_KEY || "",
+      timeoutMs: Number(process.env.GIGACHAT_TIMEOUT_MS || process.env.LLM_TIMEOUT_MS || 30000),
+      authKey:
+        (process.env.GIGACHAT_AUTH_KEY || "").trim() ||
+        (process.env.GIGACHAT_CLIENT_ID && process.env.GIGACHAT_CLIENT_SECRET
+          ? Buffer.from(
+              `${process.env.GIGACHAT_CLIENT_ID}:${process.env.GIGACHAT_CLIENT_SECRET}`
+            ).toString("base64")
+          : ""),
       scope: process.env.GIGACHAT_SCOPE || "GIGACHAT_API_PERS",
-      model: process.env.GIGACHAT_MODEL || "GigaChat-2",
+      model: process.env.GIGACHAT_MODEL || "GigaChat",
       allowInsecureTls: String(process.env.GIGACHAT_ALLOW_INSECURE_TLS || "").toLowerCase() === "true",
       authUrl:
         process.env.GIGACHAT_AUTH_URL ||

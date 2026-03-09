@@ -96,6 +96,9 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           GOOGLE_REDIRECT_URI: ${{ secrets.GOOGLE_REDIRECT_URI }}
+          GIGACHAT_AUTH_KEY: ${{ secrets.GIGACHAT_AUTH_KEY }}
+          GIGACHAT_CLIENT_ID: ${{ secrets.GIGACHAT_CLIENT_ID }}
+          GIGACHAT_CLIENT_SECRET: ${{ secrets.GIGACHAT_CLIENT_SECRET }}
         run: |
           cat > .env.server << EOF
           PORT=3001
@@ -115,6 +118,9 @@ jobs:
           GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
           GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
           GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+          GIGACHAT_AUTH_KEY=${GIGACHAT_AUTH_KEY}
+          GIGACHAT_CLIENT_ID=${GIGACHAT_CLIENT_ID}
+          GIGACHAT_CLIENT_SECRET=${GIGACHAT_CLIENT_SECRET}
           EOF
           scp -o StrictHostKeyChecking=no .env.server ${SERVER_USER}@${SERVER_HOST}:${SERVER_PATH}/.env
           rm -f .env.server

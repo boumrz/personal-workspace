@@ -6,7 +6,7 @@ const DEFAULT_MODEL_BY_PROVIDER = {
   groq: "llama-3.1-8b-instant",
   gemini: "gemini-2.0-flash",
   "gemini-flash-lite": "gemini-2.0-flash-lite",
-  gigachat: "GigaChat-2",
+  gigachat: "GigaChat",
   gpt4free: "gpt-4o-mini",
 };
 
@@ -348,19 +348,41 @@ function heuristicParse({ text, mode, categories, timezone }) {
   };
 }
 
+function tryParseJson(str) {
+  try {
+    return JSON.parse(str);
+  } catch {
+    return null;
+  }
+}
+
+function repairJson(str) {
+  return str
+    .replace(/,(\s*[}\]])/g, "$1")
+    .replace(/\r\n/g, "\n")
+    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, "");
+}
+
 function extractJson(text) {
   if (!text) return null;
-  const direct = text.trim();
-  if (direct.startsWith("{") && direct.endsWith("}")) {
-    return JSON.parse(direct);
+  const raw = text.trim();
+  const candidates = [];
+  if (raw.startsWith("{") && raw.endsWith("}")) {
+    candidates.push(raw);
   }
-  const blockMatch = text.match(/```json\s*([\s\S]*?)```/i);
+  const blockMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (blockMatch?.[1]) {
-    return JSON.parse(blockMatch[1].trim());
+    candidates.push(blockMatch[1].trim());
   }
-  const objectMatch = text.match(/\{[\s\S]*\}/);
-  if (objectMatch?.[0]) {
-    return JSON.parse(objectMatch[0]);
+  const objectMatch = raw.match(/\{[\s\S]*\}/);
+  if (objectMatch?.[0] && !candidates.includes(objectMatch[0])) {
+    candidates.push(objectMatch[0]);
+  }
+  for (const s of candidates) {
+    let parsed = tryParseJson(s);
+    if (parsed) return parsed;
+    parsed = tryParseJson(repairJson(s));
+    if (parsed) return parsed;
   }
   return null;
 }
@@ -525,38 +547,68 @@ async function getGigaChatAccessToken({ timeoutMs }) {
 async function callGigaChat({ model, prompt, timeoutMs }) {
   const accessToken = await getGigaChatAccessToken({ timeoutMs });
   const baseUrl = config.llm.gigaChat?.baseUrl || "https://gigachat.devices.sberbank.ru/api/v1";
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0.1,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You parse Russian finance speech to JSON. Return only JSON object with keys: items, confidence, warnings, unparsedText.",
-          },
-          { role: "user", content: prompt },
-        ],
-      }),
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      throw new Error(`GigaChat request failed: ${response.status}`);
+  const maxRetries = 2;
+  let lastError;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          model,
+          temperature: 0.1,
+          stream: false,
+          max_tokens: 1024,
+          messages: [
+            {
+              role: "system",
+              content:
+                "You parse Russian finance speech to JSON. Return only JSON object with keys: items, confidence, warnings, unparsedText.",
+            },
+            { role: "user", content: prompt },
+          ],
+        }),
+        signal: controller.signal,
+      });
+      if (response.ok) {
+        clearTimeout(timeout);
+        const data = await response.json();
+        return data?.choices?.[0]?.message?.content ?? "";
+      }
+      const errBody = await response.text();
+      if (response.status >= 500 && attempt < maxRetries) {
+        logVoiceParse("gigachat.retry", {
+          attempt: attempt + 1,
+          status: response.status,
+          body: errBody?.slice(0, 200),
+        });
+        await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+        continue;
+      }
+      lastError = new Error(
+        `GigaChat request failed: ${response.status}${errBody ? ` — ${errBody.slice(0, 150)}` : ""}`
+      );
+    } catch (e) {
+      clearTimeout(timeout);
+      lastError = e;
+      if (attempt < maxRetries) {
+        logVoiceParse("gigachat.retry", { attempt: attempt + 1, error: String(e) });
+        await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+        continue;
+      }
+    } finally {
+      clearTimeout(timeout);
     }
-    const data = await response.json();
-    return data?.choices?.[0]?.message?.content ?? "";
-  } finally {
-    clearTimeout(timeout);
+    throw lastError;
   }
+  throw lastError;
 }
 
 async function callProvider({ provider, prompt, timeoutMs }) {
@@ -628,10 +680,11 @@ async function callProvider({ provider, prompt, timeoutMs }) {
   }
 
   if (provider === "gigachat") {
+    const gigaTimeout = config.llm.gigaChat?.timeoutMs ?? timeoutMs;
     return callGigaChat({
       model: config.llm.gigaChat?.model || DEFAULT_MODEL_BY_PROVIDER.gigachat,
       prompt,
-      timeoutMs,
+      timeoutMs: gigaTimeout,
     });
   }
 
