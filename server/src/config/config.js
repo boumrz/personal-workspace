@@ -63,11 +63,11 @@ export default {
   rateLimit: {
     enabled: String(process.env.RATE_LIMIT_ENABLED || "true").toLowerCase() !== "false",
     windowMs: parsePositiveNumber(process.env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
-    max: parsePositiveNumber(process.env.RATE_LIMIT_MAX, 120),
+    max: parsePositiveNumber(process.env.RATE_LIMIT_MAX, 20000),
     authWindowMs: parsePositiveNumber(process.env.RATE_LIMIT_AUTH_WINDOW_MS, 15 * 60 * 1000),
-    authMax: parsePositiveNumber(process.env.RATE_LIMIT_AUTH_MAX, 20),
+    authMax: parsePositiveNumber(process.env.RATE_LIMIT_AUTH_MAX, 3000),
     voiceWindowMs: parsePositiveNumber(process.env.RATE_LIMIT_VOICE_WINDOW_MS, 5 * 60 * 1000),
-    voiceMax: parsePositiveNumber(process.env.RATE_LIMIT_VOICE_MAX, 25),
+    voiceMax: parsePositiveNumber(process.env.RATE_LIMIT_VOICE_MAX, 3000),
   },
   llm: {
     provider: llmProviderChain[0] || "gpt4free",
