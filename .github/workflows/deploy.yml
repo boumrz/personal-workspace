@@ -8,13 +8,9 @@ on:
   workflow_dispatch: # Позволяет запускать вручную из GitHub UI
 
 jobs:
-  # Деплой фронтенда на GitHub Pages
+  # Деплой фронтенда на сервер (production web: https://domiknote.ru/)
   deploy-frontend:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
 
     steps:
       - name: Checkout code
@@ -39,17 +35,32 @@ jobs:
           VITE_VK_ID_APP_ID: ${{ secrets.VITE_VK_ID_APP_ID || '' }}
           VITE_TELEGRAM_BOT_USERNAME: ${{ secrets.VITE_TELEGRAM_BOT_USERNAME || '' }}
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          path: "./dist"
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Add server to known hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Upload frontend build to server
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_PATH: ${{ secrets.SERVER_PATH }}
+          FRONTEND_PATH: ${{ secrets.FRONTEND_PATH || '' }}
+        run: |
+          tar -czf frontend-dist.tar.gz -C dist .
+          scp -o StrictHostKeyChecking=no frontend-dist.tar.gz ${SERVER_USER}@${SERVER_HOST}:/tmp/frontend-dist.tar.gz
+          ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} "set -e; FRONTEND_TARGET='${FRONTEND_PATH:-${SERVER_PATH}/dist}'; if [ -z \"\$FRONTEND_TARGET\" ] || [ \"\$FRONTEND_TARGET\" = \"/\" ]; then echo 'Invalid FRONTEND_TARGET'; exit 1; fi; mkdir -p \"\$FRONTEND_TARGET\"; find \"\$FRONTEND_TARGET\" -mindepth 1 -maxdepth 1 -exec rm -rf {} +; tar -xzf /tmp/frontend-dist.tar.gz -C \"\$FRONTEND_TARGET\"; rm -f /tmp/frontend-dist.tar.gz"
+          rm -f frontend-dist.tar.gz
+
+      - name: Verify frontend deployment
+        env:
+          FRONTEND_HEALTHCHECK_URL: ${{ secrets.FRONTEND_HEALTHCHECK_URL || 'https://domiknote.ru/' }}
+        run: |
+          curl -fsSL "${FRONTEND_HEALTHCHECK_URL}" >/dev/null
 
   # Деплой бэкенда на удаленный сервер
   deploy-backend:
@@ -278,6 +289,7 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
           EXPO_PUBLIC_VK_ID_APP_ID: ${{ secrets.EXPO_PUBLIC_VK_ID_APP_ID }}
+          EXPO_PUBLIC_VK_ID_CLIENT_SECRET: ${{ secrets.EXPO_PUBLIC_VK_ID_CLIENT_SECRET }}
           EXPO_PUBLIC_VK_ID_REDIRECT_SCHEME: ${{ secrets.EXPO_PUBLIC_VK_ID_REDIRECT_SCHEME || 'financeassistant' }}
           EXPO_PUBLIC_MYTRACKER_SDK_KEY: ${{ secrets.EXPO_PUBLIC_MYTRACKER_SDK_KEY }}
           EXPO_PUBLIC_SPEECH_PARSE_PROVIDER: ${{ secrets.EXPO_PUBLIC_SPEECH_PARSE_PROVIDER || '' }}

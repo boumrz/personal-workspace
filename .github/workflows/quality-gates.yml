@@ -51,7 +51,7 @@ jobs:
 
       - name: Install and typecheck mobile
         run: |
-          npm --prefix mobile ci
+          npm --prefix mobile ci --legacy-peer-deps
           npm --prefix mobile run typecheck
 
       - name: Install Playwright browser
