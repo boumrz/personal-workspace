@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Скрипт для автоматического деплоя
+# Скрипт для backend-only деплоя (API)
 # Использование: ./deploy.sh
 
 set -e
@@ -39,20 +39,14 @@ cd ..
 echo -e "${YELLOW}🔄 Перезапуск бэкенда...${NC}"
 pm2 restart finance-assistant-api || pm2 start ecosystem.config.cjs --env production
 
-# 5. Обновление зависимостей фронтенда
-echo -e "${YELLOW}📦 Установка зависимостей фронтенда...${NC}"
-npm install
-
-# 6. Сборка фронтенда
-echo -e "${YELLOW}🏗️  Сборка фронтенда...${NC}"
-npm run build
-
-# 7. Перезагрузка Nginx
-echo -e "${YELLOW}🔄 Перезагрузка Nginx...${NC}"
-sudo nginx -t && sudo systemctl reload nginx
-
-# 8. Проверка статуса
+# 5. Проверка статуса backend
 echo -e "${YELLOW}✅ Проверка статуса...${NC}"
 pm2 status
+
+# optional health-check
+if [ -n "${SERVER_HEALTHCHECK_URL}" ]; then
+  echo -e "${YELLOW}🌡️ Проверка health endpoint...${NC}"
+  curl -fsSL "${SERVER_HEALTHCHECK_URL}" >/dev/null
+fi
 
 echo -e "${GREEN}✨ Деплой завершен успешно!${NC}"

@@ -68,6 +68,7 @@ npx expo start
 
 - **Через EAS Build (рекомендуется):** зарегистрируйтесь на [expo.dev](https://expo.dev), выполните `npx eas build --platform android --profile production` в папке `mobile`. Подписанный AAB будет доступен в личном кабинете.
 - **Локально:** нужны Android Studio и настроенный keystore; в папке `mobile`: `npx expo run:android --variant release`.
+- **Безопасность секретов:** не храните production значения в `eas.json` и в репозитории. Для CI используйте GitHub Secrets: `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_VK_ID_APP_ID`, `EXPO_PUBLIC_VK_ID_REDIRECT_SCHEME`, `EXPO_PUBLIC_MYTRACKER_SDK_KEY`, `EXPO_PUBLIC_SPEECH_PARSE_PROVIDER`, `EXPO_TOKEN`.
 
 ## Структура
 

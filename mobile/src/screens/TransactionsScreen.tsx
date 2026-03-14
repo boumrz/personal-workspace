@@ -8,6 +8,7 @@ import "dayjs/locale/ru";
 import { useAuth, useTheme } from "../context";
 import { usePreserveScrollOnThemeChange } from "../hooks";
 import { ConfirmModal, ErrorView, SwipeActionRow } from "../components";
+import { subscribeToRefresh } from "../services/dataRefresh";
 import { getIoniconsName } from "../utils/iconMap";
 import type { Transaction } from "@finance-assistant/shared";
 
@@ -45,7 +46,7 @@ export default function TransactionsScreen({ navigation }: any) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(["all"]);
   const [deleteModal, setDeleteModal] = useState<{ visible: boolean; id: string | null }>({ visible: false, id: null });
   const [error, setError] = useState(false);
-  const retryTimer = useRef<ReturnType<typeof setTimeout>>();
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async () => {
     setError(false);
@@ -69,12 +70,20 @@ export default function TransactionsScreen({ navigation }: any) {
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state: AppStateStatus) => {
       if (state === "active") {
-        clearTimeout(retryTimer.current);
+        if (retryTimer.current) {
+          clearTimeout(retryTimer.current);
+        }
         retryTimer.current = setTimeout(load, 300);
       }
     });
-    return () => { sub.remove(); clearTimeout(retryTimer.current); };
+    return () => {
+      sub.remove();
+      if (retryTimer.current) {
+        clearTimeout(retryTimer.current);
+      }
+    };
   }, [load]);
+  useEffect(() => subscribeToRefresh("transactions", load), [load]);
   const onRefresh = () => { setRefreshing(true); load(); };
 
   const handleDeleteConfirm = async () => {

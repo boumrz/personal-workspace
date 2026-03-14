@@ -2,7 +2,7 @@ import React from "react";
 import * as LucideIcons from "lucide-react";
 
 // Маппинг эмодзи на иконки Lucide
-const ICON_MAP: Record<string, keyof typeof LucideIcons> = {
+const ICON_MAP: Record<string, string> = {
   "🍔": "Utensils",
   "🚗": "Car",
   "🎬": "Film",

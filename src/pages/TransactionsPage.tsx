@@ -124,170 +124,179 @@ const TransactionsPage: React.FC = () => {
 
   return (
     <div className={styles.transactionsPage}>
-      <PageHeader
-        title={activeTab === "actual" ? "Операции" : "Планируемые расходы"}
-        extra={
-          <Badge
+      <div className={styles.contentWrapper}>
+        <PageHeader
+          title={activeTab === "actual" ? "Операции" : "Планируемые расходы"}
+          extra={
+            <Badge
             count={hasActiveFilters ? selectedCategories.length : 0}
             size="small"
           >
-            <button
-              className={styles.filterBtn}
-              onClick={() => setFilterDrawerOpen(true)}
-            >
-              <FilterOutlined />
+              <button
+                className={styles.filterBtn}
+                onClick={() => setFilterDrawerOpen(true)}
+              >
+                <FilterOutlined />
+              </button>
+            </Badge>
+          }
+        />
+
+        <div className={styles.container}>
+          {/* Табы */}
+          <div className={styles.tabsContainer}>
+            <Segmented
+              value={activeTab}
+              onChange={(value) => setActiveTab(value as TabType)}
+              options={[
+                { label: "Актуальные", value: "actual" },
+                { label: "Планируемые", value: "planned" },
+              ]}
+              block
+              className={styles.tabs}
+            />
+          </div>
+
+          {/* Поиск */}
+          <div className={styles.searchContainer}>
+            <Input
+              placeholder="Поиск по ключевым словам"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={styles.searchInput}
+              allowClear
+            />
+            <button className={styles.searchBtn}>
+              <SearchOutlined />
             </button>
-          </Badge>
-        }
-      />
+          </div>
 
-      <div className={styles.container}>
-        {/* Табы */}
-        <div className={styles.tabsContainer}>
-          <Segmented
-            value={activeTab}
-            onChange={(value) => setActiveTab(value as TabType)}
-            options={[
-              { label: "Актуальные", value: "actual" },
-              { label: "Планируемые", value: "planned" },
-            ]}
-            block
-            className={styles.tabs}
-          />
-        </div>
-
-        {/* Поиск */}
-        <div className={styles.searchContainer}>
-          <Input
-            placeholder="Поиск по ключевым словам"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={styles.searchInput}
-            allowClear
-          />
-          <button className={styles.searchBtn}>
-            <SearchOutlined />
-          </button>
-        </div>
-
-        {/* Список транзакций */}
-        <div className={styles.transactionsList}>
-          {sortedDates.length === 0 ? (
-            <div className={styles.emptyState}>
-              {searchQuery 
-                ? "Ничего не найдено" 
-                : activeTab === "actual" 
-                  ? "Нет операций" 
-                  : "Нет планируемых расходов"}
-            </div>
-          ) : (
-            sortedDates.map((dateKey) => {
-              const { transactions: dayTransactions, totalBalance } =
-                groupedByDate[dateKey];
-              return (
-                <div key={dateKey} className={styles.dateGroup}>
-                  <div className={styles.dateHeader}>
-                    <span className={styles.dateLabel}>
-                      {formatDate(dateKey)}
-                    </span>
-                    <div className={styles.dateBalance}>
-                      {totalBalance >= 0 ? "△" : "▽"} ₽
-                      {Math.abs(totalBalance).toLocaleString("ru-RU", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </div>
-                  </div>
-
-                  {dayTransactions.map((transaction) => {
-                    const category =
-                      categories.find((c) => c.id === transaction.category.id) ||
-                      transaction.category;
-
-                    return (
-                      <div
-                        key={transaction.id}
-                        className={styles.transactionItem}
-                      >
-                        <div
-                          className={styles.transactionIcon}
-                          style={{ backgroundColor: category.color + "20" }}
-                        >
-                          <IconRenderer
-                            iconName={category.icon}
-                            size={22}
-                            color={category.color}
-                          />
-                        </div>
-
-                        <div className={styles.transactionInfo}>
-                          <span className={styles.transactionName}>
-                            {transaction.description || "Без описания"}
-                          </span>
-                          <div className={styles.transactionMeta}>
-                            <span
-                              className={styles.categoryTag}
-                              style={{
-                                backgroundColor: category.color + "25",
-                                color: category.color,
-                              }}
-                            >
-                              {category.name}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className={styles.transactionRight}>
-                          <div className={styles.transactionAmountWrapper}>
-                            <span
-                              className={`${styles.transactionAmount} ${
-                                activeTab === "planned"
-                                  ? styles.amountPlanned
-                                  : transaction.type === "income"
-                                    ? styles.amountIncome
-                                    : styles.amountExpense
-                              }`}
-                            >
-                              {activeTab === "planned" 
-                                ? "" 
-                                : transaction.type === "income" ? "+ " : "- "}₽
-                              {transaction.amount.toLocaleString("ru-RU", {
-                                minimumFractionDigits: 2,
-                              })}
-                            </span>
-                          </div>
-                          <div className={styles.actionButtons}>
-                            <button
-                              className={styles.editBtn}
-                              onClick={() => {
-                                setEditingTransaction(transaction);
-                                setShowForm(true);
-                              }}
-                              aria-label="Редактировать"
-                            >
-                              <EditOutlined />
-                            </button>
-                            <Popconfirm
-                              title={activeTab === "actual" ? "Удалить операцию?" : "Удалить планируемый расход?"}
-                              description="Это действие нельзя отменить."
-                              onConfirm={() => handleDelete(transaction.id)}
-                              okText="Удалить"
-                              okType="danger"
-                              cancelText="Отмена"
-                              placement="left"
-                            >
-                              <button className={styles.deleteBtn}>
-                                <DeleteOutlined />
-                              </button>
-                            </Popconfirm>
-                          </div>
-                        </div>
+          {/* Список транзакций */}
+          <div className={styles.transactionsList}>
+            {sortedDates.length === 0 ? (
+              <div className={styles.emptyState}>
+                {searchQuery
+                  ? "Ничего не найдено"
+                  : activeTab === "actual"
+                    ? "Нет операций"
+                    : "Нет планируемых расходов"}
+              </div>
+            ) : (
+              sortedDates.map((dateKey) => {
+                const { transactions: dayTransactions, totalBalance } =
+                  groupedByDate[dateKey];
+                return (
+                  <div key={dateKey} className={styles.dateGroup}>
+                    <div className={styles.dateHeader}>
+                      <span className={styles.dateLabel}>
+                        {formatDate(dateKey)}
+                      </span>
+                      <div className={styles.dateBalance}>
+                        {totalBalance >= 0 ? "△" : "▽"} ₽
+                        {Math.abs(totalBalance).toLocaleString("ru-RU", {
+                          minimumFractionDigits: 2,
+                        })}
                       </div>
-                    );
-                  })}
-                </div>
-              );
-            })
-          )}
+                    </div>
+
+                    {dayTransactions.map((transaction) => {
+                      const category =
+                        categories.find((c) => c.id === transaction.category.id) ||
+                        transaction.category;
+
+                      return (
+                        <div
+                          key={transaction.id}
+                          className={styles.transactionItem}
+                        >
+                          <div
+                            className={styles.transactionIcon}
+                            style={{ backgroundColor: category.color + "20" }}
+                          >
+                            <IconRenderer
+                              iconName={category.icon}
+                              size={22}
+                              color={category.color}
+                            />
+                          </div>
+
+                          <div className={styles.transactionInfo}>
+                            <span className={styles.transactionName}>
+                              {transaction.description || "Без описания"}
+                            </span>
+                            <div className={styles.transactionMeta}>
+                              <span
+                                className={styles.categoryTag}
+                                style={{
+                                  backgroundColor: category.color + "25",
+                                  color: category.color,
+                                }}
+                              >
+                                {category.name}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className={styles.transactionRight}>
+                            <div className={styles.transactionAmountWrapper}>
+                              <span
+                                className={`${styles.transactionAmount} ${
+                                  activeTab === "planned"
+                                    ? styles.amountPlanned
+                                    : transaction.type === "income"
+                                      ? styles.amountIncome
+                                      : styles.amountExpense
+                                }`}
+                              >
+                                {activeTab === "planned"
+                                  ? ""
+                                  : transaction.type === "income"
+                                    ? "+ "
+                                    : "- "}
+                                ₽
+                                {transaction.amount.toLocaleString("ru-RU", {
+                                  minimumFractionDigits: 2,
+                                })}
+                              </span>
+                            </div>
+                            <div className={styles.actionButtons}>
+                              <button
+                                className={styles.editBtn}
+                                onClick={() => {
+                                  setEditingTransaction(transaction);
+                                  setShowForm(true);
+                                }}
+                                aria-label="Редактировать"
+                              >
+                                <EditOutlined />
+                              </button>
+                              <Popconfirm
+                                title={
+                                  activeTab === "actual"
+                                    ? "Удалить операцию?"
+                                    : "Удалить планируемый расход?"
+                                }
+                                description="Это действие нельзя отменить."
+                                onConfirm={() => handleDelete(transaction.id)}
+                                okText="Удалить"
+                                okType="danger"
+                                cancelText="Отмена"
+                                placement="left"
+                              >
+                                <button className={styles.deleteBtn}>
+                                  <DeleteOutlined />
+                                </button>
+                              </Popconfirm>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
 

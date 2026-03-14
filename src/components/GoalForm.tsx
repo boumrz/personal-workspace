@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import { Form, Input, InputNumber, Button } from "antd";
 import { Goal } from "../store/api";
 
@@ -10,6 +10,13 @@ interface GoalFormProps {
 
 const GoalForm: React.FC<GoalFormProps> = ({ goal, onSave, onCancel }) => {
   const [form] = Form.useForm();
+  const handleFormFocusCapture = useCallback((event: React.FocusEvent<HTMLElement>) => {
+    const target = event.target as HTMLElement | null;
+    if (!target?.scrollIntoView) return;
+    window.setTimeout(() => {
+      target.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 120);
+  }, []);
 
   useEffect(() => {
     if (goal) {
@@ -47,6 +54,7 @@ const GoalForm: React.FC<GoalFormProps> = ({ goal, onSave, onCancel }) => {
       form={form}
       layout="vertical"
       onFinish={handleSubmit}
+      onFocusCapture={handleFormFocusCapture}
     >
       <Form.Item
         name="title"
@@ -68,8 +76,6 @@ const GoalForm: React.FC<GoalFormProps> = ({ goal, onSave, onCancel }) => {
           min={1}
           placeholder="100000"
           style={{ width: "100%" }}
-          formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, " ")}
-          parser={(value) => value!.replace(/\s?/g, "")}
         />
       </Form.Item>
 
@@ -86,8 +92,6 @@ const GoalForm: React.FC<GoalFormProps> = ({ goal, onSave, onCancel }) => {
             min={0}
             placeholder="0"
             style={{ width: "100%" }}
-            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, " ")}
-            parser={(value) => value!.replace(/\s?/g, "")}
           />
         </Form.Item>
       )}

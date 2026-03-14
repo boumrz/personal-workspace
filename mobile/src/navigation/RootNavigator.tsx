@@ -1,6 +1,7 @@
-import React, { useRef, useMemo } from "react";
+import React, { useMemo } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { NavigationContainer, DefaultTheme, DarkTheme } from "@react-navigation/native";
+import { navigationRef } from "./rootNavigation";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { track } from "@finance-assistant/shared";
 import { useAuth } from "../context/AuthContext";
@@ -13,8 +14,6 @@ const Stack = createNativeStackNavigator();
 export default function RootNavigator() {
   const { token, loading } = useAuth();
   const { theme, isDark } = useTheme();
-  const navigationRef = useRef<any>(null);
-
   const navTheme = useMemo(
     () => ({
       ...(isDark ? DarkTheme : DefaultTheme),

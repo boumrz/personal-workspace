@@ -1,0 +1,159 @@
+.modal :global(.ant-modal-content) {
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.content {
+  padding: 4px 0;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.description {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.4;
+  margin: 0 0 12px 0;
+}
+
+.voiceUpgradeHint {
+  background: var(--warning-light);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.voiceUpgradeHintText {
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 0 0 12px 0;
+}
+
+.transcriptBox {
+  min-height: 96px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.transcriptText {
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.transcriptPlaceholder {
+  color: var(--text-tertiary);
+  font-size: 15px;
+}
+
+.spinner {
+  margin-bottom: 12px;
+}
+
+.warningText {
+  color: var(--warning);
+  font-size: 13px;
+  margin: 0 0 8px 0;
+}
+
+.parsedList {
+  margin-bottom: 12px;
+}
+
+.parsedItem {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  margin-bottom: 8px;
+  background: var(--bg-base);
+}
+
+.parsedItemTitle {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.parsedItemMeta {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.parsedItemMeta:last-of-type {
+  margin-bottom: 0;
+}
+
+.categoryInput {
+  margin-top: 8px;
+}
+
+.actionsRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.button {
+  flex: 1;
+  min-height: 40px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid;
+  transition: all 0.2s ease;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.buttonPrimary {
+  background: var(--accent-muted);
+  border-color: var(--accent-muted);
+  color: #fff;
+}
+
+.buttonPrimary:hover:not(:disabled) {
+  background: var(--accent-muted-hover);
+  border-color: var(--accent-muted-hover);
+}
+
+.buttonSecondary {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+.buttonSecondary:hover:not(:disabled) {
+  background: var(--bg-base);
+}
+
+.buttonDanger {
+  background: var(--expense-light);
+  border-color: var(--expense);
+  color: var(--expense);
+}
+
+.buttonDanger:hover:not(:disabled) {
+  background: rgba(217, 101, 96, 0.2);
+}

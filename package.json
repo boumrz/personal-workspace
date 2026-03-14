@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "rspack serve",
     "build": "rspack build",
-    "preview": "rspack preview"
+    "preview": "rspack preview",
+    "typecheck": "tsc --noEmit",
+    "test:server": "npm --prefix server test",
+    "test:e2e": "playwright test",
+    "test:all": "npm run typecheck && npm run test:server && npm run test:e2e"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",
@@ -20,6 +24,7 @@
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^18.3.1",
     "react-redux": "^9.2.0",
+    "react-refresh": "^0.18.0",
     "react-router-dom": "^6.26.0"
   },
   "overrides": {
@@ -33,6 +38,7 @@
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^8.56.0",
     "@typescript-eslint/parser": "^8.56.0",
+    "@playwright/test": "^1.54.2",
     "css-loader": "^7.1.2",
     "dotenv": "^16.3.1",
     "style-loader": "^4.0.0",

@@ -1,15 +1,25 @@
 .financePage {
   width: 100%;
   max-width: 100%;
-  height: 100%;
+  min-height: 100%;
 }
 
 .navTabs {
-  background-color: var(--bg-card);
+  background: var(--bg-card);
   border-bottom: 1px solid var(--border);
   padding: 0 24px;
-  margin: 0 -24px 0 -24px; /* Компенсируем padding Layout.content */
+  margin: 0 -24px 24px -24px;
   width: calc(100% + 48px);
+}
+
+@media (min-width: 769px) {
+  .navTabs {
+    margin: 0 -48px 28px -48px;
+    width: calc(100% + 96px);
+    padding: 0 48px 0 48px;
+    background: transparent;
+    border-bottom: none;
+  }
 }
 
 .tabs {
@@ -21,7 +31,58 @@
 }
 
 .tabs :global(.ant-tabs-content-holder) {
-  display: none; /* Скрываем контент табов, так как используем Routes */
+  display: none;
+}
+
+/* Десктоп: pill-style табы по центру */
+@media (min-width: 769px) {
+  .navTabs .tabs :global(.ant-tabs-nav) {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+  }
+
+  .navTabs .tabs :global(.ant-tabs-nav-wrap) {
+    justify-content: center;
+  }
+
+  .navTabs .tabs :global(.ant-tabs-nav-list) {
+    background: var(--bg-surface);
+    padding: 4px;
+    border-radius: var(--radius-xl);
+    gap: 4px;
+  }
+
+  .navTabs .tabs :global(.ant-tabs-tab) {
+    padding: 10px 24px;
+    margin: 0;
+    border-radius: var(--radius-lg);
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+  }
+
+  .navTabs .tabs :global(.ant-tabs-tab:hover) {
+    color: var(--text-primary);
+  }
+
+  .navTabs .tabs :global(.ant-tabs-tab-active) {
+    color: var(--text-primary);
+  }
+
+  .navTabs .tabs :global(.ant-tabs-tab-active .ant-tabs-tab-btn) {
+    color: var(--accent);
+  }
+
+  .navTabs .tabs :global(.ant-tabs-ink-bar) {
+    display: none;
+  }
+
+  .navTabs .tabs :global(.ant-tabs-tab.ant-tabs-tab-active) {
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px var(--shadow-sm);
+  }
 }
 
 @media (max-width: 768px) {

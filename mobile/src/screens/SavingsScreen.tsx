@@ -33,7 +33,7 @@ export default function SavingsScreen({ navigation }: any) {
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteModal, setDeleteModal] = useState<{ visible: boolean; id: string | null }>({ visible: false, id: null });
   const [error, setError] = useState(false);
-  const retryTimer = useRef<ReturnType<typeof setTimeout>>();
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async () => {
     setError(false);
@@ -54,11 +54,18 @@ export default function SavingsScreen({ navigation }: any) {
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state: AppStateStatus) => {
       if (state === "active") {
-        clearTimeout(retryTimer.current);
+        if (retryTimer.current) {
+          clearTimeout(retryTimer.current);
+        }
         retryTimer.current = setTimeout(load, 300);
       }
     });
-    return () => { sub.remove(); clearTimeout(retryTimer.current); };
+    return () => {
+      sub.remove();
+      if (retryTimer.current) {
+        clearTimeout(retryTimer.current);
+      }
+    };
   }, [load]);
   const onRefresh = () => { setRefreshing(true); load(); };
 

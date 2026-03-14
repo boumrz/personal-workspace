@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
   Modal,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -546,7 +547,17 @@ export default function AddTransactionScreen({ navigation, route }: any) {
   );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 16 : 0}
+    >
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+    >
       {/* Переключатель типа - только для обычных операций */}
       {!isPlanned && (
         <View style={styles.row}>
@@ -815,5 +826,6 @@ export default function AddTransactionScreen({ navigation, route }: any) {
         onCancel={() => setDeleteOperationModalVisible(false)}
       />
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

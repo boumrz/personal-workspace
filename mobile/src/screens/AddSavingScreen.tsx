@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Platform } from "react-native";
+import { Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Platform, KeyboardAvoidingView } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAuth, useTheme } from "../context";
 import type { Saving } from "@finance-assistant/shared";
@@ -49,7 +49,17 @@ export default function AddSavingScreen({ navigation, route }: any) {
   }), [theme]);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 16 : 0}
+    >
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+    >
       <Text style={styles.label}>Сумма (₽)</Text>
       <TextInput style={styles.input} value={amount} onChangeText={setAmount} placeholder="0" placeholderTextColor={theme.textTertiary} keyboardType="decimal-pad" />
 
@@ -66,5 +76,6 @@ export default function AddSavingScreen({ navigation, route }: any) {
         <Text style={styles.saveBtnText}>{saving ? "Сохранение…" : editingSaving ? "Обновить" : "Сохранить"}</Text>
       </TouchableOpacity>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

@@ -67,7 +67,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Очищаем кэш RTK Query перед входом, чтобы получить свежие данные нового пользователя
       store.dispatch(api.util.resetApiState());
       
-      const result = await loginMutation({ login: loginValue, password }).unwrap();
+      const result = await loginMutation({ login: loginValue, password, platform: "web" }).unwrap();
       setToken(result.token);
       setUser(result.user);
       localStorage.setItem("token", result.token);
@@ -110,7 +110,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     hash: string;
   }) => {
     store.dispatch(api.util.resetApiState());
-    const result = await loginWithTelegramMutation(telegramData).unwrap();
+    const result = await loginWithTelegramMutation({ ...telegramData, platform: "web" }).unwrap();
     setToken(result.token);
     setUser(result.user);
     localStorage.setItem("token", result.token);
@@ -186,6 +186,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const result = await loginWithVkIdMutation({
       access_token: accessToken,
       app_id: appId || VK_ID_APP_ID || undefined,
+      platform: "web",
     }).unwrap();
     setToken(result.token);
     setUser(result.user);

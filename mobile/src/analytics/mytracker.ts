@@ -5,11 +5,14 @@
 
 import { MYTRACKER_SDK_KEY } from "../constants/config";
 
-let myTracker: typeof import("@mytracker/react-native-mytracker") | null = null;
+type MyTrackerModule = typeof import("@mytracker/react-native-mytracker").default;
+
+let myTracker: MyTrackerModule | null = null;
 let initialized = false;
 
 try {
-  myTracker = require("@mytracker/react-native-mytracker").default;
+  const moduleRef = require("@mytracker/react-native-mytracker");
+  myTracker = (moduleRef.default || moduleRef) as MyTrackerModule;
 } catch {
   // Native module may be unavailable (e.g. Expo Go)
 }

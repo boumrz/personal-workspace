@@ -60,7 +60,7 @@ const VK_ID_APP_ID = typeof __VK_ID_APP_ID__ !== "undefined" ? __VK_ID_APP_ID__ 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { modal } = App.useApp();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const { transactions } = useFinance();
   const { theme, toggleTheme } = useTheme();
 
@@ -480,9 +480,15 @@ const ProfilePage: React.FC = () => {
               <div className={styles.settingsItemContent}>
                 <span className={styles.settingsItemTitle}>Данные профиля</span>
                 <span className={styles.settingsItemSubtitle}>
-                  {displayName}
-                  {profile?.dateOfBirth &&
-                    ` • ${dayjs(profile.dateOfBirth).format("DD.MM.YYYY")}`}
+                  {[
+                    (profile?.login || user?.login || user?.email) &&
+                      `Логин: ${profile?.login || user?.login || user?.email}`,
+                    displayName,
+                    profile?.dateOfBirth &&
+                      dayjs(profile.dateOfBirth).format("DD.MM.YYYY"),
+                  ]
+                    .filter(Boolean)
+                    .join(" • ")}
                 </span>
               </div>
               <RightOutlined className={styles.settingsItemArrow} />

@@ -76,6 +76,11 @@
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
+  outline: none;
+}
+
+.viewAllBtn:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 
 .viewAllBtn:hover {
@@ -307,6 +312,19 @@
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
+  outline: none;
+}
+
+.goalActionBtn:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.goalActionBtnPrimary:focus-visible {
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+.goalActionBtnDanger:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--expense);
 }
 
 .goalActionBtn:hover {
@@ -347,12 +365,24 @@
   border: none;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
   text-align: left;
+  outline: none;
+}
+
+.settingsItem:first-child {
+  border-top-left-radius: var(--radius-2xl);
+  border-top-right-radius: var(--radius-2xl);
 }
 
 .settingsItem:last-child {
   border-bottom: none;
+  border-bottom-left-radius: var(--radius-2xl);
+  border-bottom-right-radius: var(--radius-2xl);
+}
+
+.settingsItem:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 
 .settingsItem:hover {
@@ -497,6 +527,7 @@
   gap: 10px;
   padding: 16px;
   margin-top: 16px;
+  outline: none;
   background: transparent;
   border: 1px solid var(--expense);
   border-radius: var(--radius-2xl);
@@ -509,6 +540,10 @@
 
 .logoutBtn:hover {
   background: var(--expense-light);
+}
+
+.logoutBtn:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--expense);
 }
 
 /* Мобильные адаптации */

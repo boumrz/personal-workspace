@@ -1,12 +1,21 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ApiClient, setAnalyticsAuthToken, track } from "@finance-assistant/shared";
+import {
+  ApiClient,
+  setAnalyticsAuthToken,
+  track,
+  getAnalyticsPlatform,
+  setApiBaseUrl,
+} from "@finance-assistant/shared";
 import { trackMyTrackerLogin, trackMyTrackerRegistration, clearMyTrackerUserId } from "../analytics";
+import { API_BASE_URL } from "../constants/config";
 import type { User } from "@finance-assistant/shared";
 
 const TOKEN_KEY = "token";
 const REFRESH_TOKEN_KEY = "refreshToken";
 const USER_KEY = "user";
+
+setApiBaseUrl(API_BASE_URL);
 
 interface AuthContextType {
   user: User | null;
@@ -50,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const api = useMemo(
     () =>
       new ApiClient({
+        baseUrl: API_BASE_URL,
         getToken: () => tokenRef.current,
         getRefreshToken: () => refreshTokenRef.current,
         onTokensRefreshed: (newToken, newRefreshToken, newUser) => {
@@ -108,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (loginValue: string, password: string) => {
-    const res = await api.login({ login: loginValue, password });
+    const res = await api.login({ login: loginValue, password, platform: getAnalyticsPlatform() });
     setToken(res.token);
     setUser(res.user);
     if (res.refreshToken) {
@@ -142,6 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await api.loginWithVkId({
       access_token: accessToken,
       app_id: appId,
+      platform: getAnalyticsPlatform(),
     });
     setToken(res.token);
     setUser(res.user);

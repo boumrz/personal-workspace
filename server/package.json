@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "migrate": "node src/database/migrate.js"
+    "migrate": "node src/database/migrate.js",
+    "test": "node --test",
+    "test:watch": "node --test --watch"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -23,6 +25,7 @@
     "google-auth-library": "^9.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0"
+    "@types/node": "^20.10.0",
+    "supertest": "^7.1.4"
   }
 }

@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
-// import rateLimit from "express-rate-limit"; // Rate limiting отключен
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import config from "./config/config.js";
 import transactionsRouter from "./routes/transactions.js";
 import plannedExpensesRouter from "./routes/plannedExpenses.js";
@@ -13,21 +13,21 @@ import profileRouter from "./routes/profile.js";
 import goalsRouter from "./routes/goals.js";
 import adminRouter from "./routes/admin.js";
 import analyticsRouter from "./routes/analytics.js";
+import transactionsParseV2Router from "./routes/v2/transactionsParse.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import { handleDbError } from "./middleware/dbErrorHandler.js";
 
 const app = express();
 
-// Trust proxy - необходимо для работы за Nginx прокси
-// Устанавливаем trust proxy на 1 (один прокси - Nginx)
-// Это позволяет Express правильно определять IP адреса клиентов из заголовка X-Forwarded-For
-// и предотвращает обход rate limiting (более безопасно, чем true)
-app.set('trust proxy', 1);
+// Required when running behind reverse proxy (Nginx)
+app.set("trust proxy", 1);
 
 // Security middleware
-app.use(helmet({
-  crossOriginEmbedderPolicy: false,
-}));
+app.use(
+  helmet({
+    crossOriginEmbedderPolicy: false,
+  })
+);
 app.use(
   cors({
     origin: config.corsOrigin === "*" ? true : config.corsOrigin,
@@ -37,15 +37,39 @@ app.use(
   })
 );
 
-// Rate limiting отключен
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000, // 15 minutes
-//   max: 100, // Limit each IP to 100 requests per windowMs
-//   message: "Too many requests from this IP, please try again after 15 minutes",
-//   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-//   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-// });
-// app.use("/api/", limiter);
+if (config.rateLimit.enabled) {
+  const baseLimiterOptions = {
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many requests. Please try again later." },
+    // Use express-rate-limit helper to normalize IPv6 keys safely.
+    keyGenerator: (req) => ipKeyGenerator(req.ip || req.socket.remoteAddress || "127.0.0.1"),
+  };
+
+  const apiLimiter = rateLimit({
+    ...baseLimiterOptions,
+    windowMs: config.rateLimit.windowMs,
+    max: config.rateLimit.max,
+  });
+
+  const authLimiter = rateLimit({
+    ...baseLimiterOptions,
+    windowMs: config.rateLimit.authWindowMs,
+    max: config.rateLimit.authMax,
+    message: { error: "Too many authentication attempts. Please try again later." },
+  });
+
+  const voiceLimiter = rateLimit({
+    ...baseLimiterOptions,
+    windowMs: config.rateLimit.voiceWindowMs,
+    max: config.rateLimit.voiceMax,
+    message: { error: "Voice parsing rate limit exceeded. Please try again later." },
+  });
+
+  app.use("/api", apiLimiter);
+  app.use("/api/auth", authLimiter);
+  app.use("/api/v2/transactions/parse", voiceLimiter);
+}
 
 // Compression
 app.use(compression());
@@ -63,6 +87,7 @@ app.use("/api/profile", profileRouter);
 app.use("/api/goals", goalsRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/analytics", analyticsRouter);
+app.use("/api/v2/transactions", transactionsParseV2Router);
 
 // Health check
 app.get("/api/health", (req, res) => {

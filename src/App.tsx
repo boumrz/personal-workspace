@@ -336,8 +336,6 @@ const ThemedApp: React.FC = () => {
     fontFamily: '"Helvetica", "Helvetica Neue", Arial, sans-serif',
   };
 
-  const popupStyles = { borderRadius: 12 };
-
   return (
     <ConfigProvider
       locale={ruRU}
@@ -345,15 +343,6 @@ const ThemedApp: React.FC = () => {
         algorithm: theme === "dark" ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
         token: themeTokens,
       }}
-      modal={{ styles: { wrapper: popupStyles, container: popupStyles } }}
-      popover={{ styles: { content: popupStyles } }}
-      popconfirm={{ styles: { content: popupStyles } }}
-      dropdown={{ styles: { content: popupStyles } }}
-      message={{ styles: { content: popupStyles } }}
-      notification={{ styles: { content: popupStyles } }}
-      select={{ styles: { popup: { root: popupStyles } } }}
-      datePicker={{ styles: { popup: { root: popupStyles } } }}
-      tooltip={{ styles: { content: popupStyles } }}
     >
       <AntdApp>
         <AuthProvider>

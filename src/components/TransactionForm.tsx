@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+﻿import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   Modal,
   Drawer,
@@ -53,16 +53,16 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   const [isMobile, setIsMobile] = useState(false);
   const [enteredAmount, setEnteredAmount] = useState<number | null>(null);
 
-  // Базовые категории, которые нельзя удалить
+  // Р‘Р°Р·РѕРІС‹Рµ РєР°С‚РµРіРѕСЂРёРё, РєРѕС‚РѕСЂС‹Рµ РЅРµР»СЊР·СЏ СѓРґР°Р»РёС‚СЊ
   const defaultCategoryNames = [
-    "Продукты",
-    "Транспорт",
-    "Развлечения",
-    "Здоровье",
-    "Одежда",
-    "Жилье",
-    "Зарплата",
-    "Другое",
+    "РџСЂРѕРґСѓРєС‚С‹",
+    "РўСЂР°РЅСЃРїРѕСЂС‚",
+    "Р Р°Р·РІР»РµС‡РµРЅРёСЏ",
+    "Р—РґРѕСЂРѕРІСЊРµ",
+    "РћРґРµР¶РґР°",
+    "Р–РёР»СЊРµ",
+    "Р—Р°СЂРїР»Р°С‚Р°",
+    "Р”СЂСѓРіРѕРµ",
   ];
 
   const isDefaultCategory = (categoryName: string) => {
@@ -78,7 +78,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     }
     try {
       await deleteCategory(categoryId);
-      // Если удаленная категория была выбрана, сбрасываем выбор
+      // Р•СЃР»Рё СѓРґР°Р»РµРЅРЅР°СЏ РєР°С‚РµРіРѕСЂРёСЏ Р±С‹Р»Р° РІС‹Р±СЂР°РЅР°, СЃР±СЂР°СЃС‹РІР°РµРј РІС‹Р±РѕСЂ
       if (selectedCategory === categoryId) {
         const remainingCategories = availableCategories.filter(
           (c) => c.id !== categoryId
@@ -93,12 +93,12 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       const errorMessage =
         error?.message ||
         error?.response?.data?.error ||
-        "Ошибка при удалении категории";
+        "РћС€РёР±РєР° РїСЂРё СѓРґР°Р»РµРЅРёРё РєР°С‚РµРіРѕСЂРёРё";
       alert(errorMessage);
     }
   };
 
-  // Определяем, мобильное ли устройство
+  // РћРїСЂРµРґРµР»СЏРµРј, РјРѕР±РёР»СЊРЅРѕРµ Р»Рё СѓСЃС‚СЂРѕР№СЃС‚РІРѕ
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -108,7 +108,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Сброс введенной суммы при открытии/закрытии формы
+  // РЎР±СЂРѕСЃ РІРІРµРґРµРЅРЅРѕР№ СЃСѓРјРјС‹ РїСЂРё РѕС‚РєСЂС‹С‚РёРё/Р·Р°РєСЂС‹С‚РёРё С„РѕСЂРјС‹
   useEffect(() => {
     if (!open) {
       setEnteredAmount(null);
@@ -123,12 +123,12 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   const availableCategories = useMemo(
     () =>
       transactionType === "income"
-        ? categories.filter((c) => c.name === "Зарплата" || c.name === "Другое")
+        ? categories.filter((c) => c.name === "Р—Р°СЂРїР»Р°С‚Р°" || c.name === "Р”СЂСѓРіРѕРµ")
         : categories,
     [transactionType, categories]
   );
 
-  // Функция для расчета остатка бюджета по категории за текущий месяц
+  // Р¤СѓРЅРєС†РёСЏ РґР»СЏ СЂР°СЃС‡РµС‚Р° РѕСЃС‚Р°С‚РєР° Р±СЋРґР¶РµС‚Р° РїРѕ РєР°С‚РµРіРѕСЂРёРё Р·Р° С‚РµРєСѓС‰РёР№ РјРµСЃСЏС†
   const calculateBudgetRemaining = useMemo(() => {
     if (
       type !== "actual" ||
@@ -142,7 +142,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     const currentMonth = now.month();
     const currentYear = now.year();
 
-    // Сумма запланированных расходов для категории в текущем месяце
+    // РЎСѓРјРјР° Р·Р°РїР»Р°РЅРёСЂРѕРІР°РЅРЅС‹С… СЂР°СЃС…РѕРґРѕРІ РґР»СЏ РєР°С‚РµРіРѕСЂРёРё РІ С‚РµРєСѓС‰РµРј РјРµСЃСЏС†Рµ
     const plannedAmount = plannedExpenses
       .filter((expense) => {
         const expenseDate = dayjs(expense.date);
@@ -154,7 +154,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       })
       .reduce((sum, expense) => sum + expense.amount, 0);
 
-    // Сумма фактических расходов для категории в текущем месяце
+    // РЎСѓРјРјР° С„Р°РєС‚РёС‡РµСЃРєРёС… СЂР°СЃС…РѕРґРѕРІ РґР»СЏ РєР°С‚РµРіРѕСЂРёРё РІ С‚РµРєСѓС‰РµРј РјРµСЃСЏС†Рµ
     const spentAmount = transactions
       .filter((transaction) => {
         const transactionDate = dayjs(transaction.date);
@@ -167,7 +167,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       })
       .reduce((sum, transaction) => sum + transaction.amount, 0);
 
-    // Остаток бюджета
+    // РћСЃС‚Р°С‚РѕРє Р±СЋРґР¶РµС‚Р°
     const remaining = plannedAmount - spentAmount;
 
     return {
@@ -212,7 +212,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     } else {
       form.resetFields();
       setTransactionType("expense");
-      const firstCat = categories.find((c) => c.name === "Продукты" || c.name === "Другое") || categories[0];
+      const firstCat = categories.find((c) => c.name === "РџСЂРѕРґСѓРєС‚С‹" || c.name === "Р”СЂСѓРіРѕРµ") || categories[0];
       setSelectedCategory(firstCat?.id || "");
     }
   }, [open, initialTransaction, categories]);
@@ -261,34 +261,41 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   };
 
   const isEditMode = !!initialTransaction;
+  const handleFormFocusCapture = useCallback((event: React.FocusEvent<HTMLElement>) => {
+    const target = event.target as HTMLElement | null;
+    if (!target?.scrollIntoView) return;
+    window.setTimeout(() => {
+      target.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 120);
+  }, []);
 
-  // Функция для блокировки дат в зависимости от типа операции
+  // Р¤СѓРЅРєС†РёСЏ РґР»СЏ Р±Р»РѕРєРёСЂРѕРІРєРё РґР°С‚ РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ С‚РёРїР° РѕРїРµСЂР°С†РёРё
   const disabledDate = (current: dayjs.Dayjs | null) => {
     if (!current) return false;
 
     if (type === "actual") {
-      // Для актуальных операций: блокируем будущие месяцы
+      // Р”Р»СЏ Р°РєС‚СѓР°Р»СЊРЅС‹С… РѕРїРµСЂР°С†РёР№: Р±Р»РѕРєРёСЂСѓРµРј Р±СѓРґСѓС‰РёРµ РјРµСЃСЏС†С‹
       const endOfCurrentMonth = dayjs().endOf("month");
       return current.isAfter(endOfCurrentMonth, "day");
     } else {
-      // Для планируемых трат: блокируем прошлые месяцы
+      // Р”Р»СЏ РїР»Р°РЅРёСЂСѓРµРјС‹С… С‚СЂР°С‚: Р±Р»РѕРєРёСЂСѓРµРј РїСЂРѕС€Р»С‹Рµ РјРµСЃСЏС†С‹
       const startOfCurrentMonth = dayjs().startOf("month");
       return current.isBefore(startOfCurrentMonth, "day");
     }
   };
 
-  // Функция для кастомного рендеринга дат с тултипами
-  // Важно: возвращаем правильную структуру для сохранения стандартного поведения Ant Design
+  // Р¤СѓРЅРєС†РёСЏ РґР»СЏ РєР°СЃС‚РѕРјРЅРѕРіРѕ СЂРµРЅРґРµСЂРёРЅРіР° РґР°С‚ СЃ С‚СѓР»С‚РёРїР°РјРё
+  // Р’Р°Р¶РЅРѕ: РІРѕР·РІСЂР°С‰Р°РµРј РїСЂР°РІРёР»СЊРЅСѓСЋ СЃС‚СЂСѓРєС‚СѓСЂСѓ РґР»СЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ СЃС‚Р°РЅРґР°СЂС‚РЅРѕРіРѕ РїРѕРІРµРґРµРЅРёСЏ Ant Design
   const dateRender = (current: dayjs.Dayjs) => {
-    // Проверяем, заблокирована ли дата
+    // РџСЂРѕРІРµСЂСЏРµРј, Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅР° Р»Рё РґР°С‚Р°
     const isDisabled = disabledDate(current);
 
-    // Определяем текст подсказки в зависимости от типа операции
+    // РћРїСЂРµРґРµР»СЏРµРј С‚РµРєСЃС‚ РїРѕРґСЃРєР°Р·РєРё РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ С‚РёРїР° РѕРїРµСЂР°С†РёРё
     const tooltipText = type === "actual" 
-      ? "Нельзя добавлять операции на будущие месяцы"
-      : "Нельзя планировать траты на прошлые месяцы";
+      ? "РќРµР»СЊР·СЏ РґРѕР±Р°РІР»СЏС‚СЊ РѕРїРµСЂР°С†РёРё РЅР° Р±СѓРґСѓС‰РёРµ РјРµСЃСЏС†С‹"
+      : "РќРµР»СЊР·СЏ РїР»Р°РЅРёСЂРѕРІР°С‚СЊ С‚СЂР°С‚С‹ РЅР° РїСЂРѕС€Р»С‹Рµ РјРµСЃСЏС†С‹";
 
-    // Для заблокированных дат добавляем тултип
+    // Р”Р»СЏ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅРЅС‹С… РґР°С‚ РґРѕР±Р°РІР»СЏРµРј С‚СѓР»С‚РёРї
     const content = isDisabled ? (
       <Tooltip title={tooltipText}>
         <div style={{ width: "100%", height: "100%", cursor: "not-allowed" }}>
@@ -299,8 +306,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       <div style={{ width: "100%", height: "100%" }}>{current.date()}</div>
     );
 
-    // Возвращаем содержимое, обернутое в стандартную структуру Ant Design
-    // Это сохраняет стандартные классы и поведение (выделение текущего дня, выбранной даты и т.д.)
+    // Р’РѕР·РІСЂР°С‰Р°РµРј СЃРѕРґРµСЂР¶РёРјРѕРµ, РѕР±РµСЂРЅСѓС‚РѕРµ РІ СЃС‚Р°РЅРґР°СЂС‚РЅСѓСЋ СЃС‚СЂСѓРєС‚СѓСЂСѓ Ant Design
+    // Р­С‚Рѕ СЃРѕС…СЂР°РЅСЏРµС‚ СЃС‚Р°РЅРґР°СЂС‚РЅС‹Рµ РєР»Р°СЃСЃС‹ Рё РїРѕРІРµРґРµРЅРёРµ (РІС‹РґРµР»РµРЅРёРµ С‚РµРєСѓС‰РµРіРѕ РґРЅСЏ, РІС‹Р±СЂР°РЅРЅРѕР№ РґР°С‚С‹ Рё С‚.Рґ.)
     return (
       <div
         className="ant-picker-cell-inner"
@@ -316,9 +323,10 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       form={form}
       layout="vertical"
       initialValues={{ date: dayjs(), type: "expense" }}
+      onFocusCapture={handleFormFocusCapture}
     >
       {type === "actual" && (
-        <Form.Item label="Тип операции" name="type">
+        <Form.Item label="РўРёРї РѕРїРµСЂР°С†РёРё" name="type">
           <Radio.Group
             value={transactionType}
             onChange={(e: any) => {
@@ -327,7 +335,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               const firstAvailable =
                 e.target.value === "income"
                   ? categories.find(
-                      (c) => c.name === "Зарплата" || c.name === "Другое"
+                      (c) => c.name === "Р—Р°СЂРїР»Р°С‚Р°" || c.name === "Р”СЂСѓРіРѕРµ"
                     )
                   : categories[0];
               if (firstAvailable) {
@@ -335,21 +343,21 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               }
             }}
           >
-            <Radio value="expense">Расход</Radio>
-            <Radio value="income">Доход</Radio>
+            <Radio value="expense">Р Р°СЃС…РѕРґ</Radio>
+            <Radio value="income">Р”РѕС…РѕРґ</Radio>
           </Radio.Group>
         </Form.Item>
       )}
 
       <Form.Item
-        label="Сумма (₽)"
+        label="РЎСѓРјРјР° (в‚Ѕ)"
         name="amount"
         rules={[
-          { required: true, message: "Введите сумму" },
+          { required: true, message: "Р’РІРµРґРёС‚Рµ СЃСѓРјРјСѓ" },
           {
             validator: (_, value) => {
               if (value !== null && value !== undefined && value <= 0) {
-                return Promise.reject(new Error("Сумма должна быть больше 0"));
+                return Promise.reject(new Error("РЎСѓРјРјР° РґРѕР»Р¶РЅР° Р±С‹С‚СЊ Р±РѕР»СЊС€Рµ 0"));
               }
               return Promise.resolve();
             },
@@ -373,7 +381,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
             const selectionEnd = input.selectionEnd || 0;
             const hasSelection = selectionStart !== selectionEnd;
             
-            // Служебные клавиши всегда разрешены
+            // РЎР»СѓР¶РµР±РЅС‹Рµ РєР»Р°РІРёС€Рё РІСЃРµРіРґР° СЂР°Р·СЂРµС€РµРЅС‹
             const controlKeys = [
               'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
               'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
@@ -383,7 +391,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               return;
             }
             
-            // Блокируем всё кроме цифр и разделителей
+            // Р‘Р»РѕРєРёСЂСѓРµРј РІСЃС‘ РєСЂРѕРјРµ С†РёС„СЂ Рё СЂР°Р·РґРµР»РёС‚РµР»РµР№
             const isNumber = /^[0-9]$/.test(e.key);
             const isDecimalSeparator = e.key === '.' || e.key === ',';
             
@@ -392,7 +400,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               return;
             }
             
-            // Проверяем точку/запятую — только одна разрешена
+            // РџСЂРѕРІРµСЂСЏРµРј С‚РѕС‡РєСѓ/Р·Р°РїСЏС‚СѓСЋ вЂ” С‚РѕР»СЊРєРѕ РѕРґРЅР° СЂР°Р·СЂРµС€РµРЅР°
             if (isDecimalSeparator) {
               if (value.includes('.') || value.includes(',')) {
                 e.preventDefault();
@@ -401,24 +409,24 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               return;
             }
             
-            // Проверяем ограничение длины для цифр
-            // DECIMAL(10,2): максимум 8 цифр до точки, 2 после
+            // РџСЂРѕРІРµСЂСЏРµРј РѕРіСЂР°РЅРёС‡РµРЅРёРµ РґР»РёРЅС‹ РґР»СЏ С†РёС„СЂ
+            // DECIMAL(10,2): РјР°РєСЃРёРјСѓРј 8 С†РёС„СЂ РґРѕ С‚РѕС‡РєРё, 2 РїРѕСЃР»Рµ
             const normalizedValue = value.replace(',', '.');
             const parts = normalizedValue.split('.');
             const integerPart = parts[0] || '';
             const decimalPart = parts[1] || '';
             
-            // Определяем, куда пользователь вводит (до или после точки)
+            // РћРїСЂРµРґРµР»СЏРµРј, РєСѓРґР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РІРІРѕРґРёС‚ (РґРѕ РёР»Рё РїРѕСЃР»Рµ С‚РѕС‡РєРё)
             const dotIndex = value.indexOf('.') !== -1 ? value.indexOf('.') : value.indexOf(',');
             const isBeforeDecimal = dotIndex === -1 || selectionStart <= dotIndex;
             
             if (isBeforeDecimal) {
-              // Ввод в целую часть: максимум 8 цифр
+              // Р’РІРѕРґ РІ С†РµР»СѓСЋ С‡Р°СЃС‚СЊ: РјР°РєСЃРёРјСѓРј 8 С†РёС„СЂ
               if (integerPart.length >= 8 && !hasSelection) {
                 e.preventDefault();
               }
             } else {
-              // Ввод в дробную часть: максимум 2 цифры
+              // Р’РІРѕРґ РІ РґСЂРѕР±РЅСѓСЋ С‡Р°СЃС‚СЊ: РјР°РєСЃРёРјСѓРј 2 С†РёС„СЂС‹
               if (decimalPart.length >= 2 && !hasSelection) {
                 e.preventDefault();
               }
@@ -427,7 +435,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         />
       </Form.Item>
 
-      {/* Отображение остатка бюджета */}
+      {/* РћС‚РѕР±СЂР°Р¶РµРЅРёРµ РѕСЃС‚Р°С‚РєР° Р±СЋРґР¶РµС‚Р° */}
       {type === "actual" && transactionType === "expense" && (
         <Form.Item>
           {calculateBudgetRemaining && calculateBudgetRemaining.planned > 0 ? (
@@ -437,14 +445,14 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                   style={{ display: "flex", flexDirection: "column", gap: 4 }}
                 >
                   <div style={{ fontSize: 14, fontWeight: 500 }}>
-                    Остаток бюджета на месяц
+                    РћСЃС‚Р°С‚РѕРє Р±СЋРґР¶РµС‚Р° РЅР° РјРµСЃСЏС†
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                    Запланировано:{" "}
-                    {calculateBudgetRemaining.planned.toLocaleString("ru-RU")} ₽
-                    {" • "}
-                    Потрачено:{" "}
-                    {calculateBudgetRemaining.spent.toLocaleString("ru-RU")} ₽
+                    Р—Р°РїР»Р°РЅРёСЂРѕРІР°РЅРѕ:{" "}
+                    {calculateBudgetRemaining.planned.toLocaleString("ru-RU")} в‚Ѕ
+                    {" вЂў "}
+                    РџРѕС‚СЂР°С‡РµРЅРѕ:{" "}
+                    {calculateBudgetRemaining.spent.toLocaleString("ru-RU")} в‚Ѕ
                   </div>
                   <div
                     style={{
@@ -457,12 +465,12 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                     }}
                   >
                     {enteredAmount
-                      ? `Останется после операции: ${calculateBudgetRemaining.willRemainAfter.toLocaleString(
+                      ? `РћСЃС‚Р°РЅРµС‚СЃСЏ РїРѕСЃР»Рµ РѕРїРµСЂР°С†РёРё: ${calculateBudgetRemaining.willRemainAfter.toLocaleString(
                           "ru-RU"
-                        )} ₽`
-                      : `Осталось: ${calculateBudgetRemaining.remaining.toLocaleString(
+                        )} в‚Ѕ`
+                      : `РћСЃС‚Р°Р»РѕСЃСЊ: ${calculateBudgetRemaining.remaining.toLocaleString(
                           "ru-RU"
-                        )} ₽`}
+                        )} в‚Ѕ`}
                   </div>
                 </div>
               }
@@ -481,10 +489,10 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                   style={{ display: "flex", flexDirection: "column", gap: 4 }}
                 >
                   <div style={{ fontSize: 14, fontWeight: 500 }}>
-                    Бюджет на месяц
+                    Р‘СЋРґР¶РµС‚ РЅР° РјРµСЃСЏС†
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                    Сумма не запланирована для этой категории
+                    РЎСѓРјРјР° РЅРµ Р·Р°РїР»Р°РЅРёСЂРѕРІР°РЅР° РґР»СЏ СЌС‚РѕР№ РєР°С‚РµРіРѕСЂРёРё
                   </div>
                   <div
                     style={{
@@ -493,7 +501,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                       color: "var(--text-tertiary)",
                     }}
                   >
-                    —
+                    вЂ”
                   </div>
                 </div>
               }
@@ -505,7 +513,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         </Form.Item>
       )}
 
-      <Form.Item label="Категория" required>
+      <Form.Item label="РљР°С‚РµРіРѕСЂРёСЏ" required>
         <Space wrap size={8} className={styles.categoriesContainer}>
           {availableCategories.map((category) => {
             const canDelete = !isDefaultCategory(category.name);
@@ -543,11 +551,11 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                     onClick={(e) => {
                       e.stopPropagation();
                       modal.confirm({
-                        title: "Удалить категорию?",
-                        content: "Эта категория будет удалена. Это действие нельзя отменить.",
-                        okText: "Удалить",
+                        title: "РЈРґР°Р»РёС‚СЊ РєР°С‚РµРіРѕСЂРёСЋ?",
+                        content: "Р­С‚Р° РєР°С‚РµРіРѕСЂРёСЏ Р±СѓРґРµС‚ СѓРґР°Р»РµРЅР°. Р­С‚Рѕ РґРµР№СЃС‚РІРёРµ РЅРµР»СЊР·СЏ РѕС‚РјРµРЅРёС‚СЊ.",
+                        okText: "РЈРґР°Р»РёС‚СЊ",
                         okType: "danger",
-                        cancelText: "Отмена",
+                        cancelText: "РћС‚РјРµРЅР°",
                         onOk: () => handleDeleteCategory(category.id),
                       });
                     }}
@@ -563,20 +571,20 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
             onClick={() => setShowCategoryForm(true)}
             className={styles.addCategoryButton}
           >
-            Добавить категорию
+            Р”РѕР±Р°РІРёС‚СЊ РєР°С‚РµРіРѕСЂРёСЋ
           </Button>
         </Space>
       </Form.Item>
 
-      <Form.Item label="Описание" name="description">
-        <Input placeholder="Введите описание" />
+      <Form.Item label="РћРїРёСЃР°РЅРёРµ" name="description">
+        <Input placeholder="Р’РІРµРґРёС‚Рµ РѕРїРёСЃР°РЅРёРµ" />
       </Form.Item>
 
       <Form.Item
-        label="Дата"
+        label="Р”Р°С‚Р°"
         name="date"
         rules={[
-          { required: true, message: "Выберите дату" },
+          { required: true, message: "Р’С‹Р±РµСЂРёС‚Рµ РґР°С‚Сѓ" },
           {
             validator: (_, value) => {
               if (!value) {
@@ -586,19 +594,19 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               const selectedDate = dayjs(value);
 
               if (type === "actual") {
-                // Для актуальных операций проверяем, что дата не в будущем месяце
+                // Р”Р»СЏ Р°РєС‚СѓР°Р»СЊРЅС‹С… РѕРїРµСЂР°С†РёР№ РїСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ РґР°С‚Р° РЅРµ РІ Р±СѓРґСѓС‰РµРј РјРµСЃСЏС†Рµ
                 const endOfCurrentMonth = dayjs().endOf("month");
                 if (selectedDate.isAfter(endOfCurrentMonth, "day")) {
                   return Promise.reject(
-                    new Error("Нельзя добавлять операции на будущие месяцы")
+                    new Error("РќРµР»СЊР·СЏ РґРѕР±Р°РІР»СЏС‚СЊ РѕРїРµСЂР°С†РёРё РЅР° Р±СѓРґСѓС‰РёРµ РјРµСЃСЏС†С‹")
                   );
                 }
               } else {
-                // Для планируемых трат проверяем, что дата не в прошлом месяце
+                // Р”Р»СЏ РїР»Р°РЅРёСЂСѓРµРјС‹С… С‚СЂР°С‚ РїСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ РґР°С‚Р° РЅРµ РІ РїСЂРѕС€Р»РѕРј РјРµСЃСЏС†Рµ
                 const startOfCurrentMonth = dayjs().startOf("month");
                 if (selectedDate.isBefore(startOfCurrentMonth, "day")) {
                   return Promise.reject(
-                    new Error("Нельзя планировать траты на прошлые месяцы")
+                    new Error("РќРµР»СЊР·СЏ РїР»Р°РЅРёСЂРѕРІР°С‚СЊ С‚СЂР°С‚С‹ РЅР° РїСЂРѕС€Р»С‹Рµ РјРµСЃСЏС†С‹")
                   );
                 }
               }
@@ -622,14 +630,20 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     <>
       {isMobile ? (
         <Drawer
-          title={isEditMode ? (type === "planned" ? "Редактировать план" : "Редактировать операцию") : (type === "planned" ? "Планируемая трата" : "Новая операция")}
+          title={isEditMode ? (type === "planned" ? "Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РїР»Р°РЅ" : "Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РѕРїРµСЂР°С†РёСЋ") : (type === "planned" ? "РџР»Р°РЅРёСЂСѓРµРјР°СЏ С‚СЂР°С‚Р°" : "РќРѕРІР°СЏ РѕРїРµСЂР°С†РёСЏ")}
           placement="right"
           className={styles.drawer}
           open={open}
           onClose={handleCancel}
           width="100%"
           mask={true}
-          styles={{ wrapper: { width: "100%", maxWidth: "100vw" } }}
+          styles={{
+            wrapper: { width: "100%", maxWidth: "100vw", height: "100dvh" },
+            body: {
+              overflowY: "auto",
+              paddingBottom: "calc(28px + env(safe-area-inset-bottom))",
+            },
+          }}
           footer={
             <div
               style={{
@@ -641,14 +655,14 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               }}
             >
               <Button style={{ flex: 1, minWidth: 0 }} onClick={handleCancel}>
-                Отмена
+                РћС‚РјРµРЅР°
               </Button>
               <Button
                 style={{ flex: 1, minWidth: 0 }}
                 type="primary"
                 onClick={handleSubmit}
               >
-                {isEditMode ? "Сохранить" : "Добавить"}
+                {isEditMode ? "РЎРѕС…СЂР°РЅРёС‚СЊ" : "Р”РѕР±Р°РІРёС‚СЊ"}
               </Button>
             </div>
           }
@@ -657,15 +671,15 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         </Drawer>
       ) : (
         <Modal
-          title={isEditMode ? (type === "planned" ? "Редактировать план" : "Редактировать операцию") : (type === "planned" ? "Планируемая трата" : "Новая операция")}
+          title={isEditMode ? (type === "planned" ? "Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РїР»Р°РЅ" : "Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РѕРїРµСЂР°С†РёСЋ") : (type === "planned" ? "РџР»Р°РЅРёСЂСѓРµРјР°СЏ С‚СЂР°С‚Р°" : "РќРѕРІР°СЏ РѕРїРµСЂР°С†РёСЏ")}
           open={open}
           onCancel={handleCancel}
           footer={[
             <Button key="cancel" onClick={handleCancel}>
-              Отмена
+              РћС‚РјРµРЅР°
             </Button>,
             <Button key="submit" type="primary" onClick={handleSubmit}>
-                {isEditMode ? "Сохранить" : "Добавить"}
+                {isEditMode ? "РЎРѕС…СЂР°РЅРёС‚СЊ" : "Р”РѕР±Р°РІРёС‚СЊ"}
             </Button>,
           ]}
           width={500}
@@ -684,3 +698,4 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
 };
 
 export default TransactionForm;
+

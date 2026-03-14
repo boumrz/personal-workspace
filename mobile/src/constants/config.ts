@@ -27,3 +27,10 @@ export const VK_ID_APP_ID =
  */
 export const VK_ID_REDIRECT_SCHEME =
   process.env.EXPO_PUBLIC_VK_ID_REDIRECT_SCHEME ?? "financeassistant";
+
+/**
+ * Optional voice parser provider override for /v2/transactions/parse.
+ * Useful for quick local switching between LLM providers without code changes.
+ */
+export const SPEECH_PARSE_PROVIDER =
+  process.env.EXPO_PUBLIC_SPEECH_PARSE_PROVIDER ?? "";

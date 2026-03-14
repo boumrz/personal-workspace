@@ -10,11 +10,13 @@ interface PageHeaderProps {
 const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, extra }) => {
   return (
     <div className={styles.pageHeader}>
-      <div>
-        <h1 className={styles.title}>{title}</h1>
-        {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+      <div className={styles.pageHeaderCenter}>
+        <div className={styles.titleBlock}>
+          <h1 className={styles.title}>{title}</h1>
+          {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+        </div>
+        {extra && <div className={styles.extra}>{extra}</div>}
       </div>
-      {extra && <div className={styles.extra}>{extra}</div>}
     </div>
   );
 };

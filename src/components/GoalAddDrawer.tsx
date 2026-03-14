@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+﻿import React, { useEffect } from "react";
 import { Drawer } from "antd";
 import { Goal } from "../store/api";
 import GoalForm from "./GoalForm";
@@ -15,9 +15,17 @@ const GoalAddDrawer: React.FC<GoalAddDrawerProps> = ({
   onClose,
   onSave,
 }) => {
-  const handleSubmit = async (goal: Omit<Goal, "id" | "createdAt" | "updatedAt">) => {
+  const handleSubmit = async (
+    goal: Omit<Goal, "id" | "createdAt" | "updatedAt"> | Partial<Goal>
+  ) => {
+    const payload: Omit<Goal, "id" | "createdAt" | "updatedAt"> = {
+      title: String(goal.title || "").trim(),
+      targetAmount: Number(goal.targetAmount || 0),
+      currentAmount: Number(goal.currentAmount || 0),
+      description: String(goal.description || ""),
+    };
     try {
-      await onSave(goal);
+      await onSave(payload);
       onClose();
     } catch (error) {
       throw error;
@@ -26,14 +34,20 @@ const GoalAddDrawer: React.FC<GoalAddDrawerProps> = ({
 
   return (
       <Drawer
-        title="Добавление цели"
+        title="Р”РѕР±Р°РІР»РµРЅРёРµ С†РµР»Рё"
         placement="right"
         open={open}
         onClose={onClose}
         width="100%"
         mask={true}
         closable={true}
-        styles={{ wrapper: { width: "100%", maxWidth: "100vw" } }}
+        styles={{
+          wrapper: { width: "100%", maxWidth: "100vw", height: "100dvh" },
+          body: {
+            overflowY: "auto",
+            paddingBottom: "calc(28px + env(safe-area-inset-bottom))",
+          },
+        }}
       >
       <GoalForm
         onSave={handleSubmit}
@@ -44,3 +58,4 @@ const GoalAddDrawer: React.FC<GoalAddDrawerProps> = ({
 };
 
 export default GoalAddDrawer;
+

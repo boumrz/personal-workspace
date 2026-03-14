@@ -13,6 +13,10 @@ export function setAnalyticsPlatform(p: "web" | "android" | "ios"): void {
   platform = p;
 }
 
+export function getAnalyticsPlatform(): "web" | "android" | "ios" {
+  return platform;
+}
+
 export function setAnalyticsAuthToken(token: string | null): void {
   authToken = token;
 }

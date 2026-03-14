@@ -24,6 +24,8 @@ export default function CompactHeader({
     typeof options.headerTitle === "string"
       ? options.headerTitle
       : (options.title ?? "");
+  const headerStyle =
+    (options.headerStyle as { backgroundColor?: string } | undefined) ?? undefined;
 
   const canGoBack = back !== undefined;
 
@@ -32,7 +34,7 @@ export default function CompactHeader({
       style={[
         styles.container,
         {
-          backgroundColor: options.headerStyle?.backgroundColor ?? theme.bgCard,
+          backgroundColor: headerStyle?.backgroundColor ?? theme.bgCard,
           paddingTop: STATUS_BAR_HEIGHT,
           height: HEADER_HEIGHT + STATUS_BAR_HEIGHT,
           borderBottomColor: theme.border,

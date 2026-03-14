@@ -19,6 +19,49 @@ export interface Transaction {
   date: string;
 }
 
+export interface SpeechParseContext {
+  locale?: string;
+  timezone?: string;
+}
+
+export interface ParsedSpeechTransactionItem {
+  type: "income" | "expense";
+  amount: number;
+  categoryHint?: string;
+  categoryResolution?: "matched_existing" | "suggest_create" | "unknown";
+  suggestedCategoryToCreate?: string;
+}
+
+export interface ParseTransactionsFromSpeechRequest {
+  text: string;
+  mode?: "actual" | "planned";
+  context?: SpeechParseContext;
+  provider?:
+    | "gigachat"
+    | "gpt4free"
+    | "gemini"
+    | "gemini-flash-lite"
+    | "groq"
+    | "openrouter"
+    | "heuristic";
+  providerChain?: (
+    | "gigachat"
+    | "gpt4free"
+    | "gemini"
+    | "gemini-flash-lite"
+    | "groq"
+    | "openrouter"
+    | "heuristic"
+  )[];
+}
+
+export interface ParseTransactionsFromSpeechResponse {
+  items: ParsedSpeechTransactionItem[];
+  confidence: number;
+  warnings: string[];
+  unparsedText?: string;
+}
+
 export interface Saving {
   id: string;
   amount: number;
@@ -38,6 +81,8 @@ export interface Profile {
   dateOfBirth?: string;
   telegramId?: string | null;
   vkId?: string | null;
+  voiceLlmProvider?: string | null;
+  voiceLlmProviderChain?: string[] | null;
   hasPassword?: boolean;
   authMethodsCount?: number;
 }
@@ -78,6 +123,8 @@ export interface AdminUser {
 export interface LoginRequest {
   login: string;
   password: string;
+  /** Платформа входа: web | android | ios — для учёта статистики */
+  platform?: "web" | "android" | "ios";
 }
 
 export interface RegisterRequest {
