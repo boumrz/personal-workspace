@@ -8,7 +8,7 @@ on:
   workflow_dispatch: # Позволяет запускать вручную из GitHub UI
 
 jobs:
-  # Деплой фронтенда на сервер (production web: https://domiknote.ru/)
+  # Деплой фронтенда на удаленный сервер
   deploy-frontend:
     runs-on: ubuntu-latest
 
@@ -44,23 +44,21 @@ jobs:
         run: |
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Upload frontend build to server
+      - name: Deploy frontend dist to server
         env:
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_PATH: ${{ secrets.SERVER_PATH }}
-          FRONTEND_PATH: ${{ secrets.FRONTEND_PATH || '' }}
         run: |
-          tar -czf frontend-dist.tar.gz -C dist .
-          scp -o StrictHostKeyChecking=no frontend-dist.tar.gz ${SERVER_USER}@${SERVER_HOST}:/tmp/frontend-dist.tar.gz
-          ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} "set -e; FRONTEND_TARGET='${FRONTEND_PATH:-${SERVER_PATH}/dist}'; if [ -z \"\$FRONTEND_TARGET\" ] || [ \"\$FRONTEND_TARGET\" = \"/\" ]; then echo 'Invalid FRONTEND_TARGET'; exit 1; fi; mkdir -p \"\$FRONTEND_TARGET\"; find \"\$FRONTEND_TARGET\" -mindepth 1 -maxdepth 1 -exec rm -rf {} +; tar -xzf /tmp/frontend-dist.tar.gz -C \"\$FRONTEND_TARGET\"; rm -f /tmp/frontend-dist.tar.gz"
-          rm -f frontend-dist.tar.gz
-
-      - name: Verify frontend deployment
-        env:
-          FRONTEND_HEALTHCHECK_URL: ${{ secrets.FRONTEND_HEALTHCHECK_URL || 'https://domiknote.ru/' }}
-        run: |
-          curl -fsSL "${FRONTEND_HEALTHCHECK_URL}" >/dev/null
+          tar -czf frontend-dist.tgz -C dist .
+          scp -o StrictHostKeyChecking=no frontend-dist.tgz ${SERVER_USER}@${SERVER_HOST}:/tmp/frontend-dist.tgz
+          ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} "\
+            set -e; \
+            mkdir -p '${SERVER_PATH}/dist'; \
+            find '${SERVER_PATH}/dist' -mindepth 1 -maxdepth 1 -exec rm -rf {} +; \
+            tar -xzf /tmp/frontend-dist.tgz -C '${SERVER_PATH}/dist'; \
+            rm -f /tmp/frontend-dist.tgz"
+          rm -f frontend-dist.tgz
 
   # Деплой бэкенда на удаленный сервер
   deploy-backend:
@@ -110,7 +108,17 @@ jobs:
           GIGACHAT_AUTH_KEY: ${{ secrets.GIGACHAT_AUTH_KEY }}
           GIGACHAT_CLIENT_ID: ${{ secrets.GIGACHAT_CLIENT_ID }}
           GIGACHAT_CLIENT_SECRET: ${{ secrets.GIGACHAT_CLIENT_SECRET }}
+          GIGACHAT_CA_CERT_PEM: ${{ secrets.GIGACHAT_CA_CERT_PEM }}
+          GIGACHAT_CA_CERT_BASE64: ${{ secrets.GIGACHAT_CA_CERT_BASE64 }}
+          GIGACHAT_CA_CERT_PATH: ${{ secrets.GIGACHAT_CA_CERT_PATH }}
+          GPT4FREE_BASE_URL: ${{ secrets.GPT4FREE_BASE_URL }}
+          GPT4FREE_API_KEY: ${{ secrets.GPT4FREE_API_KEY }}
+          GPT4FREE_MODEL: ${{ secrets.GPT4FREE_MODEL }}
+          GPT4FREE_TIMEOUT_MS: ${{ secrets.GPT4FREE_TIMEOUT_MS }}
+          GPT4FREE_PORT: ${{ secrets.GPT4FREE_PORT || '1337' }}
+          GPT4FREE_BIND_IP: ${{ secrets.GPT4FREE_BIND_IP || '127.0.0.1' }}
         run: |
+          ESCAPED_GIGACHAT_CA_CERT_PEM="${GIGACHAT_CA_CERT_PEM//$'\n'/\\n}"
           cat > .env.server << EOF
           PORT=3001
           NODE_ENV=production
@@ -132,9 +140,21 @@ jobs:
           GIGACHAT_AUTH_KEY=${GIGACHAT_AUTH_KEY}
           GIGACHAT_CLIENT_ID=${GIGACHAT_CLIENT_ID}
           GIGACHAT_CLIENT_SECRET=${GIGACHAT_CLIENT_SECRET}
+          GIGACHAT_CA_CERT_PEM=${ESCAPED_GIGACHAT_CA_CERT_PEM}
+          GIGACHAT_CA_CERT_BASE64=${GIGACHAT_CA_CERT_BASE64}
+          GIGACHAT_CA_CERT_PATH=${GIGACHAT_CA_CERT_PATH}
+          GPT4FREE_BASE_URL=${GPT4FREE_BASE_URL}
+          GPT4FREE_API_KEY=${GPT4FREE_API_KEY}
+          GPT4FREE_MODEL=${GPT4FREE_MODEL}
+          GPT4FREE_TIMEOUT_MS=${GPT4FREE_TIMEOUT_MS}
+          EOF
+          cat > .env.gpt4free << EOF
+          GPT4FREE_PORT=${GPT4FREE_PORT}
+          GPT4FREE_BIND_IP=${GPT4FREE_BIND_IP}
           EOF
           scp -o StrictHostKeyChecking=no .env.server ${SERVER_USER}@${SERVER_HOST}:${SERVER_PATH}/.env
-          rm -f .env.server
+          scp -o StrictHostKeyChecking=no .env.gpt4free ${SERVER_USER}@${SERVER_HOST}:${SERVER_PATH}/gpt4free-server/.env
+          rm -f .env.server .env.gpt4free
 
       - name: Deploy to server
         env:
@@ -142,6 +162,8 @@ jobs:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_PATH: ${{ secrets.SERVER_PATH }}
           DEPLOY_REF: ${{ github.sha }}
+          GPT4FREE_DEPLOY_ENABLED: ${{ secrets.GPT4FREE_DEPLOY_ENABLED || 'true' }}
+          GPT4FREE_PORT: ${{ secrets.GPT4FREE_PORT || '1337' }}
         run: |
           # Создаем скрипт деплоя на лету (используем одинарные кавычки для heredoc, чтобы переменные подставлялись на сервере)
           cat > deploy-remote.sh << 'DEPLOYSCRIPT'
@@ -191,6 +213,30 @@ jobs:
           cd server
           npm ci --production || npm install --production
 
+          # Auto-start gpt4free sidecar to avoid manual docker run.
+          if [ "${GPT4FREE_DEPLOY_ENABLED:-true}" = "true" ]; then
+            cd ../gpt4free-server
+            if command -v docker >/dev/null 2>&1; then
+              if docker compose version >/dev/null 2>&1; then
+                docker compose up -d
+              elif command -v docker-compose >/dev/null 2>&1; then
+                docker-compose up -d
+              else
+                echo "⚠️ docker compose not found, gpt4free was not started."
+              fi
+              if command -v curl >/dev/null 2>&1; then
+                if curl -fsS --max-time 20 "http://127.0.0.1:${GPT4FREE_PORT:-1337}/v1/models" >/dev/null; then
+                  echo "✅ gpt4free is healthy."
+                else
+                  echo "⚠️ gpt4free health-check failed, parser will use heuristic fallback."
+                fi
+              fi
+            else
+              echo "⚠️ Docker is not installed, gpt4free was not started."
+            fi
+            cd ../server
+          fi
+
           # Запускаем миграции
           echo "🗄️  Запуск миграций базы данных..."
           npm run migrate || echo "⚠️ Миграции пропущены (возможна ошибка)"
@@ -209,7 +255,7 @@ jobs:
 
           # Копируем и выполняем скрипт на сервере
           scp -o StrictHostKeyChecking=no deploy-remote.sh ${SERVER_USER}@${SERVER_HOST}:/tmp/deploy-remote.sh
-          ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} "chmod +x /tmp/deploy-remote.sh && SERVER_PATH='${SERVER_PATH}' DEPLOY_REF='${DEPLOY_REF}' bash /tmp/deploy-remote.sh && rm -f /tmp/deploy-remote.sh"
+          ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} "chmod +x /tmp/deploy-remote.sh && SERVER_PATH='${SERVER_PATH}' DEPLOY_REF='${DEPLOY_REF}' GPT4FREE_DEPLOY_ENABLED='${GPT4FREE_DEPLOY_ENABLED}' GPT4FREE_PORT='${GPT4FREE_PORT}' bash /tmp/deploy-remote.sh && rm -f /tmp/deploy-remote.sh"
 
           # Очищаем временный скрипт
           rm -f deploy-remote.sh
@@ -289,7 +335,6 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
           EXPO_PUBLIC_VK_ID_APP_ID: ${{ secrets.EXPO_PUBLIC_VK_ID_APP_ID }}
-          EXPO_PUBLIC_VK_ID_CLIENT_SECRET: ${{ secrets.EXPO_PUBLIC_VK_ID_CLIENT_SECRET }}
           EXPO_PUBLIC_VK_ID_REDIRECT_SCHEME: ${{ secrets.EXPO_PUBLIC_VK_ID_REDIRECT_SCHEME || 'financeassistant' }}
           EXPO_PUBLIC_MYTRACKER_SDK_KEY: ${{ secrets.EXPO_PUBLIC_MYTRACKER_SDK_KEY }}
           EXPO_PUBLIC_SPEECH_PARSE_PROVIDER: ${{ secrets.EXPO_PUBLIC_SPEECH_PARSE_PROVIDER || '' }}

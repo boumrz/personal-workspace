@@ -60,3 +60,9 @@ location /gpt4free/ {
 ```bash
 docker-compose down
 ```
+
+## Recommended Production Setup
+
+- Keep the service private by default: `GPT4FREE_BIND_IP=127.0.0.1`.
+- Point backend to local sidecar: `GPT4FREE_BASE_URL=http://127.0.0.1:1337/v1`.
+- Start/refresh container from deploy pipeline with `docker compose up -d`.

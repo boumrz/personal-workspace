@@ -8,5 +8,5 @@ services:
     container_name: finance-gpt4free
     command: python -m g4f.cli api --bind 0.0.0.0:1337
     ports:
-      - "${GPT4FREE_PORT:-1337}:1337"
+      - "${GPT4FREE_BIND_IP:-127.0.0.1}:${GPT4FREE_PORT:-1337}:1337"
     restart: unless-stopped

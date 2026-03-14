@@ -100,6 +100,9 @@ export default {
       scope: process.env.GIGACHAT_SCOPE || "GIGACHAT_API_PERS",
       model: process.env.GIGACHAT_MODEL || "GigaChat",
       allowInsecureTls: String(process.env.GIGACHAT_ALLOW_INSECURE_TLS || "").toLowerCase() === "true",
+      caCertPem: process.env.GIGACHAT_CA_CERT_PEM || "",
+      caCertBase64: process.env.GIGACHAT_CA_CERT_BASE64 || "",
+      caCertPath: process.env.GIGACHAT_CA_CERT_PATH || "",
       authUrl:
         process.env.GIGACHAT_AUTH_URL ||
         "https://ngw.devices.sberbank.ru:9443/api/v2/oauth",

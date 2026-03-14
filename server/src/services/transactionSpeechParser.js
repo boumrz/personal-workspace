@@ -1,5 +1,8 @@
 import config from "../config/config.js";
 import crypto from "crypto";
+import fs from "node:fs";
+import http from "node:http";
+import https from "node:https";
 
 const DEFAULT_MODEL_BY_PROVIDER = {
   openrouter: "google/gemini-2.0-flash-exp:free",
@@ -440,11 +443,99 @@ function describeProviderError(error) {
   return details ? `${message} (${details})` : message;
 }
 
+function normalizeMultilineEnvValue(value) {
+  return String(value || "").replace(/\\n/g, "\n").trim();
+}
+
+function resolveGigaChatCustomCa() {
+  const fromPath = String(config.llm.gigaChat?.caCertPath || "").trim();
+  if (fromPath) {
+    try {
+      return fs.readFileSync(fromPath, "utf8").trim();
+    } catch (error) {
+      throw new Error(
+        `Failed to read GigaChat CA certificate from "${fromPath}": ${error.message}`
+      );
+    }
+  }
+
+  const fromBase64 = String(config.llm.gigaChat?.caCertBase64 || "").trim();
+  if (fromBase64) {
+    return Buffer.from(fromBase64, "base64").toString("utf8").trim();
+  }
+
+  return normalizeMultilineEnvValue(config.llm.gigaChat?.caCertPem || "");
+}
+
+function resolveGigaChatTlsOptions() {
+  if (config.llm.gigaChat?.allowInsecureTls) {
+    console.warn(
+      "[voice-parse] GIGACHAT_ALLOW_INSECURE_TLS=true: TLS certificate validation is disabled (dev-only)."
+    );
+    return { rejectUnauthorized: false };
+  }
+
+  const customCa = resolveGigaChatCustomCa();
+  if (customCa) {
+    console.info("[voice-parse] GigaChat custom CA certificate is configured.");
+    return { rejectUnauthorized: true, ca: customCa };
+  }
+
+  return { rejectUnauthorized: true };
+}
+
+const gigaChatTlsOptions = resolveGigaChatTlsOptions();
+
+async function performHttpRequest({ url, method, headers, body, timeoutMs, tlsOptions }) {
+  const target = new URL(url);
+  const isHttps = target.protocol === "https:";
+  const client = isHttps ? https : http;
+  const hasBody = body !== undefined && body !== null;
+  const payload = hasBody ? (typeof body === "string" ? body : JSON.stringify(body)) : null;
+  const hasContentLengthHeader = Object.keys(headers || {}).some(
+    (key) => key.toLowerCase() === "content-length"
+  );
+
+  const requestOptions = {
+    method,
+    hostname: target.hostname,
+    port: target.port ? Number(target.port) : isHttps ? 443 : 80,
+    path: `${target.pathname}${target.search}`,
+    headers: {
+      ...(headers || {}),
+      ...(payload && !hasContentLengthHeader
+        ? { "Content-Length": String(Buffer.byteLength(payload)) }
+        : {}),
+    },
+    ...(isHttps ? tlsOptions : {}),
+  };
+
+  return new Promise((resolve, reject) => {
+    const req = client.request(requestOptions, (res) => {
+      const chunks = [];
+      res.on("data", (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+      res.on("end", () => {
+        resolve({
+          status: Number(res.statusCode || 0),
+          body: Buffer.concat(chunks).toString("utf8"),
+          headers: res.headers,
+        });
+      });
+    });
+
+    req.setTimeout(timeoutMs, () => {
+      req.destroy(new Error(`Request timeout after ${timeoutMs}ms`));
+    });
+    req.on("error", reject);
+    if (payload) {
+      req.write(payload);
+    }
+    req.end();
+  });
+}
+
 if (config.llm.gigaChat?.allowInsecureTls) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-  console.warn(
-    "[voice-parse] GIGACHAT_ALLOW_INSECURE_TLS=true: TLS certificate validation is disabled (dev-only)."
-  );
 }
 
 async function callOpenAiCompatible({ baseUrl, apiKey, model, prompt, timeoutMs, skipAuth }) {
@@ -525,35 +616,34 @@ async function getGigaChatAccessToken({ timeoutMs }) {
     throw new Error("GigaChat auth key is not configured");
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(authUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/json",
-        Authorization: `Basic ${authKey}`,
-        RqUID: crypto.randomUUID(),
-      },
-      body: new URLSearchParams({ scope }),
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      throw new Error(`GigaChat auth failed: ${response.status}`);
-    }
-    const data = await response.json();
-    const accessToken = String(data?.access_token || "").trim();
-    if (!accessToken) {
-      throw new Error("GigaChat auth response has no access_token");
-    }
-    const expiresInMs = Math.max(30_000, Number(data?.expires_in || 0));
-    cachedGigaChatToken = accessToken;
-    cachedGigaChatTokenExpiresAt = Date.now() + expiresInMs - 30_000;
-    return accessToken;
-  } finally {
-    clearTimeout(timeout);
+  const response = await performHttpRequest({
+    url: authUrl,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+      Authorization: `Basic ${authKey}`,
+      RqUID: crypto.randomUUID(),
+    },
+    body: new URLSearchParams({ scope }).toString(),
+    timeoutMs,
+    tlsOptions: gigaChatTlsOptions,
+  });
+  if (response.status < 200 || response.status >= 300) {
+    throw new Error(`GigaChat auth failed: ${response.status}`);
   }
+  const data = tryParseJson(response.body);
+  if (!data) {
+    throw new Error("GigaChat auth response is not valid JSON");
+  }
+  const accessToken = String(data?.access_token || "").trim();
+  if (!accessToken) {
+    throw new Error("GigaChat auth response has no access_token");
+  }
+  const expiresInMs = Math.max(30_000, Number(data?.expires_in || 0));
+  cachedGigaChatToken = accessToken;
+  cachedGigaChatTokenExpiresAt = Date.now() + expiresInMs - 30_000;
+  return accessToken;
 }
 
 async function callGigaChat({ model, prompt, timeoutMs }) {
@@ -561,19 +651,19 @@ async function callGigaChat({ model, prompt, timeoutMs }) {
   const baseUrl = config.llm.gigaChat?.baseUrl || "https://gigachat.devices.sberbank.ru/api/v1";
   const maxRetries = 2;
   let lastError;
+  const completionsUrl = `${baseUrl.replace(/\/$/, "")}/chat/completions`;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const response = await fetch(`${baseUrl}/chat/completions`, {
+      const response = await performHttpRequest({
+        url: completionsUrl,
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({
+        body: {
           model,
           temperature: 0.1,
           stream: false,
@@ -586,15 +676,18 @@ async function callGigaChat({ model, prompt, timeoutMs }) {
             },
             { role: "user", content: prompt },
           ],
-        }),
-        signal: controller.signal,
+        },
+        timeoutMs,
+        tlsOptions: gigaChatTlsOptions,
       });
-      if (response.ok) {
-        clearTimeout(timeout);
-        const data = await response.json();
+      if (response.status >= 200 && response.status < 300) {
+        const data = tryParseJson(response.body);
+        if (!data) {
+          throw new Error("GigaChat response is not valid JSON");
+        }
         return data?.choices?.[0]?.message?.content ?? "";
       }
-      const errBody = await response.text();
+      const errBody = response.body;
       if (response.status >= 500 && attempt < maxRetries) {
         logVoiceParse("gigachat.retry", {
           attempt: attempt + 1,
@@ -608,15 +701,12 @@ async function callGigaChat({ model, prompt, timeoutMs }) {
         `GigaChat request failed: ${response.status}${errBody ? ` — ${errBody.slice(0, 150)}` : ""}`
       );
     } catch (e) {
-      clearTimeout(timeout);
       lastError = e;
       if (attempt < maxRetries) {
         logVoiceParse("gigachat.retry", { attempt: attempt + 1, error: String(e) });
         await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
         continue;
       }
-    } finally {
-      clearTimeout(timeout);
     }
     throw lastError;
   }
