@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert } from "react-native";
+import { Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useAuth, useTheme } from "../context";
 
 export default function AddGoalScreen({ navigation, route }: any) {
@@ -43,7 +43,17 @@ export default function AddGoalScreen({ navigation, route }: any) {
   }), [theme]);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 16 : 0}
+    >
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+    >
       <Text style={styles.label}>Название</Text>
       <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="Название цели" placeholderTextColor={theme.textTertiary} />
 
@@ -60,5 +70,6 @@ export default function AddGoalScreen({ navigation, route }: any) {
         <Text style={styles.saveBtnText}>{saving ? "Сохранение…" : editingGoal ? "Сохранить" : "Создать"}</Text>
       </TouchableOpacity>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

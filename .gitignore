@@ -18,6 +18,9 @@ mobile/*.pk8
 dist/
 build/
 *.log
+output/
+test-results/
+playwright-report/
 
 # IDE
 .vscode/

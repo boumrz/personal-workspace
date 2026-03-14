@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect, useCallback } from "react";
 import { Modal, Drawer, Form, InputNumber, Input, Button, DatePicker } from "antd";
 import dayjs from "dayjs";
 import { useFinance } from "../context/FinanceContext";
@@ -14,6 +14,14 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving 
   const { addSaving, updateSaving } = useFinance();
   const [form] = Form.useForm();
   const [isMobile, setIsMobile] = useState(false);
+  const isEditMode = !!initialSaving;
+  const handleFormFocusCapture = useCallback((event: React.FocusEvent<HTMLElement>) => {
+    const target = event.target as HTMLElement | null;
+    if (!target?.scrollIntoView) return;
+    window.setTimeout(() => {
+      target.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 120);
+  }, []);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -66,7 +74,7 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving 
     onClose();
   };
 
-  // Ограничиваем даты: нельзя вносить на будущий месяц
+  // РћРіСЂР°РЅРёС‡РёРІР°РµРј РґР°С‚С‹: РЅРµР»СЊР·СЏ РІРЅРѕСЃРёС‚СЊ РЅР° Р±СѓРґСѓС‰РёР№ РјРµСЃСЏС†
   const disabledDate = (current: dayjs.Dayjs | null) => {
     if (!current) return false;
     const today = dayjs();
@@ -75,7 +83,7 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving 
     const selectedMonth = current.month();
     const selectedYear = current.year();
 
-    // Запрещаем будущие месяцы
+    // Р—Р°РїСЂРµС‰Р°РµРј Р±СѓРґСѓС‰РёРµ РјРµСЃСЏС†С‹
     if (selectedYear > currentYear) return true;
     if (selectedYear === currentYear && selectedMonth > currentMonth) return true;
 
@@ -89,13 +97,14 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving 
       onFinish={handleSubmit}
       initialValues={{ date: dayjs() }}
       className={styles.form}
+      onFocusCapture={handleFormFocusCapture}
     >
       <Form.Item
-        label="Сумма"
+        label="РЎСѓРјРјР°"
         name="amount"
         rules={[
-          { required: true, message: "Введите сумму" },
-          { type: "number", min: 0.01, message: "Сумма должна быть больше 0" },
+          { required: true, message: "Р’РІРµРґРёС‚Рµ СЃСѓРјРјСѓ" },
+          { type: "number", min: 0.01, message: "РЎСѓРјРјР° РґРѕР»Р¶РЅР° Р±С‹С‚СЊ Р±РѕР»СЊС€Рµ 0" },
         ]}
       >
         <InputNumber
@@ -108,19 +117,19 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving 
         />
       </Form.Item>
 
-      <Form.Item label="Дата" name="date" rules={[{ required: true, message: "Выберите дату" }]}>
+      <Form.Item label="Р”Р°С‚Р°" name="date" rules={[{ required: true, message: "Р’С‹Р±РµСЂРёС‚Рµ РґР°С‚Сѓ" }]}>
         <DatePicker
           format="DD.MM.YYYY"
           style={{ width: "100%" }}
           size="large"
           disabledDate={disabledDate}
-          placeholder="Выберите дату"
+          placeholder="Р’С‹Р±РµСЂРёС‚Рµ РґР°С‚Сѓ"
         />
       </Form.Item>
 
-      <Form.Item label="Описание" name="description">
+      <Form.Item label="РћРїРёСЃР°РЅРёРµ" name="description">
         <Input.TextArea
-          placeholder="Описание накопления (необязательно)"
+          placeholder="РћРїРёСЃР°РЅРёРµ РЅР°РєРѕРїР»РµРЅРёСЏ (РЅРµРѕР±СЏР·Р°С‚РµР»СЊРЅРѕ)"
           rows={3}
           maxLength={500}
           showCount
@@ -135,27 +144,31 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving 
           block
           className={styles.submitButton}
         >
-          {isEditMode ? "Сохранить" : "Добавить накопление"}
+          {isEditMode ? "РЎРѕС…СЂР°РЅРёС‚СЊ" : "Р”РѕР±Р°РІРёС‚СЊ РЅР°РєРѕРїР»РµРЅРёРµ"}
         </Button>
         <Button onClick={handleCancel} size="large" block className={styles.cancelButton}>
-          Отмена
+          РћС‚РјРµРЅР°
         </Button>
       </Form.Item>
     </Form>
   );
 
-  const isEditMode = !!initialSaving;
-
   if (isMobile) {
     return (
       <Drawer
-        title={isEditMode ? "Редактировать накопление" : "Добавить накопление"}
+        title={isEditMode ? "Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РЅР°РєРѕРїР»РµРЅРёРµ" : "Р”РѕР±Р°РІРёС‚СЊ РЅР°РєРѕРїР»РµРЅРёРµ"}
         placement="right"
         onClose={handleCancel}
         open={open}
         width="100%"
         mask={true}
-        styles={{ wrapper: { width: "100%", maxWidth: "100vw" } }}
+        styles={{
+          wrapper: { width: "100%", maxWidth: "100vw", height: "100dvh" },
+          body: {
+            overflowY: "auto",
+            paddingBottom: "calc(28px + env(safe-area-inset-bottom))",
+          },
+        }}
       >
         {formContent}
       </Drawer>
@@ -164,7 +177,7 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving 
 
   return (
     <Modal
-      title={isEditMode ? "Редактировать накопление" : "Добавить накопление"}
+      title={isEditMode ? "Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РЅР°РєРѕРїР»РµРЅРёРµ" : "Р”РѕР±Р°РІРёС‚СЊ РЅР°РєРѕРїР»РµРЅРёРµ"}
       open={open}
       onCancel={handleCancel}
       footer={null}
@@ -177,3 +190,4 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving 
 };
 
 export default SavingsForm;
+

@@ -15,6 +15,8 @@ import {
   TouchableOpacity,
   View,
   Linking,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -109,6 +111,31 @@ export default function MainTabs() {
       .replace(/\s+/g, " ")
       .trim();
 
+  const DEFAULT_VOICE_PROVIDER_CHAIN = ["gpt4free", "heuristic"] as const;
+  const normalizeProvider = (value?: string | null) =>
+    String(value || "").trim().toLowerCase();
+  const resolveVoiceProviderChain = (profile: { voiceLlmProvider?: string | null; voiceLlmProviderChain?: string[] | null } | null) => {
+    if (!profile) return [];
+    const fromChain = Array.isArray(profile.voiceLlmProviderChain)
+      ? profile.voiceLlmProviderChain.map((item) => normalizeProvider(item)).filter(Boolean)
+      : [];
+    if (fromChain.length > 0) {
+      return Array.from(new Set(fromChain));
+    }
+    const single = normalizeProvider(profile.voiceLlmProvider);
+    return single ? [single] : [];
+  };
+  const isDefaultVoiceConfiguration = (profile: { voiceLlmProvider?: string | null; voiceLlmProviderChain?: string[] | null } | null) => {
+    const providerChain = resolveVoiceProviderChain(profile);
+    if (providerChain.length === 0) return true;
+    if (providerChain.length === 1 && providerChain[0] === "gpt4free") return true;
+    const chainSet = new Set(providerChain);
+    return (
+      chainSet.size === DEFAULT_VOICE_PROVIDER_CHAIN.length &&
+      DEFAULT_VOICE_PROVIDER_CHAIN.every((provider) => chainSet.has(provider))
+    );
+  };
+
   const resolveCategoryByName = (rawName: string) => {
     if (categories.length === 0) {
       return null;
@@ -163,7 +190,9 @@ export default function MainTabs() {
           ? {
               provider: SPEECH_PARSE_PROVIDER as
                 | "gigachat"
+                | "gpt4free"
                 | "gemini"
+                | "gemini-flash-lite"
                 | "groq"
                 | "openrouter"
                 | "heuristic",
@@ -195,10 +224,8 @@ export default function MainTabs() {
         api.getCategories(),
         api.getProfile().catch(() => null),
       ]);
-      const hasCustomVoiceLlm =
-        (profile?.voiceLlmProvider && profile.voiceLlmProvider.trim()) ||
-        (Array.isArray(profile?.voiceLlmProviderChain) && profile.voiceLlmProviderChain.length > 0);
-      setShowVoiceUpgradeHint(!hasCustomVoiceLlm);
+      const showUpgradeHint = profile ? isDefaultVoiceConfiguration(profile) : false;
+      setShowVoiceUpgradeHint(showUpgradeHint);
       if (!permissionState.granted) {
         if (!permissionState.canAskAgain) {
           Alert.alert(
@@ -323,8 +350,8 @@ export default function MainTabs() {
         await api.createTransaction({
           type: item.type,
           amount: item.amount,
-          description: item.description || "Голосовая операция",
-          date: item.date || today,
+          description: "Голосовая операция",
+          date: today,
           category,
         });
         added += 1;
@@ -411,6 +438,9 @@ export default function MainTabs() {
           borderTopRightRadius: theme.radius2xl,
           height: "78%",
           overflow: "hidden",
+        },
+        voiceModalKeyboardLayer: {
+          flex: 1,
         },
         voiceModalScroll: {
           flex: 1,
@@ -649,10 +679,17 @@ export default function MainTabs() {
             onPress={resetVoiceFlow}
           />
           <View style={styles.voiceModalCard}>
+            <KeyboardAvoidingView
+              style={styles.voiceModalKeyboardLayer}
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              keyboardVerticalOffset={Platform.OS === "ios" ? 16 : 0}
+            >
             <ScrollView
               style={styles.voiceModalScroll}
               contentContainerStyle={styles.voiceModalScrollContent}
               showsVerticalScrollIndicator={true}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
             >
               <Text style={styles.title}>Голосовой помощник</Text>
               <Text style={styles.voiceAssistantDescription}>
@@ -700,9 +737,6 @@ export default function MainTabs() {
                       <View key={`${item.type}-${item.amount}-${index}`} style={styles.parsedItem}>
                         <Text style={styles.parsedItemTitle}>
                           {item.type === "income" ? "Доход" : "Расход"} · ₽{item.amount.toLocaleString("ru-RU")}
-                        </Text>
-                        <Text style={styles.parsedItemMeta}>
-                          {item.description || "Без описания"}
                         </Text>
                         <Text style={styles.parsedItemMeta}>
                           Категория: {category?.name ?? "Не определена"}
@@ -763,6 +797,7 @@ export default function MainTabs() {
                 </TouchableOpacity>
               )}
             </View>
+            </KeyboardAvoidingView>
           </View>
         </View>
       </Modal>

@@ -11,7 +11,7 @@ import * as styles from "./Dashboard.module.css";
 const Dashboard: React.FC = () => {
   const { transactions, plannedExpenses } = useFinance();
   const [activeTab, setActiveTab] = useState<"actual" | "planned">("actual");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(["all"]);
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<typeof transactions[0] | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -48,11 +48,13 @@ const Dashboard: React.FC = () => {
   );
 
   const filteredTransactions = useMemo(
-    () =>
-      selectedCategory
-        ? transactions.filter((t) => t.category.id === selectedCategory)
-        : transactions,
-    [transactions, selectedCategory]
+    () => {
+      if (selectedCategories.includes("all")) {
+        return transactions;
+      }
+      return transactions.filter((t) => selectedCategories.includes(t.category.id));
+    },
+    [transactions, selectedCategories]
   );
 
   const tabItems = useMemo(
@@ -61,12 +63,12 @@ const Dashboard: React.FC = () => {
         key: "actual",
         label: "Актуальные",
         children: (
-          <TransactionList
-            transactions={filteredTransactions}
-            selectedCategory={selectedCategory}
-            plannedExpenses={plannedExpenses}
-            onEditTransaction={(t) => {
-              setEditingTransaction(t);
+            <TransactionList
+              transactions={filteredTransactions}
+              selectedCategory={selectedCategories.includes("all") ? null : selectedCategories[0] || null}
+              plannedExpenses={plannedExpenses}
+              onEditTransaction={(t) => {
+                setEditingTransaction(t);
               setShowForm(true);
             }}
           />
@@ -87,7 +89,7 @@ const Dashboard: React.FC = () => {
         ),
       },
     ],
-    [filteredTransactions, selectedCategory, plannedExpenses]
+    [filteredTransactions, selectedCategories, plannedExpenses]
   );
 
   return (
@@ -126,8 +128,10 @@ const Dashboard: React.FC = () => {
 
       <div className={styles.content}>
         <CategoryFilter
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
+          selectedCategories={selectedCategories}
+          onSelectCategories={setSelectedCategories}
+          open={false}
+          onClose={() => undefined}
         />
         <Tabs
           activeKey={activeTab}

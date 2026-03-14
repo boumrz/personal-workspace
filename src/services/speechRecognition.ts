@@ -26,7 +26,7 @@ export interface SpeechPermissionState {
 
 const SpeechRecognitionConstructor =
   typeof window !== "undefined"
-    ? (window.SpeechRecognition || (window as any).webkitSpeechRecognition)
+    ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
     : null;
 
 function mapSpeechError(error: string): string {
@@ -54,7 +54,7 @@ function mapSpeechError(error: string): string {
 export class SpeechRecognitionService {
   private transcript = "";
   private status: SpeechStatus = "idle";
-  private recognition: InstanceType<typeof SpeechRecognition> | null = null;
+  private recognition: any = null;
   private callbacks: SpeechRecognitionCallbacks = {};
 
   getSnapshot(): SpeechRecognitionSnapshot {

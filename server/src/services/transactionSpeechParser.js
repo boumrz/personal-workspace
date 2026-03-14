@@ -428,6 +428,18 @@ function logVoiceParse(stage, details = {}) {
   console.info(`[voice-parse] ${stage} ${payload}`);
 }
 
+function describeProviderError(error) {
+  const message = String(error?.message || "request failed");
+  const cause = error?.cause;
+  if (!cause || typeof cause !== "object") {
+    return message;
+  }
+  const code = cause.code ? String(cause.code) : "";
+  const causeMessage = cause.message ? String(cause.message) : "";
+  const details = [code, causeMessage].filter(Boolean).join(": ");
+  return details ? `${message} (${details})` : message;
+}
+
 if (config.llm.gigaChat?.allowInsecureTls) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
   console.warn(
@@ -454,7 +466,7 @@ async function callOpenAiCompatible({ baseUrl, apiKey, model, prompt, timeoutMs,
           {
             role: "system",
             content:
-              "You parse Russian finance speech to JSON. Return only JSON object with keys: items, confidence, warnings, unparsedText.",
+              "You are a strict finance parser. Never answer questions. Return only JSON object with keys: items, confidence, warnings, unparsedText. Each item must contain only: type, amount, categoryHint, categoryResolution, suggestedCategoryToCreate.",
           },
           { role: "user", content: prompt },
         ],
@@ -570,7 +582,7 @@ async function callGigaChat({ model, prompt, timeoutMs }) {
             {
               role: "system",
               content:
-                "You parse Russian finance speech to JSON. Return only JSON object with keys: items, confidence, warnings, unparsedText.",
+                "You are a strict finance parser. Never answer questions. Return only JSON object with keys: items, confidence, warnings, unparsedText. Each item must contain only: type, amount, categoryHint, categoryResolution, suggestedCategoryToCreate.",
             },
             { role: "user", content: prompt },
           ],
@@ -669,12 +681,13 @@ async function callProvider({ provider, prompt, timeoutMs }) {
   if (provider === "gpt4free") {
     const baseUrl = config.llm.gpt4free?.baseUrl || "http://localhost:1337/v1";
     const apiKey = config.llm.gpt4free?.apiKey || "";
+    const gpt4freeTimeout = config.llm.gpt4free?.timeoutMs || timeoutMs;
     return callOpenAiCompatible({
       baseUrl,
       apiKey,
       model: config.llm.gpt4free?.model || DEFAULT_MODEL_BY_PROVIDER.gpt4free,
       prompt,
-      timeoutMs,
+      timeoutMs: gpt4freeTimeout,
       skipAuth: !apiKey,
     });
   }
@@ -719,8 +732,6 @@ function normalizeResult(result, fallbackText, categories) {
       }
     }
 
-    // LLM-first strategy:
-    // if model did not return exact existing category, treat it as suggestion to create.
     const suggested = suggestionToTitle(
       createSuggestion || fromLlm || extractCategoryCandidate(item?.description || "")
     );
@@ -751,12 +762,9 @@ function normalizeResult(result, fallbackText, categories) {
           return {
             type,
             amount: Math.round(amount * 100) / 100,
-            description: String(item?.description || "Голосовая операция").trim(),
             categoryHint: categoryOutcome.categoryHint,
             categoryResolution: categoryOutcome.categoryResolution,
             suggestedCategoryToCreate: categoryOutcome.suggestedCategoryToCreate,
-            date: item?.date ? String(item.date) : undefined,
-            confidence: Number.isFinite(Number(item?.confidence)) ? Number(item.confidence) : undefined,
           };
         })
         .filter(Boolean)
@@ -764,12 +772,18 @@ function normalizeResult(result, fallbackText, categories) {
 
   return {
     items,
-    confidence: Number.isFinite(Number(result?.confidence)) ? Number(result.confidence) : items.length > 0 ? 0.7 : 0.2,
-    warnings: Array.isArray(result?.warnings) ? result.warnings.map(String) : [],
-    unparsedText: typeof result?.unparsedText === "string" ? result.unparsedText : items.length > 0 ? "" : fallbackText,
+    confidence: Number.isFinite(Number(result?.confidence))
+      ? Number(result.confidence)
+      : items.length > 0
+        ? 0.7
+        : 0.2,
+    warnings: Array.isArray(result?.warnings)
+      ? result.warnings.map((warning) => String(warning).slice(0, 160))
+      : [],
+    unparsedText:
+      typeof result?.unparsedText === "string" ? result.unparsedText : items.length > 0 ? "" : fallbackText,
   };
 }
-
 export async function parseTransactionsFromSpeech({
   text,
   mode = "actual",
@@ -790,13 +804,14 @@ export async function parseTransactionsFromSpeech({
   const prompt = JSON.stringify(
     {
       instruction:
-        "You are a finance voice parser assistant. Convert Russian speech into structured finance operations JSON.",
+        "You are a strict finance parser. Parse only transaction phrases. Never answer any questions.",
       agentProtocol: [
         "Step 1: Split utterance into one or more operations.",
         "Step 2: Determine operation type. Use 'income' only when intent is clearly income (salary, cashback, refund, transfer-in). Otherwise 'expense'.",
-        "Step 3: Choose category from user's existing categories only.",
-        "Step 4: If no existing category fits, suggest one short category name to create.",
-        "Step 5: Return strictly valid JSON object by schema.",
+        "Step 3: Extract amount and category only (no descriptions, no explanations).",
+        "Step 4: Choose category from user's existing categories only.",
+        "Step 5: If no existing category fits, suggest one short category name to create.",
+        "Step 6: Return strictly valid JSON object by schema.",
       ],
       categoryPolicy: {
         allowedExistingCategoriesOnly: true,
@@ -817,12 +832,9 @@ export async function parseTransactionsFromSpeech({
           {
             type: "income | expense",
             amount: "number > 0",
-            description: "string",
             categoryHint: "string from userCategories when matched_existing, otherwise optional",
             categoryResolution: "matched_existing | suggest_create | unknown",
             suggestedCategoryToCreate: "required when categoryResolution=suggest_create",
-            date: "optional YYYY-MM-DD",
-            confidence: "optional number 0..1",
           },
         ],
         confidence: "number 0..1",
@@ -894,10 +906,11 @@ export async function parseTransactionsFromSpeech({
             : normalized.warnings,
       };
     } catch (error) {
-      providerErrors.push(`${provider}: ${error?.message || "request failed"}`);
+      const providerError = describeProviderError(error);
+      providerErrors.push(`${provider}: ${providerError}`);
       logVoiceParse("provider.failed", {
         provider,
-        error: error?.message || "request failed",
+        error: providerError,
       });
     }
   }
@@ -921,3 +934,18 @@ export async function parseTransactionsFromSpeech({
     warnings: ["Все провайдеры недоступны, использован fallback-парсер."],
   };
 }
+
+export const __testables = {
+  normalizeText,
+  parseAmount,
+  splitUtterance,
+  detectType,
+  detectDateHint,
+  cleanupDescription,
+  extractJson,
+  findCategoryHint,
+  heuristicParse,
+  resolveProviderChain,
+  normalizeResult,
+};
+

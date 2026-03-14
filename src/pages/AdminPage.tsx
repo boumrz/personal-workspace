@@ -289,7 +289,6 @@ const AdminPage: React.FC = () => {
               okText="Удалить"
               cancelText="Отмена"
               okButtonProps={{ danger: true }}
-              confirmLoading={isDeleting}
             >
               <button
                 type="button"

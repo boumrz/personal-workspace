@@ -1,12 +1,21 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ApiClient, setAnalyticsAuthToken, track, getAnalyticsPlatform } from "@finance-assistant/shared";
+import {
+  ApiClient,
+  setAnalyticsAuthToken,
+  track,
+  getAnalyticsPlatform,
+  setApiBaseUrl,
+} from "@finance-assistant/shared";
 import { trackMyTrackerLogin, trackMyTrackerRegistration, clearMyTrackerUserId } from "../analytics";
+import { API_BASE_URL } from "../constants/config";
 import type { User } from "@finance-assistant/shared";
 
 const TOKEN_KEY = "token";
 const REFRESH_TOKEN_KEY = "refreshToken";
 const USER_KEY = "user";
+
+setApiBaseUrl(API_BASE_URL);
 
 interface AuthContextType {
   user: User | null;
@@ -50,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const api = useMemo(
     () =>
       new ApiClient({
+        baseUrl: API_BASE_URL,
         getToken: () => tokenRef.current,
         getRefreshToken: () => refreshTokenRef.current,
         onTokensRefreshed: (newToken, newRefreshToken, newUser) => {

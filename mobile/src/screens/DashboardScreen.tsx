@@ -222,7 +222,7 @@ export default function DashboardScreen() {
   const [selectedCategoryIndex, setSelectedCategoryIndex] = useState<number | null>(null);
   const [selectedWeek, setSelectedWeek] = useState(1);
   const [error, setError] = useState(false);
-  const retryTimer = useRef<ReturnType<typeof setTimeout>>();
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadData = useCallback(async () => {
     setError(false);
@@ -250,11 +250,18 @@ export default function DashboardScreen() {
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state: AppStateStatus) => {
       if (state === "active") {
-        clearTimeout(retryTimer.current);
+        if (retryTimer.current) {
+          clearTimeout(retryTimer.current);
+        }
         retryTimer.current = setTimeout(loadData, 300);
       }
     });
-    return () => { sub.remove(); clearTimeout(retryTimer.current); };
+    return () => {
+      sub.remove();
+      if (retryTimer.current) {
+        clearTimeout(retryTimer.current);
+      }
+    };
   }, [loadData]);
 
   const onRefresh = () => {

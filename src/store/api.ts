@@ -38,6 +38,8 @@ export interface Profile {
   dateOfBirth?: string;
   telegramId?: string | null;
   vkId?: string | null;
+  voiceLlmProvider?: string | null;
+  voiceLlmProviderChain?: string[] | null;
   hasPassword?: boolean;
   authMethodsCount?: number;
 }
@@ -97,20 +99,32 @@ export interface SpeechParseContext {
 export interface ParsedSpeechTransactionItem {
   type: "income" | "expense";
   amount: number;
-  description: string;
   categoryHint?: string;
   categoryResolution?: "matched_existing" | "suggest_create" | "unknown";
   suggestedCategoryToCreate?: string;
-  date?: string;
-  confidence?: number;
 }
 
 export interface ParseTransactionsFromSpeechRequest {
   text: string;
   mode?: "actual" | "planned";
   context?: SpeechParseContext;
-  provider?: "gigachat" | "gemini" | "groq" | "openrouter" | "heuristic";
-  providerChain?: ("gigachat" | "gemini" | "groq" | "openrouter" | "heuristic")[];
+  provider?:
+    | "gigachat"
+    | "gpt4free"
+    | "gemini"
+    | "gemini-flash-lite"
+    | "groq"
+    | "openrouter"
+    | "heuristic";
+  providerChain?: (
+    | "gigachat"
+    | "gpt4free"
+    | "gemini"
+    | "gemini-flash-lite"
+    | "groq"
+    | "openrouter"
+    | "heuristic"
+  )[];
 }
 
 export interface ParseTransactionsFromSpeechResponse {

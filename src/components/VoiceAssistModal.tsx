@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Modal, Spin, Input, message } from "antd";
 import { useFinance } from "../context/FinanceContext";
 import {
@@ -26,12 +26,50 @@ const normalize = (value: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+const DEFAULT_VOICE_PROVIDER_CHAIN = ["gpt4free", "heuristic"] as const;
+
+function normalizeProvider(value?: string | null) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function resolveUserProviderChain(profile?: {
+  voiceLlmProvider?: string | null;
+  voiceLlmProviderChain?: string[] | null;
+} | null) {
+  if (!profile) return [];
+  const fromChain = Array.isArray(profile.voiceLlmProviderChain)
+    ? profile.voiceLlmProviderChain.map((item) => normalizeProvider(item)).filter(Boolean)
+    : [];
+  if (fromChain.length > 0) {
+    return Array.from(new Set(fromChain));
+  }
+  const single = normalizeProvider(profile.voiceLlmProvider);
+  return single ? [single] : [];
+}
+
+function isDefaultVoiceConfiguration(profile?: {
+  voiceLlmProvider?: string | null;
+  voiceLlmProviderChain?: string[] | null;
+} | null) {
+  const providerChain = resolveUserProviderChain(profile);
+  if (providerChain.length === 0) return true;
+  if (providerChain.length === 1 && providerChain[0] === "gpt4free") return true;
+  const chainSet = new Set(providerChain);
+  return (
+    chainSet.size === DEFAULT_VOICE_PROVIDER_CHAIN.length &&
+    DEFAULT_VOICE_PROVIDER_CHAIN.every((provider) => chainSet.has(provider))
+  );
+}
+
 export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
   open,
   onClose,
 }) => {
   const { addTransaction, addCategory } = useFinance();
   const { data: categories = [] } = useGetCategoriesQuery(undefined, {
+    skip: !open,
+  });
+  const { data: profile } = useGetProfileQuery(undefined, {
     skip: !open,
   });
   const [parseFromSpeech] = useParseTransactionsFromSpeechMutation();
@@ -45,6 +83,14 @@ export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
     []
   );
   const [categoryDrafts, setCategoryDrafts] = useState<string[]>([]);
+  const showVoiceUpgradeHint = useMemo(() => isDefaultVoiceConfiguration(profile), [profile]);
+  const handleFocusCapture = useCallback((event: React.FocusEvent<HTMLElement>) => {
+    const target = event.target as HTMLElement | null;
+    if (!target?.scrollIntoView) return;
+    window.setTimeout(() => {
+      target.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 120);
+  }, []);
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -247,8 +293,8 @@ export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
         await addTransaction({
           type: item.type,
           amount: item.amount,
-          description: item.description || "Голосовая операция",
-          date: item.date || today,
+          description: "Голосовая операция",
+          date: today,
           category,
         });
         added += 1;
@@ -292,19 +338,21 @@ export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
       centered
       destroyOnClose
       className={styles.modal}
-      styles={{ body: { maxHeight: "70vh", overflowY: "auto" } }}
+      styles={{ body: { maxHeight: "70dvh", overflowY: "auto" } }}
     >
-      <div className={styles.content}>
+      <div className={styles.content} onFocusCapture={handleFocusCapture}>
         <h3 className={styles.title}>Голосовой помощник</h3>
         <p className={styles.description}>
           Добавляйте доходы и расходы голосом. Продиктуйте сумму и описание —
           например: «Потратил 500 рублей на кофе» или «Получил 3000 зарплата».
         </p>
-        <div className={styles.voiceUpgradeHint}>
-          <span className={styles.voiceUpgradeHintText}>
-            Для полного доступа к голосовому помощнику обратитесь к разработчику.
-          </span>
-        </div>
+        {showVoiceUpgradeHint && (
+          <div className={styles.voiceUpgradeHint}>
+            <span className={styles.voiceUpgradeHintText}>
+              Для полного доступа к голосовому помощнику обратитесь к разработчику.
+            </span>
+          </div>
+        )}
         <p className={styles.subtitle}>
           {isListening
             ? "Скажите операции вслух. Можно перечислять несколько транзакций подряд."
@@ -350,9 +398,6 @@ export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
                   <div className={styles.parsedItemTitle}>
                     {item.type === "income" ? "Доход" : "Расход"} · ₽
                     {item.amount.toLocaleString("ru-RU")}
-                  </div>
-                  <div className={styles.parsedItemMeta}>
-                    {item.description || "Без описания"}
                   </div>
                   <div className={styles.parsedItemMeta}>
                     Категория: {category?.name ?? "Не определена"}
@@ -422,3 +467,4 @@ export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
     </Modal>
   );
 };
+

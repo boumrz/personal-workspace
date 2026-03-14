@@ -39,6 +39,11 @@ function parseEnabledProviders() {
   return raw.length > 0 ? raw : null;
 }
 
+function parsePositiveNumber(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 const vkAppIds = parseVkAppIds();
 const llmProviderChain = parseProviderChain();
 const llmEnabledProviders = parseEnabledProviders();
@@ -55,6 +60,15 @@ export default {
     appId: vkAppIds[0] || null,
     appIds: vkAppIds,
   },
+  rateLimit: {
+    enabled: String(process.env.RATE_LIMIT_ENABLED || "true").toLowerCase() !== "false",
+    windowMs: parsePositiveNumber(process.env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
+    max: parsePositiveNumber(process.env.RATE_LIMIT_MAX, 120),
+    authWindowMs: parsePositiveNumber(process.env.RATE_LIMIT_AUTH_WINDOW_MS, 15 * 60 * 1000),
+    authMax: parsePositiveNumber(process.env.RATE_LIMIT_AUTH_MAX, 20),
+    voiceWindowMs: parsePositiveNumber(process.env.RATE_LIMIT_VOICE_WINDOW_MS, 5 * 60 * 1000),
+    voiceMax: parsePositiveNumber(process.env.RATE_LIMIT_VOICE_MAX, 25),
+  },
   llm: {
     provider: llmProviderChain[0] || "gpt4free",
     providerChain: llmProviderChain,
@@ -67,6 +81,7 @@ export default {
       baseUrl: process.env.GPT4FREE_BASE_URL || "http://localhost:1337/v1",
       apiKey: process.env.GPT4FREE_API_KEY || "",
       model: process.env.GPT4FREE_MODEL || "gpt-4o-mini",
+      timeoutMs: parsePositiveNumber(process.env.GPT4FREE_TIMEOUT_MS, 60000),
     },
     gemini: {
       apiKey: process.env.GEMINI_API_KEY || process.env.LLM_API_KEY || "",
