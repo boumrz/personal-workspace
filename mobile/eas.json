@@ -7,6 +7,7 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "environment": "development",
       "env": {
         "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       },
@@ -16,6 +17,7 @@
     },
     "preview": {
       "distribution": "internal",
+      "environment": "preview",
       "env": {
         "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       },
@@ -25,6 +27,7 @@
       "channel": "preview"
     },
     "production": {
+      "environment": "production",
       "android": {
         "buildType": "app-bundle"
       },
@@ -34,6 +37,7 @@
     },
     "production-apk": {
       "distribution": "internal",
+      "environment": "production",
       "android": {
         "buildType": "apk"
       },
