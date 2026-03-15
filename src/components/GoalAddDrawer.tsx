@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from "react";
+import React, { useEffect } from "react";
 import { Drawer } from "antd";
 import { Goal } from "../store/api";
 import GoalForm from "./GoalForm";
@@ -34,7 +34,7 @@ const GoalAddDrawer: React.FC<GoalAddDrawerProps> = ({
 
   return (
       <Drawer
-        title="Р”РѕР±Р°РІР»РµРЅРёРµ С†РµР»Рё"
+        title="Добавление цели"
         placement="right"
         open={open}
         onClose={onClose}

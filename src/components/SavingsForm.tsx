@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Modal, Drawer, Form, InputNumber, Input, Button, DatePicker } from "antd";
 import dayjs from "dayjs";
 import { useFinance } from "../context/FinanceContext";
@@ -74,7 +74,7 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving 
     onClose();
   };
 
-  // РћРіСЂР°РЅРёС‡РёРІР°РµРј РґР°С‚С‹: РЅРµР»СЊР·СЏ РІРЅРѕСЃРёС‚СЊ РЅР° Р±СѓРґСѓС‰РёР№ РјРµСЃСЏС†
+  // Ограничиваем даты: нельзя вносить на будущий месяц
   const disabledDate = (current: dayjs.Dayjs | null) => {
     if (!current) return false;
     const today = dayjs();
@@ -83,7 +83,7 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving 
     const selectedMonth = current.month();
     const selectedYear = current.year();
 
-    // Р—Р°РїСЂРµС‰Р°РµРј Р±СѓРґСѓС‰РёРµ РјРµСЃСЏС†С‹
+    // Запрещаем будущие месяцы
     if (selectedYear > currentYear) return true;
     if (selectedYear === currentYear && selectedMonth > currentMonth) return true;
 
@@ -100,11 +100,11 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving 
       onFocusCapture={handleFormFocusCapture}
     >
       <Form.Item
-        label="РЎСѓРјРјР°"
+        label="Сумма"
         name="amount"
         rules={[
-          { required: true, message: "Р’РІРµРґРёС‚Рµ СЃСѓРјРјСѓ" },
-          { type: "number", min: 0.01, message: "РЎСѓРјРјР° РґРѕР»Р¶РЅР° Р±С‹С‚СЊ Р±РѕР»СЊС€Рµ 0" },
+          { required: true, message: "Введите сумму" },
+          { type: "number", min: 0.01, message: "Сумма должна быть больше 0" },
         ]}
       >
         <InputNumber
@@ -117,19 +117,19 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving 
         />
       </Form.Item>
 
-      <Form.Item label="Р”Р°С‚Р°" name="date" rules={[{ required: true, message: "Р’С‹Р±РµСЂРёС‚Рµ РґР°С‚Сѓ" }]}>
+      <Form.Item label="Дата" name="date" rules={[{ required: true, message: "Выберите дату" }]}>
         <DatePicker
           format="DD.MM.YYYY"
           style={{ width: "100%" }}
           size="large"
           disabledDate={disabledDate}
-          placeholder="Р’С‹Р±РµСЂРёС‚Рµ РґР°С‚Сѓ"
+          placeholder="Выберите дату"
         />
       </Form.Item>
 
-      <Form.Item label="РћРїРёСЃР°РЅРёРµ" name="description">
+      <Form.Item label="Описание" name="description">
         <Input.TextArea
-          placeholder="РћРїРёСЃР°РЅРёРµ РЅР°РєРѕРїР»РµРЅРёСЏ (РЅРµРѕР±СЏР·Р°С‚РµР»СЊРЅРѕ)"
+          placeholder="Описание накопления (необязательно)"
           rows={3}
           maxLength={500}
           showCount
@@ -144,10 +144,10 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving 
           block
           className={styles.submitButton}
         >
-          {isEditMode ? "РЎРѕС…СЂР°РЅРёС‚СЊ" : "Р”РѕР±Р°РІРёС‚СЊ РЅР°РєРѕРїР»РµРЅРёРµ"}
+          {isEditMode ? "Сохранить" : "Добавить накопление"}
         </Button>
         <Button onClick={handleCancel} size="large" block className={styles.cancelButton}>
-          РћС‚РјРµРЅР°
+          Отмена
         </Button>
       </Form.Item>
     </Form>
@@ -156,7 +156,7 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving 
   if (isMobile) {
     return (
       <Drawer
-        title={isEditMode ? "Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РЅР°РєРѕРїР»РµРЅРёРµ" : "Р”РѕР±Р°РІРёС‚СЊ РЅР°РєРѕРїР»РµРЅРёРµ"}
+        title={isEditMode ? "Редактировать накопление" : "Добавить накопление"}
         placement="right"
         onClose={handleCancel}
         open={open}
@@ -177,7 +177,7 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving 
 
   return (
     <Modal
-      title={isEditMode ? "Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РЅР°РєРѕРїР»РµРЅРёРµ" : "Р”РѕР±Р°РІРёС‚СЊ РЅР°РєРѕРїР»РµРЅРёРµ"}
+      title={isEditMode ? "Редактировать накопление" : "Добавить накопление"}
       open={open}
       onCancel={handleCancel}
       footer={null}

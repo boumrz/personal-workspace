@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Drawer,
   Modal,
@@ -44,7 +44,7 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [profileForm] = Form.useForm();
 
-  // RTK Query С…СѓРєРё
+  // RTK Query хуки
   const {
     data: profileData,
     isLoading: profileLoading,
@@ -154,11 +154,11 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
 
   const content = (
     <div className={styles.content} onFocusCapture={handleFocusCapture}>
-      {/* РџСЂРѕС„РёР»СЊ */}
+      {/* Профиль */}
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <h3>
-            <UserOutlined /> Р”Р°РЅРЅС‹Рµ РїСЂРѕС„РёР»СЏ
+            <UserOutlined /> Данные профиля
           </h3>
           {!editingProfile && (
             <Button
@@ -166,8 +166,8 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
               icon={<EditOutlined />}
               onClick={() => setEditingProfile(true)}
               className="circle-icon-btn"
-              title="Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ"
-              aria-label="Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ"
+              title="Редактировать"
+              aria-label="Редактировать"
             />
           )}
         </div>
@@ -178,14 +178,14 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
             layout="vertical"
             onFinish={handleProfileSubmit}
           >
-            <Form.Item name="fullName" label="Р¤РРћ">
-              <Input placeholder="Р’РІРµРґРёС‚Рµ Р¤РРћ" />
+            <Form.Item name="fullName" label="ФИО">
+              <Input placeholder="Введите ФИО" />
             </Form.Item>
-            <Form.Item name="age" label="Р’РѕР·СЂР°СЃС‚">
+            <Form.Item name="age" label="Возраст">
               <InputNumber
                 min={0}
                 max={150}
-                placeholder="Р’РІРµРґРёС‚Рµ РІРѕР·СЂР°СЃС‚"
+                placeholder="Введите возраст"
                 style={{ width: "100%" }}
               />
             </Form.Item>
@@ -201,7 +201,7 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
                 type="primary"
                 htmlType="submit"
               >
-                РЎРѕС…СЂР°РЅРёС‚СЊ
+                Сохранить
               </Button>
               <Button
                 style={{ flex: 1, minWidth: 0 }}
@@ -210,17 +210,17 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
                   profileForm.resetFields();
                 }}
               >
-                РћС‚РјРµРЅР°
+                Отмена
               </Button>
             </div>
           </Form>
         ) : (
           <div className={styles.profileInfo}>
             <div className={styles.profileField}>
-              <strong>Р¤РРћ:</strong> {profile?.name || "РќРµ СѓРєР°Р·Р°РЅРѕ"}
+              <strong>ФИО:</strong> {profile?.name || "Не указано"}
             </div>
             <div className={styles.profileField}>
-              <strong>Р’РѕР·СЂР°СЃС‚:</strong> {profile?.age || "РќРµ СѓРєР°Р·Р°РЅ"}
+              <strong>Возраст:</strong> {profile?.age || "Не указан"}
             </div>
           </div>
         )}
@@ -228,18 +228,18 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
 
       <Divider />
 
-      {/* Р¦РµР»Рё */}
+      {/* Цели */}
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
-          <h3>Р¦РµР»Рё</h3>
+          <h3>Цели</h3>
           {!showGoalForm && !editingGoal && (
             <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={() => setShowGoalForm(true)}
               className="circle-icon-btn"
-              title="Р”РѕР±Р°РІРёС‚СЊ С†РµР»СЊ"
-              aria-label="Р”РѕР±Р°РІРёС‚СЊ С†РµР»СЊ"
+              title="Добавить цель"
+              aria-label="Добавить цель"
             />
           )}
         </div>
@@ -255,7 +255,7 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
         )}
 
         {goals.length === 0 && !showGoalForm ? (
-          <Empty description="РќРµС‚ С†РµР»РµР№. Р”РѕР±Р°РІСЊС‚Рµ РїРµСЂРІСѓСЋ С†РµР»СЊ!" />
+          <Empty description="Нет целей. Добавьте первую цель!" />
         ) : (
           <div className={styles.goalsList}>
             {goals.map((goal) => (
@@ -277,7 +277,7 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
                           onClick={() => setEditingGoal(goal)}
                         />
                         <Popconfirm
-                          title="РЈРґР°Р»РёС‚СЊ С†РµР»СЊ?"
+                          title="Удалить цель?"
                           onConfirm={() => handleGoalDelete(goal.id)}
                         >
                           <Button
@@ -302,8 +302,8 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
                         format={(percent) => `${Math.round(percent || 0)}%`}
                       />
                       <div className={styles.goalAmounts}>
-                        <span>{goal.currentAmount.toLocaleString()} в‚Ѕ</span>
-                        <span>РёР· {goal.targetAmount.toLocaleString()} в‚Ѕ</span>
+                        <span>{goal.currentAmount.toLocaleString()} ₽</span>
+                        <span>из {goal.targetAmount.toLocaleString()} ₽</span>
                       </div>
                     </div>
                     <div className={styles.goalActions}>
@@ -334,7 +334,7 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
   if (isMobile) {
     return (
       <Drawer
-        title="РџСЂРѕС„РёР»СЊ"
+        title="Профиль"
         placement="right"
         open={open}
         onClose={onClose}
@@ -356,7 +356,7 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
 
   return (
     <Modal
-      title="РџСЂРѕС„РёР»СЊ"
+      title="Профиль"
       open={open}
       onCancel={onClose}
       footer={null}
