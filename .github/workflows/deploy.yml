@@ -198,6 +198,12 @@ jobs:
           echo "📋 Версия Node.js: $(node --version 2>/dev/null || echo 'не найдена')"
           echo "📋 Версия npm: $(npm --version 2>/dev/null || echo 'не найдена')"
 
+          if ! command -v pm2 &> /dev/null; then
+            echo "⚠️ pm2 не найден, устанавливаем глобально..."
+            npm install -g pm2
+          fi
+          echo "📋 Версия PM2: $(pm2 --version 2>/dev/null || echo 'не найдена')"
+
           # Переходим в директорию проекта
           cd "${SERVER_PATH}" || exit 1
 
@@ -247,6 +253,9 @@ jobs:
           echo "🔄 Перезапуск бэкенда..."
           pm2 restart finance-assistant-api || (pm2 delete finance-assistant-api 2>/dev/null || true; pm2 start ecosystem.config.cjs --env production)
           pm2 save
+          sleep 3
+          pm2 status finance-assistant-api || true
+          pm2 logs finance-assistant-api --nostream --lines 80 || true
 
           # Backend-only deploy: не трогаем фронтенд сборку и nginx-конфиг,
           # чтобы выкладка API была независимой от web/mobile релизов.
@@ -270,7 +279,16 @@ jobs:
           SERVER_BASE_URL: ${{ secrets.SERVER_BASE_URL || '' }}
         run: |
           echo "🔍 Проверка статуса сервера..."
-          ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} "pm2 status || echo 'PM2 не запущен'"
+          ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} "\
+            export NVM_DIR=\"\$HOME/.nvm\"; \
+            [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\" || true; \
+            export PATH=\"\$PATH:/usr/bin:/usr/local/bin:\$HOME/.local/bin\"; \
+            if command -v pm2 >/dev/null 2>&1; then \
+              pm2 status finance-assistant-api || pm2 status; \
+              pm2 logs finance-assistant-api --nostream --lines 80 || true; \
+            else \
+              echo 'PM2 не найден в non-interactive SSH session'; \
+            fi"
           if [ -n "${SERVER_HEALTHCHECK_URL}" ]; then
             echo "🌡️ Проверка health endpoint..."
             curl -fsSL "${SERVER_HEALTHCHECK_URL}" >/dev/null
