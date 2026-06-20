@@ -65,6 +65,12 @@
 }
 
 /* Кнопка фильтра */
+.headerActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .filterBtn {
   width: 40px;
   height: 40px;

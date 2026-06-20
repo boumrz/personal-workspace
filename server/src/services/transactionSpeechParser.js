@@ -163,17 +163,251 @@ function detectType(text, mode) {
   return "expense";
 }
 
+const RU_MONTHS = new Map([
+  ["январь", 1],
+  ["января", 1],
+  ["январе", 1],
+  ["февраль", 2],
+  ["февраля", 2],
+  ["феврале", 2],
+  ["март", 3],
+  ["марта", 3],
+  ["марте", 3],
+  ["апрель", 4],
+  ["апреля", 4],
+  ["апреле", 4],
+  ["май", 5],
+  ["мая", 5],
+  ["мае", 5],
+  ["июнь", 6],
+  ["июня", 6],
+  ["июне", 6],
+  ["июль", 7],
+  ["июля", 7],
+  ["июле", 7],
+  ["август", 8],
+  ["августа", 8],
+  ["августе", 8],
+  ["сентябрь", 9],
+  ["сентября", 9],
+  ["сентябре", 9],
+  ["октябрь", 10],
+  ["октября", 10],
+  ["октябре", 10],
+  ["ноябрь", 11],
+  ["ноября", 11],
+  ["ноябре", 11],
+  ["декабрь", 12],
+  ["декабря", 12],
+  ["декабре", 12],
+]);
+
+const RU_MONTH_WORD_PATTERN = Array.from(RU_MONTHS.keys()).join("|");
+
+const RU_DAY_WORDS = new Map([
+  ["первое", 1],
+  ["первого", 1],
+  ["один", 1],
+  ["второе", 2],
+  ["второго", 2],
+  ["два", 2],
+  ["третье", 3],
+  ["третьего", 3],
+  ["три", 3],
+  ["четвертое", 4],
+  ["четвертого", 4],
+  ["четыре", 4],
+  ["пятое", 5],
+  ["пятого", 5],
+  ["пять", 5],
+  ["шестое", 6],
+  ["шестого", 6],
+  ["шесть", 6],
+  ["седьмое", 7],
+  ["седьмого", 7],
+  ["семь", 7],
+  ["восьмое", 8],
+  ["восьмого", 8],
+  ["восемь", 8],
+  ["девятое", 9],
+  ["девятого", 9],
+  ["девять", 9],
+  ["десятое", 10],
+  ["десятого", 10],
+  ["десять", 10],
+  ["одиннадцатое", 11],
+  ["одиннадцатого", 11],
+  ["одиннадцать", 11],
+  ["двенадцатое", 12],
+  ["двенадцатого", 12],
+  ["двенадцать", 12],
+  ["тринадцатое", 13],
+  ["тринадцатого", 13],
+  ["тринадцать", 13],
+  ["четырнадцатое", 14],
+  ["четырнадцатого", 14],
+  ["четырнадцать", 14],
+  ["пятнадцатое", 15],
+  ["пятнадцатого", 15],
+  ["пятнадцать", 15],
+  ["шестнадцатое", 16],
+  ["шестнадцатого", 16],
+  ["шестнадцать", 16],
+  ["семнадцатое", 17],
+  ["семнадцатого", 17],
+  ["семнадцать", 17],
+  ["восемнадцатое", 18],
+  ["восемнадцатого", 18],
+  ["восемнадцать", 18],
+  ["девятнадцатое", 19],
+  ["девятнадцатого", 19],
+  ["девятнадцать", 19],
+  ["двадцатое", 20],
+  ["двадцатого", 20],
+  ["двадцать", 20],
+  ["тридцатое", 30],
+  ["тридцатого", 30],
+  ["тридцать", 30],
+]);
+
+function getDatePartsInTimezone(date, timezone) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone || "Europe/Moscow",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const value = (type) => Number(parts.find((part) => part.type === type)?.value);
+  return {
+    year: value("year"),
+    month: value("month"),
+    day: value("day"),
+  };
+}
+
+function buildIsoDate(year, month, day) {
+  const fullYear = Number(year);
+  const fullMonth = Number(month);
+  const fullDay = Number(day);
+  if (
+    !Number.isInteger(fullYear) ||
+    !Number.isInteger(fullMonth) ||
+    !Number.isInteger(fullDay) ||
+    fullYear < 2000 ||
+    fullYear > 2100 ||
+    fullMonth < 1 ||
+    fullMonth > 12 ||
+    fullDay < 1 ||
+    fullDay > 31
+  ) {
+    return null;
+  }
+
+  const date = new Date(Date.UTC(fullYear, fullMonth - 1, fullDay));
+  if (
+    date.getUTCFullYear() !== fullYear ||
+    date.getUTCMonth() !== fullMonth - 1 ||
+    date.getUTCDate() !== fullDay
+  ) {
+    return null;
+  }
+  return `${fullYear}-${String(fullMonth).padStart(2, "0")}-${String(fullDay).padStart(2, "0")}`;
+}
+
+function normalizeYear(year, fallbackYear) {
+  if (!year) return fallbackYear;
+  const numeric = Number(year);
+  if (!Number.isInteger(numeric)) return fallbackYear;
+  if (numeric < 100) return 2000 + numeric;
+  return numeric;
+}
+
+function addDaysToIsoDate(isoDate, days) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+  return buildIsoDate(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate());
+}
+
+function hasRuWord(text, word) {
+  return new RegExp(`(^|[^а-яёa-z])${word}(?=$|[^а-яёa-z])`, "i").test(text);
+}
+
+function parseRussianDayWords(value) {
+  const normalized = normalizeText(value);
+  if (!normalized) return null;
+  const direct = RU_DAY_WORDS.get(normalized);
+  if (direct) return direct;
+
+  const parts = normalized.split(" ").filter(Boolean);
+  if (parts.length < 2) return null;
+
+  const tens = RU_DAY_WORDS.get(parts[0]);
+  const units = RU_DAY_WORDS.get(parts.slice(1).join(" "));
+  if (!tens || !units) return null;
+
+  const day = tens + units;
+  return day >= 1 && day <= 31 ? day : null;
+}
+
 function detectDateHint(text, timezone) {
   const normalized = text.toLowerCase();
-  const now = new Date();
-  if (/вчера/.test(normalized)) {
-    const d = new Date(now);
-    d.setDate(now.getDate() - 1);
-    return formatIsoDate(d, timezone);
+  const todayParts = getDatePartsInTimezone(new Date(), timezone);
+  const today = buildIsoDate(todayParts.year, todayParts.month, todayParts.day);
+
+  if (/позавчера/.test(normalized)) {
+    return addDaysToIsoDate(today, -2);
   }
-  if (/сегодня/.test(normalized)) {
-    return formatIsoDate(now, timezone);
+  if (hasRuWord(normalized, "вчера")) {
+    return addDaysToIsoDate(today, -1);
   }
+  if (hasRuWord(normalized, "сегодня")) {
+    return today;
+  }
+  if (hasRuWord(normalized, "завтра")) {
+    return addDaysToIsoDate(today, 1);
+  }
+
+  const numericDatePattern =
+    /(?:^|[^0-9а-яёa-z])((?:за|на|от|дата|датой|число|числа)\s+)?(\d{1,2})[./-](\d{1,2})(?:[./-](\d{2,4}))?(?=$|[^0-9а-яёa-z])/gi;
+  for (const numericDate of normalized.matchAll(numericDatePattern)) {
+    const hasDateMarker = Boolean(numericDate[1]);
+    const hasExplicitYear = Boolean(numericDate[4]);
+    if (hasDateMarker || hasExplicitYear) {
+      const year = normalizeYear(numericDate[4], todayParts.year);
+      const iso = buildIsoDate(year, Number(numericDate[3]), Number(numericDate[2]));
+      if (iso) return iso;
+    }
+  }
+
+  const monthDate = normalized.match(
+    new RegExp(
+      `(?:^|[^0-9а-яёa-z])(\\d{1,2})(?:-?(?:го|ое|е|я))?\\s+(${RU_MONTH_WORD_PATTERN})(?:\\s+(\\d{2,4}))?(?=$|[^0-9а-яёa-z])`,
+      "i"
+    )
+  );
+  if (monthDate) {
+    const month = RU_MONTHS.get(monthDate[2]);
+    const year = normalizeYear(monthDate[3], todayParts.year);
+    const iso = buildIsoDate(year, month, Number(monthDate[1]));
+    if (iso) return iso;
+  }
+
+  const normalizedWords = normalizeText(text);
+  const tokens = normalizedWords.split(" ").filter(Boolean);
+  for (let index = 0; index < tokens.length; index += 1) {
+    const month = RU_MONTHS.get(tokens[index]);
+    if (!month) continue;
+
+    for (let size = Math.min(3, index); size >= 1; size -= 1) {
+      const day = parseRussianDayWords(tokens.slice(index - size, index).join(" "));
+      if (!day) continue;
+
+      const iso = buildIsoDate(todayParts.year, month, day);
+      if (iso) return iso;
+    }
+  }
+
   return null;
 }
 
@@ -443,6 +677,18 @@ function describeProviderError(error) {
   return details ? `${message} (${details})` : message;
 }
 
+function normalizeOutputDate(value) {
+  const text = String(value || "").trim();
+  if (!text) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${String(parsed.getDate()).padStart(
+    2,
+    "0"
+  )}`;
+}
+
 function normalizeMultilineEnvValue(value) {
   return String(value || "").replace(/\\n/g, "\n").trim();
 }
@@ -557,7 +803,7 @@ async function callOpenAiCompatible({ baseUrl, apiKey, model, prompt, timeoutMs,
           {
             role: "system",
             content:
-              "You are a strict finance parser. Never answer questions. Return only JSON object with keys: items, confidence, warnings, unparsedText. Each item must contain only: type, amount, categoryHint, categoryResolution, suggestedCategoryToCreate.",
+              "You are a strict finance parser. Never answer questions. Return only JSON object with keys: items, confidence, warnings, unparsedText. Each item must contain only: type, amount, date, categoryHint, categoryResolution, suggestedCategoryToCreate.",
           },
           { role: "user", content: prompt },
         ],
@@ -672,7 +918,7 @@ async function callGigaChat({ model, prompt, timeoutMs }) {
             {
               role: "system",
               content:
-                "You are a strict finance parser. Never answer questions. Return only JSON object with keys: items, confidence, warnings, unparsedText. Each item must contain only: type, amount, categoryHint, categoryResolution, suggestedCategoryToCreate.",
+                "You are a strict finance parser. Never answer questions. Return only JSON object with keys: items, confidence, warnings, unparsedText. Each item must contain only: type, amount, date, categoryHint, categoryResolution, suggestedCategoryToCreate.",
             },
             { role: "user", content: prompt },
           ],
@@ -798,7 +1044,10 @@ async function callProvider({ provider, prompt, timeoutMs }) {
   throw new Error(`Unsupported LLM provider: ${provider}`);
 }
 
-function normalizeResult(result, fallbackText, categories) {
+function normalizeResult(result, fallbackText, categories, timezone) {
+  const rawItems = Array.isArray(result?.items) ? result.items : [];
+  const sharedFallbackDate = rawItems.length === 1 ? detectDateHint(fallbackText, timezone) : null;
+
   const suggestionToTitle = (value) => {
     const trimmed = String(value || "").trim();
     if (!trimmed) return "";
@@ -840,25 +1089,34 @@ function normalizeResult(result, fallbackText, categories) {
     };
   };
 
-  const items = Array.isArray(result?.items)
-    ? result.items
-        .map((item) => {
-          const amount = Number(item?.amount);
-          if (!Number.isFinite(amount) || amount <= 0) {
-            return null;
-          }
-          const type = item?.type === "income" ? "income" : "expense";
-          const categoryOutcome = resolveCategoryOutcome(item, categories);
-          return {
-            type,
-            amount: Math.round(amount * 100) / 100,
-            categoryHint: categoryOutcome.categoryHint,
-            categoryResolution: categoryOutcome.categoryResolution,
-            suggestedCategoryToCreate: categoryOutcome.suggestedCategoryToCreate,
-          };
-        })
+  const items = rawItems
+    .map((item) => {
+      const amount = Number(item?.amount);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return null;
+      }
+      const type = item?.type === "income" ? "income" : "expense";
+      const categoryOutcome = resolveCategoryOutcome(item, categories);
+      const itemDateText = [
+        item?.dateText,
+        item?.sourceText,
+        item?.rawText,
+        item?.text,
+        item?.description,
+      ]
         .filter(Boolean)
-    : [];
+        .join(" ");
+      const detectedItemDate = itemDateText ? detectDateHint(itemDateText, timezone) : null;
+      return {
+        type,
+        amount: Math.round(amount * 100) / 100,
+        categoryHint: categoryOutcome.categoryHint,
+        categoryResolution: categoryOutcome.categoryResolution,
+        suggestedCategoryToCreate: categoryOutcome.suggestedCategoryToCreate,
+        date: detectedItemDate || sharedFallbackDate || normalizeOutputDate(item?.date) || undefined,
+      };
+    })
+    .filter(Boolean);
 
   return {
     items,
@@ -898,11 +1156,20 @@ export async function parseTransactionsFromSpeech({
       agentProtocol: [
         "Step 1: Split utterance into one or more operations.",
         "Step 2: Determine operation type. Use 'income' only when intent is clearly income (salary, cashback, refund, transfer-in). Otherwise 'expense'.",
-        "Step 3: Extract amount and category only (no descriptions, no explanations).",
+        "Step 3: Extract amount, category and optional transaction date if present in phrase (e.g. yesterday, today, explicit date).",
         "Step 4: Choose category from user's existing categories only.",
         "Step 5: If no existing category fits, suggest one short category name to create.",
         "Step 6: Return strictly valid JSON object by schema.",
       ],
+      datePolicy: {
+        parseWhenSaid: true,
+        fallbackWhenMissing: "omit date; client will suggest today",
+        examples: [
+          "22 мая -> YYYY-05-22 in request timezone year when year is omitted",
+          "двадцать второго мая -> YYYY-05-22 in request timezone year when year is omitted",
+          "вчера/сегодня/завтра -> relative to request timezone",
+        ],
+      },
       categoryPolicy: {
         allowedExistingCategoriesOnly: true,
         matchingRules: [
@@ -925,6 +1192,7 @@ export async function parseTransactionsFromSpeech({
             categoryHint: "string from userCategories when matched_existing, otherwise optional",
             categoryResolution: "matched_existing | suggest_create | unknown",
             suggestedCategoryToCreate: "required when categoryResolution=suggest_create",
+            date: "optional YYYY-MM-DD",
           },
         ],
         confidence: "number 0..1",
@@ -949,7 +1217,8 @@ export async function parseTransactionsFromSpeech({
           unparsedText: fallback.unparsedText,
         },
         text,
-        categories
+        categories,
+        timezone
       );
       logVoiceParse("fallback.heuristic", {
         reason: providerErrors.length > 0 ? "providers_failed" : "heuristic_selected",
@@ -977,7 +1246,7 @@ export async function parseTransactionsFromSpeech({
         logVoiceParse("provider.invalid_json", { provider });
         continue;
       }
-      const normalized = normalizeResult(parsedJson, text, categories);
+      const normalized = normalizeResult(parsedJson, text, categories, timezone);
       if (normalized.items.length === 0) {
         providerErrors.push(`${provider}: empty items`);
         logVoiceParse("provider.empty_items", { provider });
@@ -1017,7 +1286,8 @@ export async function parseTransactionsFromSpeech({
       unparsedText: finalFallback.unparsedText,
     },
     text,
-    categories
+    categories,
+    timezone
   );
   return {
     ...normalizedFinalFallback,

@@ -364,6 +364,154 @@ async function migrate() {
         console.log("Icon column migration completed");
       }
 
+      const categoryTypeColumnCheck = await pool.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'categories' AND column_name = 'type'
+      `);
+
+      if (categoryTypeColumnCheck.rows.length === 0) {
+        console.log("Migrating categories table: adding type column...");
+        await pool.query(`ALTER TABLE categories ADD COLUMN type VARCHAR(10)`);
+        const categoryUsageTablesCheck = await pool.query(`
+          SELECT
+            to_regclass('public.transactions') AS transactions_table,
+            to_regclass('public.planned_expenses') AS planned_table
+        `);
+        const hasTransactionsTable = !!categoryUsageTablesCheck.rows[0]?.transactions_table;
+        const hasPlannedTable = !!categoryUsageTablesCheck.rows[0]?.planned_table;
+
+        if (hasTransactionsTable) {
+          await pool.query(`
+            UPDATE categories
+            SET type = CASE
+              WHEN name = 'Зарплата' THEN 'income'
+              WHEN name = 'Другое' THEN 'both'
+              WHEN EXISTS (
+                SELECT 1 FROM transactions t
+                WHERE t.category_id = categories.id AND t.type = 'income'
+              ) AND (
+                EXISTS (
+                  SELECT 1 FROM transactions t
+                  WHERE t.category_id = categories.id AND t.type = 'expense'
+                ) ${hasPlannedTable ? `OR EXISTS (
+                  SELECT 1 FROM planned_expenses pe
+                  WHERE pe.category_id = categories.id
+                )` : ""}
+              ) THEN 'both'
+              WHEN EXISTS (
+                SELECT 1 FROM transactions t
+                WHERE t.category_id = categories.id AND t.type = 'income'
+              ) THEN 'income'
+              WHEN name IN ('Продукты', 'Транспорт', 'Развлечения', 'Здоровье', 'Одежда', 'Жилье') THEN 'expense'
+              WHEN NOT EXISTS (
+                SELECT 1 FROM transactions t
+                WHERE t.category_id = categories.id
+              ) ${hasPlannedTable ? `AND NOT EXISTS (
+                SELECT 1 FROM planned_expenses pe
+                WHERE pe.category_id = categories.id
+              )` : ""} THEN 'both'
+              ELSE 'expense'
+            END
+            WHERE type IS NULL
+          `);
+        } else {
+          await pool.query(`
+            UPDATE categories
+            SET type = CASE
+              WHEN name = 'Зарплата' THEN 'income'
+              WHEN name = 'Другое' THEN 'both'
+              WHEN name IN ('Продукты', 'Транспорт', 'Развлечения', 'Здоровье', 'Одежда', 'Жилье') THEN 'expense'
+              ELSE 'both'
+            END
+            WHERE type IS NULL
+          `);
+        }
+        await pool.query(`ALTER TABLE categories ALTER COLUMN type SET DEFAULT 'expense'`);
+        await pool.query(`ALTER TABLE categories ALTER COLUMN type SET NOT NULL`);
+        await pool.query(`ALTER TABLE categories DROP CONSTRAINT IF EXISTS categories_type_check`);
+        await pool.query(
+          `ALTER TABLE categories ADD CONSTRAINT categories_type_check CHECK (type IN ('income', 'expense', 'both'))`
+        );
+        console.log("Category type migration completed");
+      }
+
+      const categoryTypeReadyCheck = await pool.query(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'categories' AND column_name = 'type'
+      `);
+
+      if (categoryTypeReadyCheck.rows.length > 0) {
+        const categoryUsageTablesCheck = await pool.query(`
+          SELECT
+            to_regclass('public.transactions') AS transactions_table,
+            to_regclass('public.planned_expenses') AS planned_table
+        `);
+        const hasTransactionsTable = !!categoryUsageTablesCheck.rows[0]?.transactions_table;
+        const hasPlannedTable = !!categoryUsageTablesCheck.rows[0]?.planned_table;
+
+        if (hasTransactionsTable) {
+          await pool.query(`
+            UPDATE categories
+            SET type = 'income'
+            WHERE type = 'expense'
+              AND EXISTS (
+                SELECT 1 FROM transactions t
+                WHERE t.category_id = categories.id AND t.type = 'income'
+              )
+              AND NOT EXISTS (
+                SELECT 1 FROM transactions t
+                WHERE t.category_id = categories.id AND t.type = 'expense'
+              )
+              ${hasPlannedTable ? `AND NOT EXISTS (
+                SELECT 1 FROM planned_expenses pe
+                WHERE pe.category_id = categories.id
+              )` : ""}
+          `);
+          await pool.query(`
+            UPDATE categories
+            SET type = 'both'
+            WHERE type = 'expense'
+              AND EXISTS (
+                SELECT 1 FROM transactions t
+                WHERE t.category_id = categories.id AND t.type = 'income'
+              )
+              AND (
+                EXISTS (
+                  SELECT 1 FROM transactions t
+                  WHERE t.category_id = categories.id AND t.type = 'expense'
+                )
+                ${hasPlannedTable ? `OR EXISTS (
+                  SELECT 1 FROM planned_expenses pe
+                  WHERE pe.category_id = categories.id
+                )` : ""}
+              )
+          `);
+          await pool.query(`
+            UPDATE categories
+            SET type = 'both'
+            WHERE type = 'expense'
+              AND name NOT IN ('Продукты', 'Транспорт', 'Развлечения', 'Здоровье', 'Одежда', 'Жилье', 'Зарплата')
+              AND NOT EXISTS (
+                SELECT 1 FROM transactions t
+                WHERE t.category_id = categories.id
+              )
+              ${hasPlannedTable ? `AND NOT EXISTS (
+                SELECT 1 FROM planned_expenses pe
+                WHERE pe.category_id = categories.id
+              )` : ""}
+          `);
+        } else {
+          await pool.query(`
+            UPDATE categories
+            SET type = 'both'
+            WHERE type = 'expense'
+              AND name NOT IN ('Продукты', 'Транспорт', 'Развлечения', 'Здоровье', 'Одежда', 'Жилье', 'Зарплата')
+          `);
+        }
+      }
+
       if (categoriesCheck.rows.length === 0) {
         // Table exists but doesn't have user_id - need to migrate
         console.log("Migrating categories table...");
@@ -414,6 +562,7 @@ async function migrate() {
           name VARCHAR(100) NOT NULL,
           color VARCHAR(7) NOT NULL,
           icon VARCHAR(100) NOT NULL,
+          type VARCHAR(10) NOT NULL DEFAULT 'expense' CHECK (type IN ('income', 'expense', 'both')),
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           UNIQUE(user_id, name)
         );

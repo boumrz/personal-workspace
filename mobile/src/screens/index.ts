@@ -6,5 +6,7 @@ export { default as AddTransactionScreen } from "./AddTransactionScreen";
 export { default as CategoriesScreen } from "./CategoriesScreen";
 export { default as AddCategoryScreen } from "./AddCategoryScreen";
 export { default as ProfileScreen } from "./ProfileScreen";
+export { default as DataToolsScreen } from "./DataToolsScreen";
+export { default as DataImportReviewScreen } from "./DataImportReviewScreen";
 export { default as SavingsScreen } from "./SavingsScreen";
 export { default as AddSavingScreen } from "./AddSavingScreen";

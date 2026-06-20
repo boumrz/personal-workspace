@@ -19,6 +19,43 @@ import { handleDbError } from "./middleware/dbErrorHandler.js";
 
 const app = express();
 
+function parseUrlSafe(value) {
+  try {
+    return new URL(value);
+  } catch {
+    return null;
+  }
+}
+
+function isOriginAllowed(requestOrigin, configuredOrigins) {
+  const requestUrl = parseUrlSafe(requestOrigin);
+
+  return configuredOrigins.some((configuredOrigin) => {
+    if (configuredOrigin === requestOrigin) {
+      return true;
+    }
+
+    const configuredUrl = parseUrlSafe(configuredOrigin);
+    if (!requestUrl || !configuredUrl) {
+      return false;
+    }
+
+    if (
+      configuredUrl.protocol !== requestUrl.protocol ||
+      configuredUrl.hostname !== requestUrl.hostname
+    ) {
+      return false;
+    }
+
+    // If configured origin has no explicit port, allow same host on any port.
+    if (!configuredUrl.port) {
+      return true;
+    }
+
+    return configuredUrl.port === requestUrl.port;
+  });
+}
+
 // Required when running behind reverse proxy (Nginx)
 app.set("trust proxy", 1);
 
@@ -30,7 +67,18 @@ app.use(
 );
 app.use(
   cors({
-    origin: config.corsOrigin === "*" ? true : config.corsOrigin,
+    origin: (origin, callback) => {
+      if (config.corsOrigin === "*" || !origin) {
+        callback(null, true);
+        return;
+      }
+
+      const configuredOrigins = Array.isArray(config.corsOrigin)
+        ? config.corsOrigin
+        : [config.corsOrigin];
+
+      callback(null, isOriginAllowed(origin, configuredOrigins));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],

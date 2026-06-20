@@ -1,0 +1,17 @@
+# Dependencies and package managers
+**/node_modules/**
+
+# Build artifacts
+dist/**
+output/**
+test-results/**
+coverage/**
+
+# Mobile generated artifacts
+mobile/android/.gradle/**
+mobile/android/app/build/**
+mobile/ios/build/**
+
+# VCS and runtime noise
+.git/**
+.runtime/logs/**

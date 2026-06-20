@@ -3,6 +3,14 @@
 This folder defines a practical multi-agent delivery setup for `finance-assistant`.
 Each agent has a dedicated prompt file for focused execution.
 
+Canonical cross-tool contracts now live in `../agents/`.
+Use this folder as a legacy prompt library, and use these files as entry points:
+
+- Codex: `../AGENTS.md`
+- Cursor: `../.cursor/rules/00-multi-agent-system.mdc`
+- Full system description: `../MULTI_AGENT_SYSTEM.md`
+- Project specification: `../TECHNICAL_SPECIFICATION.md`
+
 ## Agents
 
 - `orchestrator.prompt.md`

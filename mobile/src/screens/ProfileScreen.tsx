@@ -365,6 +365,14 @@ export default function ProfileScreen({ navigation }: any) {
             </View>
             <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
           </TouchableOpacity>
+          <TouchableOpacity style={dynamicStyles.settingsItem} onPress={() => navigation.navigate("DataTools")}>
+            <View style={dynamicStyles.settingsItemIcon}><Ionicons name="layers-outline" size={18} color={theme.accentMuted} /></View>
+            <View style={dynamicStyles.settingsItemContent}>
+              <Text style={dynamicStyles.settingsItemTitle}>Инструменты данных</Text>
+              <Text style={dynamicStyles.settingsItemSubtitle}>Экспорт, импорт и фото чека</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
+          </TouchableOpacity>
           <TouchableOpacity style={dynamicStyles.settingsItem} onPress={() => navigation.navigate("PrivacyPolicy")}>
             <View style={dynamicStyles.settingsItemIcon}><Ionicons name="shield-checkmark-outline" size={18} color={theme.accentMuted} /></View>
             <View style={dynamicStyles.settingsItemContent}>

@@ -3,13 +3,11 @@ import {
   Modal,
   Drawer,
   Form,
-  InputNumber,
   Input,
   Radio,
   Button,
   DatePicker,
   Space,
-  Tooltip,
   Alert,
   App,
 } from "antd";
@@ -25,6 +23,83 @@ interface TransactionFormProps {
   onClose: () => void;
   type: "actual" | "planned";
   initialTransaction?: { id: string; type: "income" | "expense"; amount: number; category: { id: string }; description: string; date: string } | null;
+}
+
+const AMOUNT_MAX = 99999999.99;
+
+function normalizeAmountInput(raw: string): string {
+  const withDot = raw.replace(/,/g, ".");
+  const compact = withDot.replace(/\s+/g, "");
+  return compact.replace(/[^0-9+.]/g, "");
+}
+
+function parseAmountInput(raw: unknown): number | null {
+  if (raw === null || raw === undefined) return null;
+  const normalized = String(raw).trim().replace(",", ".");
+  if (!normalized) return null;
+  if (normalized.endsWith("+")) return null;
+
+  const parts = normalized.split("+");
+  if (parts.length === 0) return null;
+
+  let total = 0;
+  for (const part of parts) {
+    if (!part || !/^\d+(\.\d{1,2})?$/.test(part)) {
+      return null;
+    }
+    const value = Number(part);
+    if (!Number.isFinite(value)) return null;
+    total += value;
+  }
+
+  const rounded = Math.round(total * 100) / 100;
+  if (rounded <= 0 || rounded > AMOUNT_MAX) return null;
+  return rounded;
+}
+
+function hasAdditionExpression(raw: string): boolean {
+  return raw.includes("+");
+}
+
+function getAmountExpressionHint(raw: string, parsedAmount: number | null): string | null {
+  const normalized = normalizeAmountInput(raw);
+  if (!normalized || !hasAdditionExpression(normalized)) {
+    return null;
+  }
+  if (parsedAmount === null) {
+    return "Завершите выражение в калькуляторе";
+  }
+  return `Итого: ${formatAmountForDisplay(parsedAmount)} ₽`;
+}
+
+function formatAmountForInput(value: number): string {
+  return value.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
+}
+
+function formatAmountForDisplay(value: number): string {
+  return new Intl.NumberFormat("ru-RU", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+type CategoryScope = "income" | "expense" | "both";
+
+function resolveCategoryScope(category: { name: string; type?: CategoryScope }): CategoryScope {
+  if (category.type === "income" || category.type === "expense" || category.type === "both") {
+    return category.type;
+  }
+  if (category.name === "Зарплата") return "income";
+  if (category.name === "Другое") return "both";
+  return "expense";
+}
+
+function isCategoryAvailableForType(
+  category: { name: string; type?: CategoryScope },
+  transactionType: "income" | "expense"
+) {
+  const scope = resolveCategoryScope(category);
+  return scope === "both" || scope === transactionType;
 }
 
 const TransactionForm: React.FC<TransactionFormProps> = ({
@@ -52,6 +127,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [enteredAmount, setEnteredAmount] = useState<number | null>(null);
+  const [amountInputValue, setAmountInputValue] = useState("");
 
   // Базовые категории, которые нельзя удалить
   const defaultCategoryNames = [
@@ -108,12 +184,30 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Сброс введенной суммы при открытии/закрытии формы
+  // Сброс состояния суммы при закрытии формы
   useEffect(() => {
     if (!open) {
       setEnteredAmount(null);
+      setAmountInputValue("");
     }
   }, [open]);
+
+  const applyAmountInputValue = useCallback(
+    (raw: string) => {
+      const normalized = normalizeAmountInput(raw);
+      const parsed = parseAmountInput(normalized);
+
+      setAmountInputValue(normalized);
+      setEnteredAmount(parsed);
+      form.setFieldValue("amount", normalized);
+    },
+    [form]
+  );
+
+  const amountExpressionHint = useMemo(
+    () => getAmountExpressionHint(amountInputValue, enteredAmount),
+    [amountInputValue, enteredAmount]
+  );
 
   const handleCategoryCreated = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -122,10 +216,10 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
 
   const availableCategories = useMemo(
     () =>
-      transactionType === "income"
-        ? categories.filter((c) => c.name === "Зарплата" || c.name === "Другое")
-        : categories,
-    [transactionType, categories]
+      categories.filter((category) =>
+        isCategoryAvailableForType(category, type === "planned" ? "expense" : transactionType)
+      ),
+    [type, transactionType, categories]
   );
 
   // Функция для расчета остатка бюджета по категории за текущий месяц
@@ -202,20 +296,27 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
 
     if (initialTransaction) {
       form.setFieldsValue({
-        amount: initialTransaction.amount,
+        amount: formatAmountForInput(initialTransaction.amount),
         description: initialTransaction.description,
         date: dayjs(initialTransaction.date),
         type: initialTransaction.type,
       });
       setTransactionType(initialTransaction.type);
       setSelectedCategory(initialTransaction.category.id);
+      setAmountInputValue(formatAmountForInput(initialTransaction.amount));
+      setEnteredAmount(initialTransaction.amount);
     } else {
       form.resetFields();
       setTransactionType("expense");
-      const firstCat = categories.find((c) => c.name === "Продукты" || c.name === "Другое") || categories[0];
+      const firstCat =
+        categories.find((c) => c.name === "Продукты" && isCategoryAvailableForType(c, "expense")) ||
+        categories.find((c) => isCategoryAvailableForType(c, "expense")) ||
+        categories[0];
       setSelectedCategory(firstCat?.id || "");
+      setAmountInputValue("");
+      setEnteredAmount(null);
     }
-  }, [open, initialTransaction, categories]);
+  }, [open, initialTransaction, categories, form]);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -223,10 +324,17 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       const values = await form.validateFields();
       const category = categories.find((c) => c.id === selectedCategory);
       if (!category) return;
+      const amount = parseAmountInput(values.amount);
+      if (amount === null || amount <= 0) {
+        form.setFields([
+          { name: "amount", errors: ["Введите сумму больше 0"] },
+        ]);
+        return;
+      }
 
       const transactionData = {
         type: transactionType,
-        amount: values.amount,
+        amount,
         category,
         description: values.description || "",
         date: values.date.format("YYYY-MM-DD"),
@@ -248,6 +356,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
 
       form.resetFields();
       setEnteredAmount(null);
+      setAmountInputValue("");
       onClose();
     } catch (error) {
       console.error("Validation failed:", error);
@@ -257,6 +366,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   const handleCancel = () => {
     form.resetFields();
     setEnteredAmount(null);
+    setAmountInputValue("");
     onClose();
   };
 
@@ -284,40 +394,6 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     }
   };
 
-  // Функция для кастомного рендеринга дат с тултипами
-  // Важно: возвращаем правильную структуру для сохранения стандартного поведения Ant Design
-  const dateRender = (current: dayjs.Dayjs) => {
-    // Проверяем, заблокирована ли дата
-    const isDisabled = disabledDate(current);
-
-    // Определяем текст подсказки в зависимости от типа операции
-    const tooltipText = type === "actual" 
-      ? "Нельзя добавлять операции на будущие месяцы"
-      : "Нельзя планировать траты на прошлые месяцы";
-
-    // Для заблокированных дат добавляем тултип
-    const content = isDisabled ? (
-      <Tooltip title={tooltipText}>
-        <div style={{ width: "100%", height: "100%", cursor: "not-allowed" }}>
-          {current.date()}
-        </div>
-      </Tooltip>
-    ) : (
-      <div style={{ width: "100%", height: "100%" }}>{current.date()}</div>
-    );
-
-    // Возвращаем содержимое, обернутое в стандартную структуру Ant Design
-    // Это сохраняет стандартные классы и поведение (выделение текущего дня, выбранной даты и т.д.)
-    return (
-      <div
-        className="ant-picker-cell-inner"
-        style={{ width: "100%", height: "100%" }}
-      >
-        {content}
-      </div>
-    );
-  };
-
   const formContent = (
     <Form
       form={form}
@@ -330,14 +406,12 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           <Radio.Group
             value={transactionType}
             onChange={(e: any) => {
-              setTransactionType(e.target.value);
+              const nextType = e.target.value as "income" | "expense";
+              setTransactionType(nextType);
               setEnteredAmount(null);
-              const firstAvailable =
-                e.target.value === "income"
-                  ? categories.find(
-                      (c) => c.name === "Зарплата" || c.name === "Другое"
-                    )
-                  : categories[0];
+              const firstAvailable = categories.find((category) =>
+                isCategoryAvailableForType(category, nextType)
+              );
               if (firstAvailable) {
                 setSelectedCategory(firstAvailable.id);
               }
@@ -352,88 +426,66 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       <Form.Item
         label="Сумма (₽)"
         name="amount"
+        extra="В поле суммы есть калькулятор"
         rules={[
           { required: true, message: "Введите сумму" },
           {
             validator: (_, value) => {
-              if (value !== null && value !== undefined && value <= 0) {
-                return Promise.reject(new Error("Сумма должна быть больше 0"));
+              const parsed = parseAmountInput(value);
+              if (parsed === null) {
+                return Promise.reject(new Error("Введите корректную сумму или выражение"));
+              }
+              if (parsed <= 0) {
+                return Promise.reject(new Error("Введите сумму больше 0"));
+              }
+              if (parsed > AMOUNT_MAX) {
+                return Promise.reject(
+                  new Error("Сумма не может превышать 99 999 999.99")
+                );
               }
               return Promise.resolve();
             },
           },
         ]}
       >
-        <InputNumber
+        <Input
           style={{ width: "100%" }}
-          min={0.01}
-          max={99999999.99}
-          step={0.01}
-          precision={2}
-          placeholder="0"
-          controls={false}
-          keyboard={false}
-          onChange={(value) => setEnteredAmount(value)}
-          onKeyDown={(e) => {
-            const input = e.target as HTMLInputElement;
-            const value = input.value;
-            const selectionStart = input.selectionStart || 0;
-            const selectionEnd = input.selectionEnd || 0;
-            const hasSelection = selectionStart !== selectionEnd;
-            
-            // Служебные клавиши всегда разрешены
+          type="text"
+          inputMode="decimal"
+          placeholder="0.00"
+          value={amountInputValue}
+          onChange={(event) => applyAmountInputValue(event.target.value)}
+          onKeyDown={(event) => {
             const controlKeys = [
-              'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
-              'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
-              'Home', 'End'
+              "Backspace",
+              "Delete",
+              "Tab",
+              "Escape",
+              "Enter",
+              "ArrowLeft",
+              "ArrowRight",
+              "ArrowUp",
+              "ArrowDown",
+              "Home",
+              "End",
             ];
-            if (controlKeys.includes(e.key) || e.ctrlKey || e.metaKey) {
+
+            if (controlKeys.includes(event.key) || event.ctrlKey || event.metaKey) {
               return;
             }
-            
-            // Блокируем всё кроме цифр и разделителей
-            const isNumber = /^[0-9]$/.test(e.key);
-            const isDecimalSeparator = e.key === '.' || e.key === ',';
-            
-            if (!isNumber && !isDecimalSeparator) {
-              e.preventDefault();
-              return;
-            }
-            
-            // Проверяем точку/запятую — только одна разрешена
-            if (isDecimalSeparator) {
-              if (value.includes('.') || value.includes(',')) {
-                e.preventDefault();
-                return;
-              }
-              return;
-            }
-            
-            // Проверяем ограничение длины для цифр
-            // DECIMAL(10,2): максимум 8 цифр до точки, 2 после
-            const normalizedValue = value.replace(',', '.');
-            const parts = normalizedValue.split('.');
-            const integerPart = parts[0] || '';
-            const decimalPart = parts[1] || '';
-            
-            // Определяем, куда пользователь вводит (до или после точки)
-            const dotIndex = value.indexOf('.') !== -1 ? value.indexOf('.') : value.indexOf(',');
-            const isBeforeDecimal = dotIndex === -1 || selectionStart <= dotIndex;
-            
-            if (isBeforeDecimal) {
-              // Ввод в целую часть: максимум 8 цифр
-              if (integerPart.length >= 8 && !hasSelection) {
-                e.preventDefault();
-              }
-            } else {
-              // Ввод в дробную часть: максимум 2 цифры
-              if (decimalPart.length >= 2 && !hasSelection) {
-                e.preventDefault();
-              }
+
+            if (!/^[0-9+.,]$/.test(event.key)) {
+              event.preventDefault();
             }
           }}
         />
       </Form.Item>
+
+      {amountExpressionHint ? (
+        <Form.Item style={{ marginTop: -14 }}>
+          <div className={styles.amountSaveHint}>{amountExpressionHint}</div>
+        </Form.Item>
+      ) : null}
 
       {/* Отображение остатка бюджета */}
       {type === "actual" && transactionType === "expense" && (
@@ -501,7 +553,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                       color: "var(--text-tertiary)",
                     }}
                   >
-                    вЂ”
+                    —
                   </div>
                 </div>
               }
@@ -581,8 +633,13 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       </Form.Item>
 
       <Form.Item
-        label="Дата"
+        label={type === "actual" ? "Дата операции" : "Дата плановой траты"}
         name="date"
+        extra={
+          type === "actual"
+            ? "Можно выбрать дату до конца текущего месяца"
+            : "Можно выбрать дату начиная с текущего месяца"
+        }
         rules={[
           { required: true, message: "Выберите дату" },
           {
@@ -620,9 +677,24 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           style={{ width: "100%" }}
           format="DD.MM.YYYY"
           disabledDate={disabledDate}
-          dateRender={dateRender}
         />
       </Form.Item>
+
+      {type === "actual" && (
+        <Form.Item>
+          <Space wrap size={8}>
+            <Button size="small" onClick={() => form.setFieldValue("date", dayjs())}>
+              Сегодня
+            </Button>
+            <Button
+              size="small"
+              onClick={() => form.setFieldValue("date", dayjs().subtract(1, "day"))}
+            >
+              Вчера
+            </Button>
+          </Space>
+        </Form.Item>
+      )}
     </Form>
   );
 
@@ -690,7 +762,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       <CategoryForm
         open={showCategoryForm}
         onClose={() => setShowCategoryForm(false)}
-        transactionType={transactionType}
+        transactionType={type === "planned" ? "expense" : transactionType}
         onCategoryCreated={handleCategoryCreated}
       />
     </>

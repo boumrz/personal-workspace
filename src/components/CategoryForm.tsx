@@ -56,6 +56,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
         name: values.name,
         color: selectedColor,
         icon: selectedIcon,
+        type: transactionType,
       });
       
       if (onCategoryCreated) {

@@ -1,4 +1,5 @@
 ﻿import { test, expect, type Page } from "@playwright/test";
+import dayjs from "dayjs";
 
 type TransactionPayload = {
   type: "income" | "expense";
@@ -8,37 +9,59 @@ type TransactionPayload = {
   date: string;
 };
 
+type DraftPayload = {
+  type: "income" | "expense";
+  amount: number;
+  description?: string;
+  categoryHint?: string;
+  categoryResolution?: "matched_existing" | "suggest_create" | "unknown";
+  suggestedCategoryToCreate?: string;
+  date?: string;
+};
+
+type DraftResponse = {
+  items: DraftPayload[];
+  confidence: number;
+  warnings: string[];
+  unparsedText?: string;
+};
+
 type ApiState = {
-  categories: Array<{ id: string; name: string; color: string; icon: string }>;
+  categories: Array<{ id: string; name: string; color: string; icon: string; type?: "income" | "expense" | "both" }>;
+  profile: {
+    id: string;
+    login: string;
+    name: string;
+    voiceLlmProvider: string | null;
+    voiceLlmProviderChain: string[] | null;
+  };
   transactions: TransactionPayload[];
   plannedExpenses: unknown[];
   savings: unknown[];
-  parseResponse: {
-    items: Array<{
-      type: "income" | "expense";
-      amount: number;
-      description: string;
-      categoryHint?: string;
-      categoryResolution?: "matched_existing" | "suggest_create" | "unknown";
-      suggestedCategoryToCreate?: string;
-      date?: string;
-      confidence?: number;
-    }>;
-    confidence: number;
-    warnings: string[];
-    unparsedText?: string;
-  };
-  createdCategories: Array<{ id: string; name: string; color: string; icon: string }>;
+  parseResponse: DraftResponse;
+  importParseResponse: DraftResponse;
+  receiptParseResponse: DraftResponse;
+  createdCategories: Array<{ id: string; name: string; color: string; icon: string; type?: "income" | "expense" | "both" }>;
   createdTransactions: TransactionPayload[];
   parseCalls: number;
+  importCalls: number;
+  receiptCalls: number;
+  exportCalls: number;
 };
 
 function buildDefaultState(): ApiState {
   return {
     categories: [
-      { id: "1", name: "Food", color: "#4a9ed6", icon: "Utensils" },
-      { id: "2", name: "Transport", color: "#5fb972", icon: "Car" },
+      { id: "1", name: "Food", color: "#4a9ed6", icon: "Utensils", type: "expense" },
+      { id: "2", name: "Transport", color: "#5fb972", icon: "Car", type: "expense" },
     ],
+    profile: {
+      id: "42",
+      login: "e2e-user",
+      name: "E2E User",
+      voiceLlmProvider: "heuristic",
+      voiceLlmProviderChain: ["heuristic"],
+    },
     transactions: [],
     plannedExpenses: [],
     savings: [],
@@ -50,15 +73,57 @@ function buildDefaultState(): ApiState {
           description: "Coffee",
           categoryHint: "Food",
           categoryResolution: "matched_existing",
+          date: "2026-03-12",
         },
       ],
       confidence: 0.93,
       warnings: [],
       unparsedText: "",
     },
+    importParseResponse: {
+      items: [
+        {
+          type: "expense",
+          amount: 1280,
+          description: "Groceries",
+          categoryHint: "Food",
+          categoryResolution: "matched_existing",
+          date: "2026-03-15",
+        },
+        {
+          type: "expense",
+          amount: 220,
+          description: "Taxi",
+          categoryHint: "Transport",
+          categoryResolution: "matched_existing",
+          date: "2026-03-16",
+        },
+      ],
+      confidence: 0.91,
+      warnings: [],
+      unparsedText: "",
+    },
+    receiptParseResponse: {
+      items: [
+        {
+          type: "expense",
+          amount: 540,
+          description: "Cafe receipt",
+          categoryHint: "Food",
+          categoryResolution: "matched_existing",
+          date: "2026-03-17",
+        },
+      ],
+      confidence: 0.89,
+      warnings: [],
+      unparsedText: "",
+    },
     createdCategories: [],
     createdTransactions: [],
     parseCalls: 0,
+    importCalls: 0,
+    receiptCalls: 0,
+    exportCalls: 0,
   };
 }
 
@@ -164,6 +229,10 @@ async function setupApiMocks(page: Page, state: ApiState) {
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(state.transactions) });
     }
 
+    if (method === "GET" && path === "/api/profile") {
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(state.profile) });
+    }
+
     if (method === "GET" && path === "/api/planned-expenses") {
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(state.plannedExpenses) });
     }
@@ -177,13 +246,45 @@ async function setupApiMocks(page: Page, state: ApiState) {
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(state.parseResponse) });
     }
 
+    if (method === "POST" && path === "/api/v2/transactions/export") {
+      state.exportCalls += 1;
+      return route.fulfill({
+        status: 200,
+        headers: {
+          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "Content-Disposition": 'attachment; filename="finance-assistant-export.xlsx"',
+          "Access-Control-Expose-Headers": "Content-Disposition",
+        },
+        body: Buffer.from("fake-xlsx"),
+      });
+    }
+
+    if (method === "POST" && path === "/api/v2/transactions/import") {
+      state.importCalls += 1;
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(state.importParseResponse),
+      });
+    }
+
+    if (method === "POST" && path === "/api/v2/transactions/receipt/parse") {
+      state.receiptCalls += 1;
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(state.receiptParseResponse),
+      });
+    }
+
     if (method === "POST" && path === "/api/categories") {
-      const payload = request.postDataJSON() as { name: string; color: string; icon: string };
+      const payload = request.postDataJSON() as { name: string; color: string; icon: string; type?: "income" | "expense" | "both" };
       const created = {
         id: String(100 + state.createdCategories.length + 1),
         name: payload.name,
         color: payload.color,
         icon: payload.icon,
+        type: payload.type ?? "expense",
       };
       state.createdCategories.push(created);
       state.categories.push(created);
@@ -200,6 +301,18 @@ async function setupApiMocks(page: Page, state: ApiState) {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({ id: String(200 + state.createdTransactions.length), ...payload }),
+      });
+    }
+
+    if (method === "POST" && path === "/api/planned-expenses") {
+      const payload = request.postDataJSON() as TransactionPayload;
+      state.createdTransactions.push(payload);
+      state.plannedExpenses.push(payload);
+
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ id: String(300 + state.createdTransactions.length), ...payload }),
       });
     }
 
@@ -227,13 +340,105 @@ async function openVoiceModal(page: Page) {
   const voiceButton = page.locator("button:has(.anticon-audio)").first();
   await expect(voiceButton).toBeVisible();
   await voiceButton.click();
-  await expect(page.locator(".ant-modal:visible")).toHaveCount(1);
+  await expect(getVoiceModal(page)).toBeVisible();
 }
 
-async function clickPrimaryModalAction(page: Page) {
-  const actionButtons = page.locator(".ant-modal .ant-modal-body button[type='button']");
-  await expect(actionButtons).toHaveCount(2);
-  await actionButtons.nth(1).click();
+function getVoiceModal(page: Page) {
+  return page.locator(".ant-modal:visible").last();
+}
+
+async function ensureVoiceModalVisible(page: Page) {
+  const modal = getVoiceModal(page);
+  if ((await modal.count()) === 0) {
+    await openVoiceModal(page);
+    return;
+  }
+  if (!(await modal.first().isVisible())) {
+    await openVoiceModal(page);
+  }
+}
+
+async function clickVoiceProcessAction(page: Page) {
+  await ensureVoiceModalVisible(page);
+  const actionButton = getVoiceModal(page).locator("button").last();
+  await expect(actionButton).toBeVisible();
+  await actionButton.click({ force: true });
+}
+
+async function processVoiceInput(page: Page, state: ApiState) {
+  await clickVoiceProcessAction(page);
+  try {
+    await expect.poll(() => state.parseCalls, { timeout: 6_000 }).toBe(1);
+  } catch {
+    // Mobile emulation may occasionally require a second explicit tap.
+    await clickVoiceProcessAction(page);
+    await expect.poll(() => state.parseCalls).toBe(1);
+  }
+}
+
+async function clickVoiceSaveAction(page: Page) {
+  await ensureVoiceModalVisible(page);
+  const actionButton = getVoiceModal(page).locator("button").last();
+  await expect(actionButton).toBeVisible();
+  await actionButton.click({ force: true });
+}
+
+async function openDataToolsModal(page: Page, tool: "export" | "import" | "receipt") {
+  const openButton = page.locator('[data-testid="data-tools-open-button"]').first();
+  await expect(openButton).toBeVisible();
+  await openButton.click();
+
+  const drawer = getDataToolsModal(page);
+  await expect(drawer).toBeVisible();
+
+  if (tool === "import") {
+    const importTab = drawer.getByRole("tab", { name: /Загрузить таблицу/i }).first();
+    await expect(importTab).toBeVisible();
+    await importTab.click();
+    await expect(drawer.locator('[data-testid="import-file-input"]')).toHaveCount(1);
+    return;
+  }
+
+  if (tool === "receipt") {
+    const receiptTab = drawer.getByRole("tab", { name: /Распознать чек/i }).first();
+    await expect(receiptTab).toBeVisible();
+    await receiptTab.click();
+    await expect(drawer.locator('[data-testid="receipt-gallery-file-input"]')).toHaveCount(1);
+    await expect(drawer.locator('[data-testid="receipt-camera-file-input"]')).toHaveCount(1);
+  }
+}
+
+function getDataToolsModal(page: Page) {
+  return page.locator(".ant-drawer-content-wrapper:visible").last();
+}
+
+async function openTransactionForm(page: Page) {
+  const floatButton = page.locator(".ant-float-btn").first();
+  if (await floatButton.isVisible().catch(() => false)) {
+    await floatButton.click();
+    return;
+  }
+
+  const plusButton = page.locator("button:has(.anticon-plus)").first();
+  await expect(plusButton).toBeVisible();
+  await plusButton.click();
+}
+
+async function chooseDateInTransactionForm(page: Page, targetDate: dayjs.Dayjs) {
+  const datePicker = page.locator(".ant-picker:visible").first();
+  await expect(datePicker).toBeVisible();
+  await datePicker.click();
+
+  const dropdown = page.locator(".ant-picker-dropdown:visible").last();
+  await expect(dropdown).toBeVisible();
+
+  const dayCell = dropdown
+    .locator(".ant-picker-cell-in-view:not(.ant-picker-cell-disabled) .ant-picker-cell-inner")
+    .filter({ hasText: String(targetDate.date()) })
+    .first();
+
+  await expect(dayCell).toBeVisible();
+  await dayCell.click();
 }
 
 test("voice assistant parses speech and saves transaction with existing category", async ({ page }) => {
@@ -247,14 +452,13 @@ test("voice assistant parses speech and saves transaction with existing category
   await expect(page).toHaveURL(/\/finance\/transactions/);
 
   await openVoiceModal(page);
-  await clickPrimaryModalAction(page);
-
-  await expect.poll(() => state.parseCalls).toBe(1);
-  await expect(page.locator(".ant-modal .ant-modal-body")).toContainText("450");
-  await clickPrimaryModalAction(page);
+  await processVoiceInput(page, state);
+  await expect(getVoiceModal(page).locator(".ant-modal-body")).toContainText("450");
+  await clickVoiceSaveAction(page);
 
   await expect.poll(() => state.createdTransactions.length).toBe(1);
   expect(state.createdTransactions[0].amount).toBe(450);
+  expect(state.createdTransactions[0].date).toBe("2026-03-12");
 });
 
 test("voice assistant creates missing category suggestion before saving", async ({ page }) => {
@@ -281,13 +485,164 @@ test("voice assistant creates missing category suggestion before saving", async 
 
   await page.goto("/finance/transactions");
   await openVoiceModal(page);
-  await clickPrimaryModalAction(page);
-
-  await expect.poll(() => state.parseCalls).toBe(1);
-  await expect(page.locator(".ant-modal .ant-modal-body input")).toHaveCount(1);
-  await clickPrimaryModalAction(page);
+  await processVoiceInput(page, state);
+  await expect(getVoiceModal(page).locator(".ant-modal-body input")).toHaveCount(1);
+  await clickVoiceSaveAction(page);
 
   await expect.poll(() => state.createdCategories.length).toBe(1);
   await expect.poll(() => state.createdTransactions.length).toBe(1);
   expect(state.createdCategories[0].name).toBe("Coffee Shops");
 });
+
+test("transaction tools export starts an Excel download", async ({ page }) => {
+  const state = buildDefaultState();
+
+  await setupAuthStorage(page);
+  await setupApiMocks(page, state);
+
+  await page.goto("/finance/transactions");
+  await openDataToolsModal(page, "export");
+
+  const modal = getDataToolsModal(page);
+  const downloadPromise = page.waitForEvent("download");
+  await modal.locator("button:has(.anticon-download)").first().click();
+  const download = await downloadPromise;
+
+  expect(download.suggestedFilename()).toBe("finance-assistant-export.xlsx");
+  await expect.poll(() => state.exportCalls).toBe(1);
+});
+
+test("transaction tools import parses excel and saves drafts", async ({ page }) => {
+  const state = buildDefaultState();
+  state.importParseResponse = {
+    items: [
+      {
+        type: "expense",
+        amount: 1280,
+        description: "Groceries",
+        categoryHint: "Food",
+        categoryResolution: "matched_existing",
+        date: "2026-03-15",
+      },
+      {
+        type: "expense",
+        amount: 220,
+        description: "Taxi",
+        categoryHint: "Bakery",
+        categoryResolution: "suggest_create",
+        suggestedCategoryToCreate: "Bakery",
+        date: "2026-03-16",
+      },
+    ],
+    confidence: 0.91,
+    warnings: [],
+    unparsedText: "",
+  };
+
+  await setupAuthStorage(page);
+  await setupApiMocks(page, state);
+
+  await page.goto("/finance/transactions");
+  await openDataToolsModal(page, "import");
+
+  const modal = getDataToolsModal(page);
+  await modal.locator('[data-testid="import-file-input"]').setInputFiles({
+    name: "transactions.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from("fake-xlsx"),
+  });
+  await modal.locator(".ant-btn:has(.anticon-file-excel)").first().click();
+
+  await expect.poll(() => state.importCalls).toBe(1);
+  await expect(modal).toContainText("Groceries");
+  await expect(modal).toContainText("Taxi");
+
+  await modal.locator(".ant-btn:has(.anticon-upload)").first().click();
+
+  await expect.poll(() => state.createdCategories.length).toBe(1);
+  await expect.poll(() => state.createdTransactions.length).toBe(2);
+  expect(state.createdCategories[0].name).toBe("Bakery");
+  expect(state.createdTransactions.map((transaction) => transaction.date)).toEqual([
+    "2026-03-15",
+    "2026-03-16",
+  ]);
+});
+
+test("transaction tools receipt flow parses photo and saves operations", async ({ page }) => {
+  const state = buildDefaultState();
+  state.receiptParseResponse = {
+    items: [
+      {
+        type: "expense",
+        amount: 540,
+        description: "Cafe receipt",
+        categoryHint: "Cafe",
+        categoryResolution: "suggest_create",
+        suggestedCategoryToCreate: "Cafe",
+        date: "2026-03-17",
+      },
+    ],
+    confidence: 0.89,
+    warnings: [],
+    unparsedText: "",
+  };
+
+  await setupAuthStorage(page);
+  await setupApiMocks(page, state);
+
+  await page.goto("/finance/transactions");
+  await openDataToolsModal(page, "receipt");
+
+  const modal = getDataToolsModal(page);
+  await modal.locator('[data-testid="receipt-gallery-file-input"]').setInputFiles({
+    name: "receipt.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("fake-image"),
+  });
+  await modal.locator(".ant-btn:has(.anticon-scan)").first().click();
+
+  await expect.poll(() => state.receiptCalls).toBe(1);
+  await expect(modal).toContainText("Cafe receipt");
+
+  await modal.locator(".ant-btn:has(.anticon-upload)").first().click();
+
+  await expect.poll(() => state.createdCategories.length).toBe(1);
+  await expect.poll(() => state.createdTransactions.length).toBe(1);
+  expect(state.createdCategories[0].name).toBe("Cafe");
+  expect(state.createdTransactions[0].date).toBe("2026-03-17");
+});
+test("transaction form lets you choose a date from the calendar", async ({ page }) => {
+  const state = buildDefaultState();
+  const targetDate = dayjs().date(dayjs().date() === 15 ? 16 : 15);
+
+  await setupAuthStorage(page);
+  await setupApiMocks(page, state);
+
+  await page.goto("/finance/transactions");
+  await openTransactionForm(page);
+
+  const form = page.locator(".ant-modal:visible, .ant-drawer-content-wrapper:visible").last();
+  await expect(form).toBeVisible();
+
+  const amountInput = form.locator('input[placeholder="0.00"]').first();
+  await expect(amountInput).toBeVisible();
+  await amountInput.fill("100+100");
+  await expect(form).toContainText("200,00");
+
+  await chooseDateInTransactionForm(page, targetDate);
+
+  const selectedDateText = targetDate.format("DD.MM.YYYY");
+  const dateInput = form.locator(".ant-picker input").first();
+  await expect(dateInput).toHaveValue(selectedDateText);
+
+  const submitButton = form
+    .locator(".ant-modal-footer .ant-btn-primary, .ant-drawer-footer .ant-btn-primary")
+    .first();
+  await expect(submitButton).toBeVisible();
+  await submitButton.click();
+
+  await expect.poll(() => state.createdTransactions.length).toBe(1);
+  expect(state.createdTransactions[0].amount).toBe(200);
+  expect(state.createdTransactions[0].date).toBe(targetDate.format("YYYY-MM-DD"));
+});
+

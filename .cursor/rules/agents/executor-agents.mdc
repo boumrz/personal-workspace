@@ -1,0 +1,18 @@
+---
+description: Cursor rule for executor agent ownership.
+globs: **/*.{ts,tsx,js,css,md}
+---
+
+# Executor Agents
+
+Use the executor matching the changed area:
+
+- `web-agent`: `src/`, `rspack.config.cjs`, web e2e.
+- `mobile-agent`: `mobile/`.
+- `backend-agent`: `server/`.
+- `shared-contract-agent`: `shared/` plus all API consumers.
+- `design-agent`: UI/UX decisions before implementation.
+- `autotest-agent`: test implementation.
+
+Each executor returns changed files, verification commands, risks, and next
+review owner.

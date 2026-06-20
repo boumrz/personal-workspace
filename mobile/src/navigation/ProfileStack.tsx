@@ -12,6 +12,8 @@ const AddGoalScreen = lazy(() => import("../screens/AddGoalScreen"));
 const GoalAmountScreen = lazy(() => import("../screens/GoalAmountScreen"));
 const PrivacyPolicyScreen = lazy(() => import("../screens/PrivacyPolicyScreen"));
 const TermsScreen = lazy(() => import("../screens/TermsScreen"));
+const DataToolsScreen = lazy(() => import("../screens/DataToolsScreen"));
+const DataImportReviewScreen = lazy(() => import("../screens/DataImportReviewScreen"));
 
 function Fallback() {
   const { theme } = useTheme();
@@ -97,6 +99,16 @@ export default function ProfileStack() {
         name="Terms"
         component={withSuspense(TermsScreen)}
         options={{ title: "Условия использования" }}
+      />
+      <Stack.Screen
+        name="DataTools"
+        component={withSuspense(DataToolsScreen)}
+        options={{ title: "Инструменты данных" }}
+      />
+      <Stack.Screen
+        name="DataImportReview"
+        component={withSuspense(DataImportReviewScreen)}
+        options={{ title: "Проверка импорта" }}
       />
     </Stack.Navigator>
   );

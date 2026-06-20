@@ -1,0 +1,73 @@
+---
+description: Skill trigger catalog for Codex/Cursor-style agent work in finance-assistant.
+alwaysApply: true
+---
+
+# Available Skill Triggers
+
+Use these skills when the current task matches their scope and the skill is
+available in the active environment. If a skill is unavailable, continue with the
+best local fallback and mention the limitation.
+
+## Reviews
+
+- `$build-graph`: build/update code graph before reviews.
+- `$review-delta`: review local diffs.
+- `$review-pr`: review PR or branch diffs.
+
+## Browser And Verification
+
+- `$browser:control-in-app-browser`
+- `$playwright`
+- `$playwright-interactive`
+- `$screenshot`
+
+## Product Tools
+
+- `$openai-docs`
+- `$github:github`
+- `$github:gh-address-comments`
+- `$github:gh-fix-ci`
+- `$github:yeet`
+- `$linear`
+- `$linear:linear`
+- `$sentry`
+- `$notion-knowledge-capture`
+
+## Design
+
+- `$figma`
+- `$figma-implement-design`
+- `$figma:figma-use`
+- `$figma:figma-generate-design`
+- `$figma:figma-generate-library`
+- `$figma:figma-code-connect`
+- `$figma:figma-generate-diagram`
+- `$figma:figma-create-new-file`
+- `$figma:figma-use-figjam`
+- `$figma:figma-use-slides`
+- `$imagegen`
+
+## Documents And Media
+
+- `$pdf`
+- `$pdf:pdf`
+- `$doc`
+- `$documents:documents`
+- `$spreadsheets:Spreadsheets`
+- `$presentations:Presentations`
+- `$speech`
+- `$transcribe`
+
+## Codex Extensibility And Writing
+
+- `$plugin-creator`
+- `$skill-creator`
+- `$skill-installer`
+- `$humanizer`
+- `$viral-hooks-threads`
+
+## Rule
+
+Use the smallest skill set that covers the work. Read selected skill
+instructions before acting.

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Layout as AntLayout } from "antd";
 import Header from "./Header";
 import BottomNavigation from "./BottomNavigation";
+import { useKeyboardViewportOffset } from "../hooks/useKeyboardViewportOffset";
 import * as styles from "./Layout.module.css";
 
 const { Content } = AntLayout;
@@ -12,6 +13,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMobile, setIsMobile] = useState(false);
+  useKeyboardViewportOffset(isMobile);
 
   useEffect(() => {
     const checkMobile = () => {

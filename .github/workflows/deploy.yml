@@ -267,12 +267,37 @@ jobs:
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_HEALTHCHECK_URL: ${{ secrets.SERVER_HEALTHCHECK_URL || '' }}
+          SERVER_BASE_URL: ${{ secrets.SERVER_BASE_URL || '' }}
         run: |
           echo "🔍 Проверка статуса сервера..."
           ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} "pm2 status || echo 'PM2 не запущен'"
           if [ -n "${SERVER_HEALTHCHECK_URL}" ]; then
             echo "🌡️ Проверка health endpoint..."
             curl -fsSL "${SERVER_HEALTHCHECK_URL}" >/dev/null
+          fi
+          if [ -z "${SERVER_BASE_URL}" ] && [ -n "${SERVER_HEALTHCHECK_URL}" ]; then
+            SERVER_BASE_URL="${SERVER_HEALTHCHECK_URL%/api/health}"
+          fi
+          if [ -n "${SERVER_BASE_URL}" ]; then
+            echo "Compatibility smoke checks..."
+            for endpoint in "/api/categories" "/api/transactions"; do
+              status_code=$(curl -s -o /dev/null -w "%{http_code}" "${SERVER_BASE_URL}${endpoint}")
+              if [ "${status_code}" -ge 500 ]; then
+                echo "Endpoint ${endpoint} returned ${status_code}"
+                exit 1
+              fi
+              echo "${endpoint} -> ${status_code}"
+            done
+
+            parse_status=$(curl -s -o /dev/null -w "%{http_code}" \
+              -X POST "${SERVER_BASE_URL}/api/v2/transactions/parse" \
+              -H "Content-Type: application/json" \
+              -d '{"text":"compatibility smoke"}')
+            if [ "${parse_status}" -ge 500 ]; then
+              echo "Endpoint /api/v2/transactions/parse returned ${parse_status}"
+              exit 1
+            fi
+            echo "/api/v2/transactions/parse -> ${parse_status}"
           fi
 
   # Проверяем, изменились ли версии мобильного приложения

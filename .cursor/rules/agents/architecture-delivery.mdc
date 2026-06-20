@@ -1,0 +1,14 @@
+---
+description: Cursor rule for architecture and delivery planning.
+globs: **/*.{ts,tsx,js,md,mdc}
+---
+
+# Architecture And Delivery Agents
+
+Use:
+
+- `agents/roles/architect-agent.md` for API, data, security, or cross-layer design.
+- `agents/roles/team-lead-agent.md` for task breakdown and sequencing.
+- `agents/roles/prompt-task-auditor-agent.md` before executor work starts.
+
+API contract changes must route through `agents/roles/shared-contract-agent.md`.

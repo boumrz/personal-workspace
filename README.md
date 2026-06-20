@@ -82,3 +82,8 @@ npm run dev
 ## Лицензия
 
 MIT
+
+## Security & Deploy docs
+
+- Secrets inventory and setup: `docs/GITHUB_SECRETS.md`
+- Backend compatibility/rollback guide: `docs/DEPLOYMENT_COMPATIBILITY.md`

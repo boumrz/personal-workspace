@@ -18,9 +18,13 @@ export function consumeLastCreatedCategoryId(): string | null {
   return id;
 }
 
-export default function AddCategoryScreen({ navigation }: any) {
+export default function AddCategoryScreen({ navigation, route }: any) {
   const { api } = useAuth();
   const { theme } = useTheme();
+  const categoryType =
+    route?.params?.categoryType === "income" || route?.params?.categoryType === "expense"
+      ? route.params.categoryType
+      : "expense";
   const [name, setName] = useState("");
   const [selectedColor, setSelectedColor] = useState(COLOR_PALETTE[0]);
   const [selectedIcon, setSelectedIcon] = useState(AVAILABLE_ICONS[0] ?? "Package");
@@ -31,7 +35,7 @@ export default function AddCategoryScreen({ navigation }: any) {
     if (!trimmed) { Alert.alert("Ошибка", "Введите название категории"); return; }
     setSaving(true);
     try {
-      const created = await api.createCategory({ name: trimmed, color: selectedColor, icon: selectedIcon });
+      const created = await api.createCategory({ name: trimmed, color: selectedColor, icon: selectedIcon, type: categoryType });
       _lastCreatedCategoryId = created.id;
       navigation.goBack();
     } catch (e: any) { Alert.alert("Ошибка", e?.message ?? "Не удалось создать категорию"); }

@@ -11,13 +11,19 @@ const { Pool } = pg;
 
 // Очищаем имя базы данных от лишних символов
 const dbName = (process.env.DB_NAME || "finance_assistant").trim().replace(/[;,\s]+$/, "");
+const nodeEnv = process.env.NODE_ENV || "development";
+const dbPassword = process.env.DB_PASSWORD || "postgres";
+
+if (nodeEnv === "production" && (!dbPassword || dbPassword === "postgres")) {
+  throw new Error("DB_PASSWORD must be configured via environment variables in production.");
+}
 
 const pool = new Pool({
   host: process.env.DB_HOST || "localhost",
   port: process.env.DB_PORT || 5432,
   database: dbName,
   user: process.env.DB_USER || "postgres",
-  password: process.env.DB_PASSWORD || "postgres",
+  password: dbPassword,
 });
 
 // Test connection

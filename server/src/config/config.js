@@ -44,15 +44,46 @@ function parsePositiveNumber(value, fallback) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function resolveJwtSecret(nodeEnv) {
+  const jwtSecret = String(process.env.JWT_SECRET || "").trim();
+  const placeholderSecret = "your-secret-key-change-in-production";
+
+  if (nodeEnv === "production" && (!jwtSecret || jwtSecret === placeholderSecret)) {
+    throw new Error("JWT_SECRET must be set to a strong value in production.");
+  }
+
+  return jwtSecret || placeholderSecret;
+}
+
+function resolveCorsOrigin(nodeEnv) {
+  const rawCorsOrigin = String(process.env.CORS_ORIGIN || "*").trim() || "*";
+
+  if (nodeEnv === "production" && rawCorsOrigin === "*") {
+    throw new Error("CORS_ORIGIN must be explicitly configured in production.");
+  }
+
+  if (rawCorsOrigin === "*") {
+    return "*";
+  }
+
+  const parsedOrigins = rawCorsOrigin
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return parsedOrigins.length > 0 ? parsedOrigins : "*";
+}
+
 const vkAppIds = parseVkAppIds();
 const llmProviderChain = parseProviderChain();
 const llmEnabledProviders = parseEnabledProviders();
+const nodeEnv = process.env.NODE_ENV || "development";
 
 export default {
   port: process.env.PORT || 3001,
-  nodeEnv: process.env.NODE_ENV || "development",
-  jwtSecret: process.env.JWT_SECRET || "your-secret-key-change-in-production",
-  corsOrigin: process.env.CORS_ORIGIN || "*",
+  nodeEnv,
+  jwtSecret: resolveJwtSecret(nodeEnv),
+  corsOrigin: resolveCorsOrigin(nodeEnv),
   accessTokenExpiry: process.env.ACCESS_TOKEN_EXPIRY || "15m",
   refreshTokenExpiry: process.env.REFRESH_TOKEN_EXPIRY || "30d",
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,

@@ -99,8 +99,46 @@
   margin-bottom: 0;
 }
 
+.dateDraftRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.dateDraftLabel {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.dateDraftHint {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.dateDraftPicker {
+  min-width: 132px;
+}
+
 .categoryInput {
   margin-top: 8px;
+}
+
+@media (max-width: 480px) {
+  .dateDraftRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dateDraftPicker {
+    width: 100%;
+  }
 }
 
 .actionsRow {

@@ -1,0 +1,53 @@
+---
+description: Multi-agent workflow for finance-assistant. Use before broad product, API, UI, mobile, backend, test, or infrastructure changes.
+alwaysApply: true
+---
+
+# Finance Assistant Multi-Agent System
+
+This repository is developed specification-first.
+
+Primary artifacts:
+
+- `TECHNICAL_SPECIFICATION.md`
+- `MULTI_AGENT_SYSTEM.md`
+- `agents/README.md`
+- `agents/common/shared-contract.md`
+- `agents/roles/*.md`
+- `SKILLS_DECISIONS.md`
+
+## Default Flow
+
+For broad or unclear work, route through:
+
+```text
+orchestrator-agent
+  -> specification-agent
+  -> product-owner-agent
+  -> architect-agent
+  -> team-lead-agent
+  -> prompt-task-auditor-agent
+  -> executor
+  -> reviewer/qa
+```
+
+For small scoped changes, load only the relevant executor role and reviewer role.
+
+## Executor Mapping
+
+- Web: `agents/roles/web-agent.md`
+- Mobile: `agents/roles/mobile-agent.md`
+- Backend: `agents/roles/backend-agent.md`
+- Shared contracts: `agents/roles/shared-contract-agent.md`
+- Design: `agents/roles/design-agent.md`
+- Tests: `agents/roles/autotest-agent.md`
+- Security/DevOps: `agents/roles/security-devops-agent.md`
+
+## Non-Negotiable Rules
+
+- Read the spec before changing behavior.
+- Update the spec when behavior or contracts change.
+- API payload changes must update backend, shared, web, mobile, and tests.
+- User-owned finance data must remain scoped by `user_id`.
+- Production security defaults must not be weakened.
+- Review results must include risk level and missing tests.

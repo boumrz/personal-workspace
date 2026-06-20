@@ -25,7 +25,8 @@ router.get(
         c.id as category_id,
         c.name as category_name,
         c.color as category_color,
-        c.icon as category_icon
+        c.icon as category_icon,
+        c.type as category_type
       FROM transactions t
       JOIN categories c ON t.category_id = c.id
       WHERE t.user_id = $1
@@ -45,6 +46,7 @@ router.get(
         name: row.category_name,
         color: row.category_color,
         icon: row.category_icon,
+        type: row.category_type || (row.category_name === "Зарплата" ? "income" : row.category_name === "Другое" ? "both" : "expense"),
       },
     }));
 
@@ -65,7 +67,8 @@ router.get(
         c.id as category_id,
         c.name as category_name,
         c.color as category_color,
-        c.icon as category_icon
+        c.icon as category_icon,
+        c.type as category_type
       FROM transactions t
       JOIN categories c ON t.category_id = c.id
       WHERE t.id = $1 AND t.user_id = $2
@@ -89,6 +92,7 @@ router.get(
         name: row.category_name,
         color: row.category_color,
         icon: row.category_icon,
+        type: row.category_type || (row.category_name === "Зарплата" ? "income" : row.category_name === "Другое" ? "both" : "expense"),
       },
     };
 
@@ -135,7 +139,8 @@ router.post(
         c.id as category_id,
         c.name as category_name,
         c.color as category_color,
-        c.icon as category_icon
+        c.icon as category_icon,
+        c.type as category_type
       FROM transactions t
       JOIN categories c ON t.category_id = c.id
       WHERE t.id = $1
@@ -155,6 +160,7 @@ router.post(
         name: row.category_name,
         color: row.category_color,
         icon: row.category_icon,
+        type: row.category_type || (row.category_name === "Зарплата" ? "income" : row.category_name === "Другое" ? "both" : "expense"),
       },
     };
 
@@ -200,7 +206,8 @@ router.put(
         c.id as category_id,
         c.name as category_name,
         c.color as category_color,
-        c.icon as category_icon
+        c.icon as category_icon,
+        c.type as category_type
       FROM transactions t
       JOIN categories c ON t.category_id = c.id
       WHERE t.id = $1
@@ -224,6 +231,7 @@ router.put(
         name: row.category_name,
         color: row.category_color,
         icon: row.category_icon,
+        type: row.category_type || (row.category_name === "Зарплата" ? "income" : row.category_name === "Другое" ? "both" : "expense"),
       },
     };
 

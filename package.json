@@ -8,9 +8,10 @@
     "build": "rspack build",
     "preview": "rspack preview",
     "typecheck": "tsc --noEmit",
+    "check:secrets": "node ./scripts/check-no-secrets.mjs",
     "test:server": "npm --prefix server test",
     "test:e2e": "playwright test",
-    "test:all": "npm run typecheck && npm run test:server && npm run test:e2e"
+    "test:all": "npm run check:secrets && npm run typecheck && npm run test:server && npm run test:e2e"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",
@@ -43,5 +44,13 @@
     "dotenv": "^16.3.1",
     "style-loader": "^4.0.0",
     "typescript": "^5.5.3"
-  }
+  },
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

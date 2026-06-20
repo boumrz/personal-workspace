@@ -34,3 +34,11 @@ export const VK_ID_REDIRECT_SCHEME =
  */
 export const SPEECH_PARSE_PROVIDER =
   process.env.EXPO_PUBLIC_SPEECH_PARSE_PROVIDER ?? "";
+
+export const APP_DEEP_LINK_SCHEME = "financeassistant";
+
+export const DATA_TOOL_ENDPOINTS = {
+  exportExcel: "/v2/transactions/export",
+  importExcel: "/v2/transactions/import",
+  parseReceipt: "/v2/transactions/receipt/parse",
+} as const;

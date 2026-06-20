@@ -1,7 +1,6 @@
-import {
-  ExpoSpeechRecognitionModule,
-  type ExpoSpeechRecognitionErrorEvent,
-  type ExpoSpeechRecognitionResultEvent,
+import type {
+  ExpoSpeechRecognitionErrorEvent,
+  ExpoSpeechRecognitionResultEvent,
 } from "expo-speech-recognition";
 
 export type SpeechStatus = "idle" | "starting" | "listening" | "stopping";
@@ -25,6 +24,27 @@ export interface SpeechPermissionState {
 }
 
 type Subscription = { remove: () => void };
+type ExpoSpeechRecognitionModuleRef = typeof import("expo-speech-recognition")["ExpoSpeechRecognitionModule"];
+
+const MISSING_NATIVE_MODULE_MESSAGE =
+  "Голосовое распознавание доступно только в Android-сборке приложения. Установите свежий APK и откройте QR через приложение «Мой бюджет», а не через Expo Go.";
+
+let speechRecognitionModule: ExpoSpeechRecognitionModuleRef | null | undefined;
+
+function getSpeechRecognitionModule(): ExpoSpeechRecognitionModuleRef | null {
+  if (speechRecognitionModule !== undefined) {
+    return speechRecognitionModule;
+  }
+
+  try {
+    const moduleRef = require("expo-speech-recognition") as typeof import("expo-speech-recognition");
+    speechRecognitionModule = moduleRef.ExpoSpeechRecognitionModule ?? null;
+  } catch {
+    speechRecognitionModule = null;
+  }
+
+  return speechRecognitionModule;
+}
 
 function mapSpeechError(event: ExpoSpeechRecognitionErrorEvent): string {
   switch (event.error) {
@@ -58,25 +78,48 @@ export class SpeechRecognitionService {
   }
 
   async requestPermissions(): Promise<boolean> {
-    const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    const nativeModule = getSpeechRecognitionModule();
+    if (!nativeModule) {
+      return false;
+    }
+
+    const result = await nativeModule.requestPermissionsAsync();
     return result.granted;
   }
 
   async ensureMicrophonePermission(): Promise<SpeechPermissionState> {
-    const current = await ExpoSpeechRecognitionModule.getMicrophonePermissionsAsync();
+    const nativeModule = getSpeechRecognitionModule();
+    if (!nativeModule) {
+      return { granted: false, canAskAgain: false };
+    }
+
+    const current = await nativeModule.getMicrophonePermissionsAsync();
     if (current.granted) {
       return { granted: true, canAskAgain: current.canAskAgain };
     }
 
-    const requested = await ExpoSpeechRecognitionModule.requestMicrophonePermissionsAsync();
+    const requested = await nativeModule.requestMicrophonePermissionsAsync();
     return {
       granted: requested.granted,
       canAskAgain: requested.canAskAgain,
     };
   }
 
+  getUnavailableReason(): string | null {
+    return getSpeechRecognitionModule() ? null : MISSING_NATIVE_MODULE_MESSAGE;
+  }
+
   isRecognitionAvailable(): boolean {
-    return ExpoSpeechRecognitionModule.isRecognitionAvailable();
+    const nativeModule = getSpeechRecognitionModule();
+    if (!nativeModule) {
+      return false;
+    }
+
+    try {
+      return nativeModule.isRecognitionAvailable();
+    } catch {
+      return false;
+    }
   }
 
   start(callbacks: SpeechRecognitionCallbacks, language = "ru-RU"): void {
@@ -84,15 +127,24 @@ export class SpeechRecognitionService {
     this.callbacks = callbacks;
     this.transcript = "";
     this.updateStatus("starting");
+    const nativeModule = getSpeechRecognitionModule();
+    if (!nativeModule) {
+      this.updateStatus("idle");
+      this.callbacks.onError?.(MISSING_NATIVE_MODULE_MESSAGE, {
+        error: "service-not-allowed",
+        message: MISSING_NATIVE_MODULE_MESSAGE,
+      } as ExpoSpeechRecognitionErrorEvent);
+      return;
+    }
 
     this.subscriptions.push(
-      ExpoSpeechRecognitionModule.addListener("start", () => {
+      nativeModule.addListener("start", () => {
         this.updateStatus("listening");
       })
     );
 
     this.subscriptions.push(
-      ExpoSpeechRecognitionModule.addListener("result", (event: ExpoSpeechRecognitionResultEvent) => {
+      nativeModule.addListener("result", (event: ExpoSpeechRecognitionResultEvent) => {
         const transcript = event.results[0]?.transcript?.trim() ?? "";
         if (!transcript) {
           return;
@@ -108,7 +160,7 @@ export class SpeechRecognitionService {
     );
 
     this.subscriptions.push(
-      ExpoSpeechRecognitionModule.addListener("error", (event: ExpoSpeechRecognitionErrorEvent) => {
+      nativeModule.addListener("error", (event: ExpoSpeechRecognitionErrorEvent) => {
         this.updateStatus("idle");
         this.callbacks.onError?.(mapSpeechError(event), event);
         this.teardownSubscriptions();
@@ -116,13 +168,13 @@ export class SpeechRecognitionService {
     );
 
     this.subscriptions.push(
-      ExpoSpeechRecognitionModule.addListener("end", () => {
+      nativeModule.addListener("end", () => {
         this.updateStatus("idle");
         this.teardownSubscriptions();
       })
     );
 
-    ExpoSpeechRecognitionModule.start({
+    nativeModule.start({
       lang: language,
       interimResults: true,
       continuous: false,
@@ -131,9 +183,10 @@ export class SpeechRecognitionService {
   }
 
   stop(): void {
+    const nativeModule = getSpeechRecognitionModule();
     if (this.status === "listening" || this.status === "starting") {
       this.updateStatus("stopping");
-      ExpoSpeechRecognitionModule.stop();
+      nativeModule?.stop();
       return;
     }
     this.teardownSubscriptions();
@@ -141,7 +194,7 @@ export class SpeechRecognitionService {
   }
 
   abort(): void {
-    ExpoSpeechRecognitionModule.abort();
+    getSpeechRecognitionModule()?.abort();
     this.teardownSubscriptions();
     this.updateStatus("idle");
   }

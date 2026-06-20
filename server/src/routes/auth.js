@@ -156,20 +156,20 @@ router.post(
 
       // Create default categories for the user
       const defaultCategories = [
-        { name: "Продукты", color: "#FF8A65", icon: "Utensils" },
-        { name: "Транспорт", color: "#64B5F6", icon: "Car" },
-        { name: "Развлечения", color: "#BA68C8", icon: "Film" },
-        { name: "Здоровье", color: "#81C784", icon: "Hospital" },
-        { name: "Одежда", color: "#FFB74D", icon: "Shirt" },
-        { name: "Жилье", color: "#90CAF9", icon: "Home" },
-        { name: "Зарплата", color: "#66BB6A", icon: "Wallet" },
-        { name: "Другое", color: "#90A4AE", icon: "Package" },
+        { name: "Продукты", color: "#FF8A65", icon: "Utensils", type: "expense" },
+        { name: "Транспорт", color: "#64B5F6", icon: "Car", type: "expense" },
+        { name: "Развлечения", color: "#BA68C8", icon: "Film", type: "expense" },
+        { name: "Здоровье", color: "#81C784", icon: "Hospital", type: "expense" },
+        { name: "Одежда", color: "#FFB74D", icon: "Shirt", type: "expense" },
+        { name: "Жилье", color: "#90CAF9", icon: "Home", type: "expense" },
+        { name: "Зарплата", color: "#66BB6A", icon: "Wallet", type: "income" },
+        { name: "Другое", color: "#90A4AE", icon: "Package", type: "both" },
       ];
 
       for (const category of defaultCategories) {
         await pool.query(
-          "INSERT INTO categories (user_id, name, color, icon) VALUES ($1, $2, $3, $4)",
-          [user.id, category.name, category.color, category.icon]
+          "INSERT INTO categories (user_id, name, color, icon, type) VALUES ($1, $2, $3, $4, $5)",
+          [user.id, category.name, category.color, category.icon, category.type]
         );
       }
 
@@ -319,19 +319,19 @@ router.post(
       user = insertResult.rows[0];
 
       const defaultCategories = [
-        { name: "Продукты", color: "#FF8A65", icon: "Utensils" },
-        { name: "Транспорт", color: "#64B5F6", icon: "Car" },
-        { name: "Развлечения", color: "#BA68C8", icon: "Film" },
-        { name: "Здоровье", color: "#81C784", icon: "Hospital" },
-        { name: "Одежда", color: "#FFB74D", icon: "Shirt" },
-        { name: "Жилье", color: "#90CAF9", icon: "Home" },
-        { name: "Зарплата", color: "#66BB6A", icon: "Wallet" },
-        { name: "Другое", color: "#90A4AE", icon: "Package" },
+        { name: "Продукты", color: "#FF8A65", icon: "Utensils", type: "expense" },
+        { name: "Транспорт", color: "#64B5F6", icon: "Car", type: "expense" },
+        { name: "Развлечения", color: "#BA68C8", icon: "Film", type: "expense" },
+        { name: "Здоровье", color: "#81C784", icon: "Hospital", type: "expense" },
+        { name: "Одежда", color: "#FFB74D", icon: "Shirt", type: "expense" },
+        { name: "Жилье", color: "#90CAF9", icon: "Home", type: "expense" },
+        { name: "Зарплата", color: "#66BB6A", icon: "Wallet", type: "income" },
+        { name: "Другое", color: "#90A4AE", icon: "Package", type: "both" },
       ];
       for (const category of defaultCategories) {
         await pool.query(
-          "INSERT INTO categories (user_id, name, color, icon) VALUES ($1, $2, $3, $4)",
-          [user.id, category.name, category.color, category.icon]
+          "INSERT INTO categories (user_id, name, color, icon, type) VALUES ($1, $2, $3, $4, $5)",
+          [user.id, category.name, category.color, category.icon, category.type]
         );
       }
     } else {
@@ -436,19 +436,19 @@ router.post(
       user = insertResult.rows[0];
 
       const defaultCategories = [
-        { name: "Продукты", color: "#FF8A65", icon: "Utensils" },
-        { name: "Транспорт", color: "#64B5F6", icon: "Car" },
-        { name: "Развлечения", color: "#BA68C8", icon: "Film" },
-        { name: "Здоровье", color: "#81C784", icon: "Hospital" },
-        { name: "Одежда", color: "#FFB74D", icon: "Shirt" },
-        { name: "Жилье", color: "#90CAF9", icon: "Home" },
-        { name: "Зарплата", color: "#66BB6A", icon: "Wallet" },
-        { name: "Другое", color: "#90A4AE", icon: "Package" },
+        { name: "Продукты", color: "#FF8A65", icon: "Utensils", type: "expense" },
+        { name: "Транспорт", color: "#64B5F6", icon: "Car", type: "expense" },
+        { name: "Развлечения", color: "#BA68C8", icon: "Film", type: "expense" },
+        { name: "Здоровье", color: "#81C784", icon: "Hospital", type: "expense" },
+        { name: "Одежда", color: "#FFB74D", icon: "Shirt", type: "expense" },
+        { name: "Жилье", color: "#90CAF9", icon: "Home", type: "expense" },
+        { name: "Зарплата", color: "#66BB6A", icon: "Wallet", type: "income" },
+        { name: "Другое", color: "#90A4AE", icon: "Package", type: "both" },
       ];
       for (const category of defaultCategories) {
         await pool.query(
-          "INSERT INTO categories (user_id, name, color, icon) VALUES ($1, $2, $3, $4)",
-          [user.id, category.name, category.color, category.icon]
+          "INSERT INTO categories (user_id, name, color, icon, type) VALUES ($1, $2, $3, $4, $5)",
+          [user.id, category.name, category.color, category.icon, category.type]
         );
       }
     } else {
@@ -584,8 +584,8 @@ router.get(
 
         for (const category of defaultCategories) {
           await pool.query(
-            "INSERT INTO categories (user_id, name, color, icon) VALUES ($1, $2, $3, $4)",
-            [user.id, category.name, category.color, category.icon]
+            "INSERT INTO categories (user_id, name, color, icon, type) VALUES ($1, $2, $3, $4, $5)",
+            [user.id, category.name, category.color, category.icon, category.type]
           );
         }
       } else {

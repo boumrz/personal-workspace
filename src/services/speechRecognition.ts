@@ -24,10 +24,10 @@ export interface SpeechPermissionState {
   canAskAgain: boolean;
 }
 
-const SpeechRecognitionConstructor =
-  typeof window !== "undefined"
-    ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
-    : null;
+function getSpeechRecognitionConstructor() {
+  if (typeof window === "undefined") return null;
+  return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null;
+}
 
 function mapSpeechError(error: string): string {
   switch (error) {
@@ -91,11 +91,12 @@ export class SpeechRecognitionService {
   }
 
   isRecognitionAvailable(): boolean {
-    return !!SpeechRecognitionConstructor;
+    return !!getSpeechRecognitionConstructor();
   }
 
   start(callbacks: SpeechRecognitionCallbacks, language = "ru-RU"): void {
     this.stop();
+    const SpeechRecognitionConstructor = getSpeechRecognitionConstructor();
     if (!SpeechRecognitionConstructor) {
       callbacks.onError?.("Распознавание речи недоступно в этом браузере. Используйте Chrome или Safari.");
       return;

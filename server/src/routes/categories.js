@@ -8,21 +8,34 @@ const router = express.Router();
 // All routes require authentication
 router.use(authenticateToken);
 
+function normalizeCategoryType(value, name = "") {
+  const type = String(value || "").trim().toLowerCase();
+  if (type === "income" || type === "expense" || type === "both") {
+    return type;
+  }
+  if (name === "Зарплата") return "income";
+  if (name === "Другое") return "both";
+  return "expense";
+}
+
+function mapCategory(row) {
+  return {
+    id: row.id.toString(),
+    name: row.name,
+    color: row.color,
+    icon: row.icon,
+    type: normalizeCategoryType(row.type, row.name),
+  };
+}
+
 // Get all categories
 router.get(
   "/",
   asyncHandler(async (req, res) => {
     const userId = req.user.userId;
-    const result = await pool.query("SELECT * FROM categories WHERE user_id = $1 ORDER BY id", [userId]);
+    const result = await pool.query("SELECT id, name, color, icon, type FROM categories WHERE user_id = $1 ORDER BY id", [userId]);
 
-    const categories = result.rows.map((row) => ({
-      id: row.id.toString(),
-      name: row.name,
-      color: row.color,
-      icon: row.icon,
-    }));
-
-    res.json(categories);
+    res.json(result.rows.map(mapCategory));
   })
 );
 
@@ -31,6 +44,7 @@ router.post(
   "/",
   asyncHandler(async (req, res) => {
     const { name, color, icon } = req.body;
+    const type = normalizeCategoryType(req.body?.type, name);
     const userId = req.user.userId;
 
     if (!name || !color || !icon) {
@@ -38,21 +52,13 @@ router.post(
     }
 
     const result = await pool.query(
-      `INSERT INTO categories (user_id, name, color, icon)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, name, color, icon`,
-      [userId, name, color, icon]
+      `INSERT INTO categories (user_id, name, color, icon, type)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, name, color, icon, type`,
+      [userId, name, color, icon, type]
     );
 
-    const row = result.rows[0];
-    const category = {
-      id: row.id.toString(),
-      name: row.name,
-      color: row.color,
-      icon: row.icon,
-    };
-
-    res.status(201).json(category);
+    res.status(201).json(mapCategory(result.rows[0]));
   })
 );
 
@@ -62,21 +68,13 @@ router.get(
   asyncHandler(async (req, res) => {
     const { id } = req.params;
     const userId = req.user.userId;
-    const result = await pool.query("SELECT * FROM categories WHERE id = $1 AND user_id = $2", [id, userId]);
+    const result = await pool.query("SELECT id, name, color, icon, type FROM categories WHERE id = $1 AND user_id = $2", [id, userId]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Category not found" });
     }
 
-    const row = result.rows[0];
-    const category = {
-      id: row.id.toString(),
-      name: row.name,
-      color: row.color,
-      icon: row.icon,
-    };
-
-    res.json(category);
+    res.json(mapCategory(result.rows[0]));
   })
 );
 

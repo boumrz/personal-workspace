@@ -7,6 +7,7 @@ export interface Category {
   name: string;
   color: string;
   icon: string;
+  type?: "income" | "expense" | "both";
 }
 
 export interface Transaction {

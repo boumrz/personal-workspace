@@ -1,0 +1,426 @@
+.launchToggleWrap {
+  display: flex;
+  justify-content: flex-start;
+  margin: 0;
+}
+
+.launchToggleButton {
+  min-width: 40px;
+  height: 40px;
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  font-weight: 600;
+  padding: 0 12px;
+  color: var(--text-primary);
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  outline: none;
+  transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+}
+
+.launchToggleButton:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.launchToggleButton:hover {
+  background: var(--bg-surface);
+  color: var(--accent);
+}
+
+.drawer :global(.ant-drawer-content-wrapper) {
+  width: min(96vw, 960px) !important;
+}
+
+.drawer :global(.ant-drawer-content) {
+  border-radius: 24px 0 0 24px;
+  overflow: hidden;
+}
+
+.drawer :global(.ant-drawer-header) {
+  padding: 20px 24px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.drawer :global(.ant-drawer-body) {
+  padding: 16px 24px 24px;
+  overflow-y: auto;
+}
+
+.drawerTitleWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.drawerTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.drawerSubtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.flow {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.stack {
+  width: 100%;
+}
+
+.drawerIntro {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--bg-surface);
+}
+
+.drawerIntroIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--accent-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.drawerIntroCopy {
+  min-width: 0;
+}
+
+.drawerIntroTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.drawerIntroText {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.toolSwitch {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.toolChoice {
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  min-height: 82px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.toolChoice:hover,
+.toolChoice:focus-visible {
+  border-color: var(--accent);
+  background: var(--bg-surface);
+}
+
+.toolChoice:focus-visible {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.toolChoiceActive {
+  border-color: var(--accent);
+  background: var(--bg-surface);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.toolChoiceIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  background: var(--accent-muted-light);
+  color: var(--accent-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+}
+
+.toolChoiceCopy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toolChoiceTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.toolChoiceText {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.toolPanel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  padding: 14px;
+}
+
+.panelHeader {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panelIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  color: var(--accent-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.panelTitle {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.panelText {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.sectionLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.segmented {
+  width: 100%;
+}
+
+.primaryAction:global(.ant-btn),
+.secondaryAction:global(.ant-btn) {
+  height: 46px !important;
+  border-radius: var(--radius-lg);
+}
+
+.primaryAction:global(.ant-btn) {
+  font-weight: 700;
+}
+
+.primaryAction:global(.ant-btn-primary:disabled),
+.primaryAction:global(.ant-btn-primary.ant-btn-disabled) {
+  background: var(--bg-surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text-secondary) !important;
+  box-shadow: none !important;
+  opacity: 1;
+}
+
+.primaryAction:global(.ant-btn-primary:disabled) :global(.anticon),
+.primaryAction:global(.ant-btn-primary.ant-btn-disabled) :global(.anticon) {
+  color: var(--text-secondary) !important;
+}
+
+.secondaryAction:global(.ant-btn) {
+  font-weight: 700;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+.secondaryAction:hover,
+.secondaryAction:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.fileActionsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.receiptInputControls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.summaryRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.draftCard {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+}
+
+.draftHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.draftTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.draftMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.categoryInputWrap {
+  margin-top: 12px;
+}
+
+@media (max-width: 768px) {
+  .fileActionsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .drawer :global(.ant-drawer-content-wrapper) {
+    width: 100% !important;
+    max-width: 100vw;
+    height: 100dvh;
+  }
+
+  .drawer :global(.ant-drawer-content) {
+    border-radius: 0;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .drawer :global(.ant-drawer-header) {
+    padding: calc(14px + env(safe-area-inset-top)) 16px 10px !important;
+    align-items: flex-start !important;
+    flex-shrink: 0;
+  }
+
+  .drawer :global(.ant-drawer-header-title) {
+    align-items: flex-start !important;
+  }
+
+  .drawer :global(.ant-drawer-title) {
+    align-items: flex-start !important;
+  }
+
+  .drawer :global(.ant-drawer-close) {
+    flex-shrink: 0;
+    margin-inline-end: 8px;
+    margin-top: 1px;
+  }
+
+  .drawer :global(.ant-drawer-title) {
+    min-width: 0;
+  }
+
+  .drawer :global(.ant-drawer-body) {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 12px 16px calc(18px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+  }
+
+  .drawerTitle {
+    font-size: 17px;
+  }
+
+  .drawerSubtitle {
+    display: none;
+  }
+
+  .drawerIntro {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .drawerIntroIcon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .toolSwitch {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .toolChoice {
+    min-height: 62px;
+    padding: 10px;
+  }
+
+  .toolPanel {
+    padding: 12px;
+  }
+
+  .panelHeader {
+    align-items: flex-start;
+  }
+}

@@ -25,7 +25,8 @@ router.get(
         c.id as category_id,
         c.name as category_name,
         c.color as category_color,
-        c.icon as category_icon
+        c.icon as category_icon,
+        c.type as category_type
       FROM planned_expenses pe
       JOIN categories c ON pe.category_id = c.id
       WHERE pe.user_id = $1
@@ -44,6 +45,7 @@ router.get(
         name: row.category_name,
         color: row.category_color,
         icon: row.category_icon,
+        type: row.category_type || (row.category_name === "Другое" ? "both" : "expense"),
       },
     }));
 
@@ -64,7 +66,8 @@ router.get(
         c.id as category_id,
         c.name as category_name,
         c.color as category_color,
-        c.icon as category_icon
+        c.icon as category_icon,
+        c.type as category_type
       FROM planned_expenses pe
       JOIN categories c ON pe.category_id = c.id
       WHERE pe.id = $1 AND pe.user_id = $2
@@ -87,6 +90,7 @@ router.get(
         name: row.category_name,
         color: row.category_color,
         icon: row.category_icon,
+        type: row.category_type || (row.category_name === "Другое" ? "both" : "expense"),
       },
     };
 
@@ -133,7 +137,8 @@ router.post(
         c.id as category_id,
         c.name as category_name,
         c.color as category_color,
-        c.icon as category_icon
+        c.icon as category_icon,
+        c.type as category_type
       FROM planned_expenses pe
       JOIN categories c ON pe.category_id = c.id
       WHERE pe.id = $1
@@ -152,6 +157,7 @@ router.post(
         name: row.category_name,
         color: row.category_color,
         icon: row.category_icon,
+        type: row.category_type || (row.category_name === "Другое" ? "both" : "expense"),
       },
     };
 
@@ -197,7 +203,8 @@ router.put(
         c.id as category_id,
         c.name as category_name,
         c.color as category_color,
-        c.icon as category_icon
+        c.icon as category_icon,
+        c.type as category_type
       FROM planned_expenses pe
       JOIN categories c ON pe.category_id = c.id
       WHERE pe.id = $1
@@ -220,6 +227,7 @@ router.put(
         name: row.category_name,
         color: row.category_color,
         icon: row.category_icon,
+        type: row.category_type || (row.category_name === "Другое" ? "both" : "expense"),
       },
     };
 

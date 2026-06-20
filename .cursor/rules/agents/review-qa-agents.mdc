@@ -1,0 +1,17 @@
+---
+description: Cursor rule for review, QA, security, and UX gates.
+globs: **/*.{ts,tsx,js,css,md,yml,yaml}
+---
+
+# Review And QA Agents
+
+Use:
+
+- `reviewer-agent` for bug-first code review.
+- `security-devops-agent` for secrets, auth, CORS, rate limits, CI, and deploy.
+- `test-reviewer-agent` for coverage quality.
+- `ux-critic-agent` for UX/accessibility.
+- `qa-agent` for release readiness.
+
+Reviews must list findings first, then missing tests, residual risk, and a
+go/no-go verdict.

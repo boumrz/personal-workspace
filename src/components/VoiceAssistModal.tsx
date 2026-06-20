@@ -1,5 +1,6 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { Modal, Spin, Input, message } from "antd";
+﻿import React, { useState, useCallback, useMemo } from "react";
+import { DatePicker, Modal, Spin, Input, message } from "antd";
+import dayjs from "dayjs";
 import { useFinance } from "../context/FinanceContext";
 import {
   useGetCategoriesQuery,
@@ -26,7 +27,36 @@ const normalize = (value: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+function categoryMatchesTransactionType(
+  category: Category,
+  transactionType: "income" | "expense"
+) {
+  const scope =
+    category.type ||
+    (category.name === "Зарплата"
+      ? "income"
+      : category.name === "Другое"
+        ? "both"
+        : "expense");
+  return scope === "both" || scope === transactionType;
+}
+
 const DEFAULT_VOICE_PROVIDER_CHAIN = ["gpt4free", "heuristic"] as const;
+
+function getTodayIso() {
+  return dayjs().format("YYYY-MM-DD");
+}
+
+function normalizeDraftDate(value?: string | null, fallback = getTodayIso()) {
+  const raw = String(value || "").slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const parsed = dayjs(raw);
+    if (parsed.isValid() && parsed.format("YYYY-MM-DD") === raw) {
+      return raw;
+    }
+  }
+  return fallback;
+}
 
 function normalizeProvider(value?: string | null) {
   return String(value || "").trim().toLowerCase();
@@ -83,6 +113,7 @@ export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
     []
   );
   const [categoryDrafts, setCategoryDrafts] = useState<string[]>([]);
+  const [dateDrafts, setDateDrafts] = useState<string[]>([]);
   const showVoiceUpgradeHint = useMemo(() => isDefaultVoiceConfiguration(profile), [profile]);
   const handleFocusCapture = useCallback((event: React.FocusEvent<HTMLElement>) => {
     const target = event.target as HTMLElement | null;
@@ -92,18 +123,20 @@ export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
     }, 120);
   }, []);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = dayjs().format("YYYY-MM-DD");
 
   const resolveCategoryByName = useCallback(
-    (rawName: string): Category | null => {
+    (rawName: string, transactionType: "income" | "expense"): Category | null => {
       if (categories.length === 0) return null;
       const hint = normalize(rawName);
       if (hint) {
-        const exact = categories.find((c) => normalize(c.name) === hint);
+        const exact = categories.find(
+          (c) => normalize(c.name) === hint && categoryMatchesTransactionType(c, transactionType)
+        );
         if (exact) return exact;
         const fuzzy = categories.find((c) => {
           const categoryName = normalize(c.name);
-          return categoryName.includes(hint) || hint.includes(categoryName);
+          return categoryMatchesTransactionType(c, transactionType) && (categoryName.includes(hint) || hint.includes(categoryName));
         });
         if (fuzzy) return fuzzy;
       }
@@ -116,7 +149,7 @@ export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
     (item: ParsedSpeechTransactionItem, index: number): Category | null => {
       const draftName = categoryDrafts[index]?.trim();
       const source = draftName || item.categoryHint || "";
-      return resolveCategoryByName(source);
+      return resolveCategoryByName(source, item.type);
     },
     [categoryDrafts, resolveCategoryByName]
   );
@@ -125,6 +158,14 @@ export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
     setCategoryDrafts((prev) => {
       const next = [...prev];
       next[index] = value;
+      return next;
+    });
+  };
+
+  const updateDateDraft = (index: number, value: string) => {
+    setDateDrafts((prev) => {
+      const next = [...prev];
+      next[index] = normalizeDraftDate(value, today);
       return next;
     });
   };
@@ -138,6 +179,7 @@ export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
     setParseWarnings([]);
     setParsedItems([]);
     setCategoryDrafts([]);
+    setDateDrafts([]);
     onClose();
   }, [onClose]);
 
@@ -160,6 +202,7 @@ export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
         }).unwrap();
         setParsedItems(parsed.items);
         setCategoryDrafts(parsed.items.map((item) => item.categoryHint ?? ""));
+        setDateDrafts(parsed.items.map((item) => normalizeDraftDate(item.date, today)));
         setParseWarnings(parsed.warnings ?? []);
         if (!parsed.items.length) {
           message.warning(
@@ -198,6 +241,7 @@ export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
 
       setTranscript("");
       setParsedItems([]);
+      setDateDrafts([]);
       setParseWarnings([]);
       setIsListening(true);
 
@@ -266,6 +310,7 @@ export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
           name: desiredName[0].toUpperCase() + desiredName.slice(1),
           color: "#4a9ed6",
           icon: "Tag",
+          type: item.type,
         });
         createdByName.set(normalized, created);
         createdCount += 1;
@@ -290,11 +335,14 @@ export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
           continue;
         }
 
+        const transactionDate =
+          normalizeDraftDate(dateDrafts[index], today);
+
         await addTransaction({
           type: item.type,
           amount: item.amount,
           description: "Голосовая операция",
-          date: today,
+          date: transactionDate,
           category,
         });
         added += 1;
@@ -314,6 +362,7 @@ export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
   }, [
     parsedItems,
     categoryDrafts,
+    dateDrafts,
     resolveCategory,
     addTransaction,
     addCategory,
@@ -390,6 +439,7 @@ export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
                 item.suggestedCategoryToCreate ||
                 item.categoryHint ||
                 "";
+              const draftDate = normalizeDraftDate(dateDrafts[index], today);
               return (
                 <div
                   key={`${item.type}-${item.amount}-${index}`}
@@ -401,6 +451,24 @@ export const VoiceAssistModal: React.FC<VoiceAssistModalProps> = ({
                   </div>
                   <div className={styles.parsedItemMeta}>
                     Категория: {category?.name ?? "Не определена"}
+                  </div>
+                  <div className={styles.dateDraftRow}>
+                    <div>
+                      <div className={styles.dateDraftLabel}>Дата операции</div>
+                      <div className={styles.dateDraftHint}>
+                        {item.date ? "Распознана из фразы" : "Дата не названа, предложено сегодня"}
+                      </div>
+                    </div>
+                    <DatePicker
+                      className={styles.dateDraftPicker}
+                      size="small"
+                      allowClear={false}
+                      value={dayjs(draftDate)}
+                      format="DD.MM.YYYY"
+                      onChange={(value) =>
+                        updateDateDraft(index, value ? value.format("YYYY-MM-DD") : today)
+                      }
+                    />
                   </div>
                   {!category && (
                     <>

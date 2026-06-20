@@ -2,11 +2,14 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { navigateToOperations } from "./rootNavigation";
 import { Ionicons } from "@expo/vector-icons";
+import dayjs from "dayjs";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import {
   ActivityIndicator,
   Animated,
   Alert,
   Easing,
+  Keyboard,
   Modal,
   ScrollView,
   StyleSheet,
@@ -48,6 +51,40 @@ function VoiceAssistPlaceholder() {
   return <View style={{ flex: 1 }} />;
 }
 
+function getTodayIso() {
+  return dayjs().format("YYYY-MM-DD");
+}
+
+function normalizeDraftDate(value?: string | null, fallback = getTodayIso()) {
+  const raw = String(value || "").slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const parsed = dayjs(raw);
+    if (parsed.isValid() && parsed.format("YYYY-MM-DD") === raw) {
+      return raw;
+    }
+  }
+  return fallback;
+}
+
+function formatDraftDate(value?: string | null, fallback = getTodayIso()) {
+  return dayjs(normalizeDraftDate(value, fallback)).format("DD.MM.YYYY");
+}
+
+function draftDateToDate(value?: string | null, fallback = getTodayIso()) {
+  return dayjs(normalizeDraftDate(value, fallback)).toDate();
+}
+
+function categoryMatchesTransactionType(category: Category, transactionType: "income" | "expense") {
+  const scope =
+    category.type ||
+    (category.name === "Зарплата"
+      ? "income"
+      : category.name === "Другое"
+        ? "both"
+        : "expense");
+  return scope === "both" || scope === transactionType;
+}
+
 export default function MainTabs() {
   const { api } = useAuth();
   const { theme } = useTheme();
@@ -62,9 +99,13 @@ export default function MainTabs() {
   const [parseWarnings, setParseWarnings] = useState<string[]>([]);
   const [parsedItems, setParsedItems] = useState<ParsedSpeechTransactionItem[]>([]);
   const [categoryDrafts, setCategoryDrafts] = useState<string[]>([]);
+  const [dateDrafts, setDateDrafts] = useState<string[]>([]);
+  const [datePickerIndex, setDatePickerIndex] = useState<number | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [showVoiceUpgradeHint, setShowVoiceUpgradeHint] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const pulse = useRef(new Animated.Value(1)).current;
+  const voiceScrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -87,8 +128,19 @@ export default function MainTabs() {
     return () => loop.stop();
   }, [pulse]);
 
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
   const today = useMemo(() => {
-    return new Date().toISOString().slice(0, 10);
+    return getTodayIso();
   }, []);
 
   const resetVoiceFlow = () => {
@@ -101,6 +153,8 @@ export default function MainTabs() {
     setParseWarnings([]);
     setParsedItems([]);
     setCategoryDrafts([]);
+    setDateDrafts([]);
+    setDatePickerIndex(null);
   };
 
   const normalize = (value: string) =>
@@ -136,19 +190,21 @@ export default function MainTabs() {
     );
   };
 
-  const resolveCategoryByName = (rawName: string) => {
+  const resolveCategoryByName = (rawName: string, transactionType: "income" | "expense") => {
     if (categories.length === 0) {
       return null;
     }
     const hint = normalize(rawName);
     if (hint) {
-      const exact = categories.find((c) => normalize(c.name) === hint);
+      const exact = categories.find(
+        (c) => normalize(c.name) === hint && categoryMatchesTransactionType(c, transactionType)
+      );
       if (exact) {
         return exact;
       }
       const fuzzy = categories.find((c) => {
         const categoryName = normalize(c.name);
-        return categoryName.includes(hint) || hint.includes(categoryName);
+        return categoryMatchesTransactionType(c, transactionType) && (categoryName.includes(hint) || hint.includes(categoryName));
       });
       if (fuzzy) {
         return fuzzy;
@@ -160,7 +216,7 @@ export default function MainTabs() {
   const resolveCategory = (item: ParsedSpeechTransactionItem, index: number) => {
     const draftName = categoryDrafts[index]?.trim();
     const source = draftName || item.categoryHint || "";
-    return resolveCategoryByName(source);
+    return resolveCategoryByName(source, item.type);
   };
 
   const updateCategoryDraft = (index: number, value: string) => {
@@ -169,6 +225,29 @@ export default function MainTabs() {
       next[index] = value;
       return next;
     });
+  };
+
+  const updateDateDraft = (index: number, value: string) => {
+    setDateDrafts((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+  };
+
+  const scrollToVoiceInput = (index: number) => {
+    setTimeout(() => {
+      voiceScrollRef.current?.scrollTo({
+        y: 360 + index * 230,
+        animated: true,
+      });
+    }, 120);
+  };
+
+  const openDatePicker = (index: number) => {
+    Keyboard.dismiss();
+    setDatePickerIndex(index);
+    scrollToVoiceInput(index);
   };
 
   const runParse = async (text: string) => {
@@ -201,6 +280,7 @@ export default function MainTabs() {
       });
       setParsedItems(parsed.items);
       setCategoryDrafts(parsed.items.map((item) => item.categoryHint ?? ""));
+      setDateDrafts(parsed.items.map((item) => normalizeDraftDate(item.date, today)));
       setParseWarnings(parsed.warnings ?? []);
       if (!parsed.items.length) {
         Alert.alert("Голосовой помощник", "Не удалось разобрать операции. Попробуйте переформулировать фразу.");
@@ -214,7 +294,10 @@ export default function MainTabs() {
 
   const startListening = async () => {
     if (!speechRecognitionService.isRecognitionAvailable()) {
-      Alert.alert("Голосовой помощник", "Распознавание речи недоступно на этом устройстве.");
+      Alert.alert(
+        "Голосовой помощник",
+        speechRecognitionService.getUnavailableReason() || "Распознавание речи недоступно на этом устройстве."
+      );
       return;
     }
 
@@ -251,6 +334,7 @@ export default function MainTabs() {
       setVoiceModalVisible(true);
       setTranscript("");
       setParsedItems([]);
+      setDateDrafts([]);
       setParseWarnings([]);
       setIsListening(true);
 
@@ -319,6 +403,7 @@ export default function MainTabs() {
           name: desiredName[0].toUpperCase() + desiredName.slice(1),
           color: theme.accentMuted,
           icon: "pricetag-outline",
+          type: item.type,
         });
         createdByName.set(normalized, created);
         createdCount += 1;
@@ -351,7 +436,7 @@ export default function MainTabs() {
           type: item.type,
           amount: item.amount,
           description: "Голосовая операция",
-          date: today,
+          date: normalizeDraftDate(dateDrafts[index], today),
           category,
         });
         added += 1;
@@ -429,8 +514,15 @@ export default function MainTabs() {
           backgroundColor: "rgba(0, 0, 0, 0.45)",
           justifyContent: "flex-end",
         },
+        voiceModalBackdropKeyboard: {
+          justifyContent: "flex-start",
+          paddingTop: Math.max(insets.top, 10),
+        },
         voiceModalDimmer: {
           flex: 1,
+        },
+        voiceModalDimmerKeyboard: {
+          flex: 0,
         },
         voiceModalCard: {
           backgroundColor: theme.bgCard,
@@ -438,6 +530,9 @@ export default function MainTabs() {
           borderTopRightRadius: theme.radius2xl,
           height: "78%",
           overflow: "hidden",
+        },
+        voiceModalCardKeyboard: {
+          height: "100%",
         },
         voiceModalKeyboardLayer: {
           flex: 1,
@@ -448,6 +543,9 @@ export default function MainTabs() {
         voiceModalScrollContent: {
           padding: 16,
           paddingBottom: 12,
+        },
+        voiceModalScrollContentKeyboard: {
+          paddingBottom: 220,
         },
         title: {
           fontSize: 18,
@@ -521,6 +619,42 @@ export default function MainTabs() {
           color: theme.textSecondary,
           fontSize: 13,
         },
+        dateDraftBlock: {
+          borderTopWidth: 1,
+          borderTopColor: theme.border,
+          marginTop: 8,
+          paddingTop: 8,
+        },
+        dateDraftLabel: {
+          color: theme.textPrimary,
+          fontSize: 13,
+          fontWeight: "600",
+          marginBottom: 2,
+        },
+        dateDraftHint: {
+          color: theme.textTertiary,
+          fontSize: 12,
+          lineHeight: 16,
+          marginBottom: 8,
+        },
+        datePickerButton: {
+          minHeight: 42,
+          borderWidth: 1,
+          borderColor: theme.border,
+          borderRadius: theme.radiusSm,
+          backgroundColor: theme.bgCard,
+          paddingHorizontal: 10,
+          paddingVertical: 8,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+        },
+        datePickerButtonText: {
+          color: theme.textPrimary,
+          fontSize: 14,
+          fontWeight: "600",
+        },
         categoryInput: {
           marginTop: 8,
           borderWidth: 1,
@@ -576,7 +710,7 @@ export default function MainTabs() {
           fontWeight: "600",
         },
       }),
-    [theme, tabBarHeight, bottomInset]
+    [theme, tabBarHeight, bottomInset, insets.top]
   );
 
   return (
@@ -672,21 +806,25 @@ export default function MainTabs() {
         animationType="slide"
         onRequestClose={resetVoiceFlow}
       >
-        <View style={styles.voiceModalBackdrop}>
+        <View style={[styles.voiceModalBackdrop, isKeyboardVisible && styles.voiceModalBackdropKeyboard]}>
           <TouchableOpacity
             activeOpacity={1}
-            style={styles.voiceModalDimmer}
+            style={[styles.voiceModalDimmer, isKeyboardVisible && styles.voiceModalDimmerKeyboard]}
             onPress={resetVoiceFlow}
           />
-          <View style={styles.voiceModalCard}>
+          <View style={[styles.voiceModalCard, isKeyboardVisible && styles.voiceModalCardKeyboard]}>
             <KeyboardAvoidingView
               style={styles.voiceModalKeyboardLayer}
               behavior={Platform.OS === "ios" ? "padding" : "height"}
               keyboardVerticalOffset={Platform.OS === "ios" ? 16 : 0}
             >
             <ScrollView
+              ref={voiceScrollRef}
               style={styles.voiceModalScroll}
-              contentContainerStyle={styles.voiceModalScrollContent}
+              contentContainerStyle={[
+                styles.voiceModalScrollContent,
+                isKeyboardVisible && styles.voiceModalScrollContentKeyboard,
+              ]}
               showsVerticalScrollIndicator={true}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
@@ -733,6 +871,7 @@ export default function MainTabs() {
                       item.suggestedCategoryToCreate ||
                       item.categoryHint ||
                       "";
+                    const draftDate = dateDrafts[index] || today;
                     return (
                       <View key={`${item.type}-${item.amount}-${index}`} style={styles.parsedItem}>
                         <Text style={styles.parsedItemTitle}>
@@ -741,6 +880,36 @@ export default function MainTabs() {
                         <Text style={styles.parsedItemMeta}>
                           Категория: {category?.name ?? "Не определена"}
                         </Text>
+                        <View style={styles.dateDraftBlock}>
+                          <Text style={styles.dateDraftLabel}>Дата операции</Text>
+                          <Text style={styles.dateDraftHint}>
+                            {item.date ? "Распознана из фразы" : "Дата не названа, предложено сегодня"}
+                          </Text>
+                          <TouchableOpacity
+                            style={styles.datePickerButton}
+                            onPress={() => openDatePicker(index)}
+                            accessibilityRole="button"
+                            accessibilityLabel="Выбрать дату операции"
+                          >
+                            <Text style={styles.datePickerButtonText}>
+                              {formatDraftDate(draftDate, today)}
+                            </Text>
+                            <Ionicons name="calendar-outline" size={18} color={theme.accentMuted} />
+                          </TouchableOpacity>
+                          {datePickerIndex === index && (
+                            <DateTimePicker
+                              value={draftDateToDate(draftDate, today)}
+                              mode="date"
+                              display={Platform.OS === "ios" ? "spinner" : "default"}
+                              onChange={(_, selectedDate) => {
+                                setDatePickerIndex(null);
+                                if (selectedDate) {
+                                  updateDateDraft(index, dayjs(selectedDate).format("YYYY-MM-DD"));
+                                }
+                              }}
+                            />
+                          )}
+                        </View>
                         {!category && (
                           <>
                             <Text style={styles.parsedItemMeta}>
@@ -752,8 +921,11 @@ export default function MainTabs() {
                               style={styles.categoryInput}
                               value={categoryDrafts[index] ?? ""}
                               onChangeText={(value) => updateCategoryDraft(index, value)}
+                              onFocus={() => scrollToVoiceInput(index)}
                               placeholder="Введите категорию (создадим автоматически)"
                               placeholderTextColor={theme.textTertiary}
+                              returnKeyType="done"
+                              onSubmitEditing={() => Keyboard.dismiss()}
                             />
                           </>
                         )}
@@ -764,6 +936,7 @@ export default function MainTabs() {
               )}
             </ScrollView>
 
+            {!isKeyboardVisible && (
             <View style={styles.actionsRow}>
               <TouchableOpacity style={[styles.button, styles.buttonSecondary]} onPress={resetVoiceFlow} disabled={isSaving}>
                 <Text style={styles.buttonTextSecondary}>Закрыть</Text>
@@ -797,6 +970,7 @@ export default function MainTabs() {
                 </TouchableOpacity>
               )}
             </View>
+            )}
             </KeyboardAvoidingView>
           </View>
         </View>

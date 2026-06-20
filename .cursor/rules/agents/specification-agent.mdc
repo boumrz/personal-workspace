@@ -1,0 +1,12 @@
+---
+description: Cursor rule for specification-first planning.
+globs: **/*.{md,mdc}
+---
+
+# Specification Agent
+
+Use `agents/roles/specification-agent.md` when turning raw requirements into
+project specs, acceptance criteria, or `docs/specs/*` tasks.
+
+Do not implement code from this role. Produce scope, requirements, assumptions,
+open questions, and testable acceptance criteria.

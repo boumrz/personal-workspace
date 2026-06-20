@@ -40,6 +40,77 @@ function formatMonthDisplay(year: number, month: number) {
   return date.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
 }
 
+const AMOUNT_MAX = 99999999.99;
+
+function normalizeAmountInput(raw: string): string {
+  const withDot = raw.replace(/,/g, ".");
+  const compact = withDot.replace(/\s+/g, "");
+  return compact.replace(/[^0-9+.]/g, "");
+}
+
+function formatAmount(value: number): string {
+  return value.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
+}
+
+function parseAmountInput(raw: string): number | null {
+  const normalized = raw.replace(/,/g, ".").replace(/\s+/g, "");
+  if (!normalized) return null;
+  if (normalized.endsWith("+")) return null;
+
+  const parts = normalized.split("+");
+  if (parts.length === 0) return null;
+
+  let total = 0;
+  for (const part of parts) {
+    if (!part || !/^\d+(\.\d{1,2})?$/.test(part)) {
+      return null;
+    }
+    const value = Number(part);
+    if (!Number.isFinite(value)) return null;
+    total += value;
+  }
+
+  const rounded = Math.round(total * 100) / 100;
+  if (rounded <= 0 || rounded > AMOUNT_MAX) {
+    return null;
+  }
+  return rounded;
+}
+
+function formatAmountForHint(value: number): string {
+  return new Intl.NumberFormat("ru-RU", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function getAmountExpressionHint(raw: string, parsedAmount: number | null): string | null {
+  const normalized = normalizeAmountInput(raw);
+  if (!normalized.includes("+")) {
+    return null;
+  }
+  if (parsedAmount === null) {
+    return "Завершите выражение в калькуляторе";
+  }
+  return `Итого: ${formatAmountForHint(parsedAmount)} ₽`;
+}
+
+type CategoryScope = "income" | "expense" | "both";
+
+function resolveCategoryScope(category: Category): CategoryScope {
+  if (category.type === "income" || category.type === "expense" || category.type === "both") {
+    return category.type;
+  }
+  if (category.name === "Зарплата") return "income";
+  if (category.name === "Другое") return "both";
+  return "expense";
+}
+
+function isCategoryAvailableForType(category: Category, transactionType: "income" | "expense") {
+  const scope = resolveCategoryScope(category);
+  return scope === "both" || scope === transactionType;
+}
+
 export default function AddTransactionScreen({ navigation, route }: any) {
   const { api } = useAuth();
   const { theme } = useTheme();
@@ -54,7 +125,7 @@ export default function AddTransactionScreen({ navigation, route }: any) {
   const [plannedExpenses, setPlannedExpenses] = useState<Transaction[]>([]);
   const [type, setType] = useState<"income" | "expense">(editingTransaction?.type ?? "expense");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(editingTransaction?.category ?? null);
-  const [amount, setAmount] = useState(editingTransaction ? String(editingTransaction.amount) : "");
+  const [amount, setAmount] = useState(editingTransaction ? formatAmount(editingTransaction.amount) : "");
   const [description, setDescription] = useState(editingTransaction?.description ?? "");
   const [date, setDate] = useState(editingTransaction ? dayjs(editingTransaction.date) : dayjs());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -93,6 +164,17 @@ export default function AddTransactionScreen({ navigation, route }: any) {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() + 1 };
   });
+
+
+  const handleAmountChange = useCallback((raw: string) => {
+    setAmount(normalizeAmountInput(raw));
+  }, []);
+
+  const parsedAmount = useMemo(() => parseAmountInput(amount), [amount]);
+  const amountExpressionHint = useMemo(
+    () => getAmountExpressionHint(amount, parsedAmount),
+    [amount, parsedAmount]
+  );
   
   // Логируем доступные месяцы при их создании
   useEffect(() => {
@@ -115,10 +197,8 @@ export default function AddTransactionScreen({ navigation, route }: any) {
 
   // Для планируемых трат — все категории (только расходы), для обычных — фильтруем по типу
   const availableCategories = isPlanned
-    ? categories
-    : (type === "income"
-      ? categories.filter((c) => c.name === "Зарплата" || c.name === "Другое")
-      : categories);
+    ? categories.filter((category) => isCategoryAvailableForType(category, "expense"))
+    : categories.filter((category) => isCategoryAvailableForType(category, type));
 
   const loadData = useCallback(async () => {
     const pendingId = consumeLastCreatedCategoryId();
@@ -141,9 +221,10 @@ export default function AddTransactionScreen({ navigation, route }: any) {
       } else if (catData.length > 0 && !selectedCategory) {
         const def =
           type === "income"
-            ? catData.find((c) => c.name === "Зарплата") || catData[0]
-            : catData[0];
-        setSelectedCategory(def);
+            ? catData.find((c) => c.name === "Зарплата" && isCategoryAvailableForType(c, "income")) ||
+              catData.find((c) => isCategoryAvailableForType(c, "income"))
+            : catData.find((c) => isCategoryAvailableForType(c, "expense"));
+        setSelectedCategory(def ?? null);
       }
     } catch {
       setCategories([]);
@@ -167,8 +248,8 @@ export default function AddTransactionScreen({ navigation, route }: any) {
       if (selectedCategory?.id === cat.id) {
         const remaining = categories.filter((c) => c.id !== cat.id);
         const next = type === "income"
-          ? remaining.find((c) => c.name === "Зарплата" || c.name === "Другое") || remaining[0]
-          : remaining[0];
+          ? remaining.find((c) => isCategoryAvailableForType(c, "income"))
+          : remaining.find((c) => isCategoryAvailableForType(c, "expense"));
         setSelectedCategory(next ?? null);
       }
     } catch (e: any) {
@@ -224,7 +305,7 @@ export default function AddTransactionScreen({ navigation, route }: any) {
       .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
 
     const remaining = plannedAmount - spentAmount;
-    const enteredAmount = parseFloat(amount.replace(",", ".")) || 0;
+    const enteredAmount = parsedAmount ?? 0;
     const willRemainAfter = remaining - enteredAmount;
 
     return {
@@ -233,12 +314,12 @@ export default function AddTransactionScreen({ navigation, route }: any) {
       remaining,
       willRemainAfter,
     };
-  }, [type, selectedCategory, plannedExpenses, transactions, amount]);
+  }, [type, selectedCategory, plannedExpenses, transactions, parsedAmount]);
 
   const onSave = async () => {
-    const num = parseFloat(amount.replace(",", "."));
-    if (isNaN(num) || num <= 0) {
-      Alert.alert("Ошибка", "Введите сумму");
+    const num = parsedAmount;
+    if (num === null || num <= 0) {
+      Alert.alert("Ошибка", "Введите корректную сумму или выражение");
       return;
     }
     if (!selectedCategory) {
@@ -445,10 +526,21 @@ export default function AddTransactionScreen({ navigation, route }: any) {
           borderColor: theme.border,
           borderRadius: theme.radiusMd,
           paddingHorizontal: 14,
-          paddingVertical: 12,
+          paddingVertical: 14,
+          minHeight: 48,
           fontSize: 16,
-          marginBottom: 16,
+          marginBottom: 8,
           color: theme.textPrimary,
+        },
+        helperText: {
+          fontSize: 12,
+          color: theme.textSecondary,
+          marginBottom: 4,
+        },
+        amountExpressionHint: {
+          fontSize: 12,
+          color: theme.textSecondary,
+          marginBottom: 16,
         },
         dateBtn: {
           backgroundColor: theme.bgCard,
@@ -457,9 +549,31 @@ export default function AddTransactionScreen({ navigation, route }: any) {
           borderRadius: theme.radiusMd,
           paddingHorizontal: 14,
           paddingVertical: 12,
-          marginBottom: 24,
+          minHeight: 48,
+          justifyContent: "center",
+          marginBottom: 8,
         },
         dateBtnText: { fontSize: 16, color: theme.textPrimary, textTransform: "capitalize" },
+        dateQuickActions: {
+          flexDirection: "row",
+          gap: 8,
+          marginBottom: 24,
+        },
+        dateQuickBtn: {
+          minHeight: 40,
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: theme.border,
+          backgroundColor: theme.bgCard,
+          paddingHorizontal: 12,
+          justifyContent: "center",
+          alignItems: "center",
+        },
+        dateQuickBtnText: {
+          fontSize: 13,
+          color: theme.textPrimary,
+          fontWeight: "500",
+        },
         saveBtn: {
           backgroundColor: theme.accentMuted,
           borderRadius: theme.radiusMd,
@@ -590,15 +704,19 @@ export default function AddTransactionScreen({ navigation, route }: any) {
         </View>
       )}
 
-      <Text style={styles.label}>Сумма (₽)</Text>
+      <Text style={styles.label}>Сумма, ₽</Text>
       <TextInput
         style={styles.input}
         value={amount}
-        onChangeText={setAmount}
-        placeholder="0"
+        onChangeText={handleAmountChange}
+        placeholder="0.00"
         placeholderTextColor={theme.textTertiary}
-        keyboardType="decimal-pad"
+        keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "default"}
+        autoCapitalize="none"
+        autoCorrect={false}
       />
+      <Text style={styles.helperText}>В поле суммы есть калькулятор</Text>
+      {amountExpressionHint ? <Text style={styles.amountExpressionHint}>{amountExpressionHint}</Text> : null}
 
       {/* Бюджет на месяц - только для обычных расходов */}
       {!isPlanned && type === "expense" && (
@@ -627,7 +745,7 @@ export default function AddTransactionScreen({ navigation, route }: any) {
                     : styles.budgetAmountNegative,
                 ]}
               >
-                {amount && parseFloat(amount.replace(",", ".")) > 0
+                {parsedAmount !== null && parsedAmount > 0
                   ? `Останется: ${budgetInfo.willRemainAfter.toLocaleString(
                       "ru-RU"
                     )} ₽`
@@ -703,7 +821,7 @@ export default function AddTransactionScreen({ navigation, route }: any) {
       {/* Добавить категорию */}
       <TouchableOpacity
         style={styles.addCategoryBtn}
-        onPress={() => navigation.navigate("AddCategory")}
+        onPress={() => navigation.navigate("AddCategory", { categoryType: isPlanned ? "expense" : type })}
       >
         <Ionicons name="add-outline" size={18} color={theme.accentMuted} />
         <Text style={styles.addCategoryBtnText}>Добавить категорию</Text>
@@ -718,7 +836,7 @@ export default function AddTransactionScreen({ navigation, route }: any) {
         placeholderTextColor={theme.textTertiary}
       />
 
-      <Text style={styles.label}>{isPlanned ? "Месяц" : "Дата"}</Text>
+      <Text style={styles.label}>{isPlanned ? "Месяц плановой траты" : "Дата операции"}</Text>
       {isPlanned ? (
         // Выбор месяца для планируемых трат
         <TouchableOpacity
@@ -736,6 +854,20 @@ export default function AddTransactionScreen({ navigation, route }: any) {
           >
             <Text style={styles.dateBtnText}>{date.format("DD.MM.YYYY")}</Text>
           </TouchableOpacity>
+          <View style={styles.dateQuickActions}>
+            <TouchableOpacity
+              style={styles.dateQuickBtn}
+              onPress={() => setDate(dayjs())}
+            >
+              <Text style={styles.dateQuickBtnText}>Сегодня</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.dateQuickBtn}
+              onPress={() => setDate(dayjs().subtract(1, "day"))}
+            >
+              <Text style={styles.dateQuickBtnText}>Вчера</Text>
+            </TouchableOpacity>
+          </View>
           {showDatePicker && (
             <DateTimePicker
               value={date.toDate()}

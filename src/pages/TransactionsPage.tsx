@@ -10,6 +10,7 @@ import {
 import { useFinance } from "../context/FinanceContext";
 import TransactionForm from "../components/TransactionForm";
 import CategoryFilter from "../components/CategoryFilter";
+import TransactionDataTools from "../components/TransactionDataTools";
 import PageHeader from "../components/PageHeader";
 import IconRenderer from "../components/IconRenderer";
 import * as styles from "./TransactionsPage.module.css";
@@ -128,17 +129,26 @@ const TransactionsPage: React.FC = () => {
         <PageHeader
           title={activeTab === "actual" ? "Операции" : "Планируемые расходы"}
           extra={
-            <Badge
-            count={hasActiveFilters ? selectedCategories.length : 0}
-            size="small"
-          >
-              <button
-                className={styles.filterBtn}
-                onClick={() => setFilterDrawerOpen(true)}
+            <div className={styles.headerActions}>
+              <TransactionDataTools
+                activeTab={activeTab}
+                triggerClassName={styles.filterBtn}
+                triggerLabel="Файлы и чеки"
+              />
+              <Badge
+                count={hasActiveFilters ? selectedCategories.length : 0}
+                size="small"
               >
-                <FilterOutlined />
-              </button>
-            </Badge>
+                <button
+                  className={styles.filterBtn}
+                  onClick={() => setFilterDrawerOpen(true)}
+                  aria-label="Фильтры"
+                  title="Фильтры"
+                >
+                  <FilterOutlined />
+                </button>
+              </Badge>
+            </div>
           }
         />
 
@@ -157,7 +167,6 @@ const TransactionsPage: React.FC = () => {
             />
           </div>
 
-          {/* Поиск */}
           <div className={styles.searchContainer}>
             <Input
               placeholder="Поиск по ключевым словам"

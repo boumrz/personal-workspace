@@ -8,6 +8,7 @@ export interface Category {
   name: string;
   color: string;
   icon: string;
+  type?: "income" | "expense" | "both";
 }
 
 export interface Transaction {
@@ -27,9 +28,27 @@ export interface SpeechParseContext {
 export interface ParsedSpeechTransactionItem {
   type: "income" | "expense";
   amount: number;
+  date?: string;
   categoryHint?: string;
   categoryResolution?: "matched_existing" | "suggest_create" | "unknown";
   suggestedCategoryToCreate?: string;
+}
+
+export interface TransactionDraft {
+  type: "income" | "expense";
+  amount: number;
+  date?: string;
+  description?: string;
+  categoryHint?: string;
+  categoryResolution?: "matched_existing" | "suggest_create" | "unknown";
+  suggestedCategoryToCreate?: string;
+}
+
+export interface TransactionImportPreview {
+  source: "excel" | "receipt";
+  title: string;
+  warnings: string[];
+  drafts: TransactionDraft[];
 }
 
 export interface ParseTransactionsFromSpeechRequest {
