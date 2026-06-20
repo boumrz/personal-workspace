@@ -750,8 +750,8 @@ body .ant-tooltip-inner {
     right: 0 !important;
     height: var(--app-viewport-height, 100dvh) !important;
     max-height: var(--app-viewport-height, 100dvh) !important;
-    top: auto !important;
-    bottom: 0 !important;
+    top: 0 !important;
+    bottom: auto !important;
   }
 
   .ant-drawer-content,

@@ -373,9 +373,20 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   const isEditMode = !!initialTransaction;
   const handleFormFocusCapture = useCallback((event: React.FocusEvent<HTMLElement>) => {
     const target = event.target as HTMLElement | null;
-    if (!target?.scrollIntoView) return;
+    const scrollContainer = target?.closest(".ant-drawer-body") as HTMLElement | null;
+    if (!target || !scrollContainer) return;
+
     window.setTimeout(() => {
-      target.scrollIntoView({ block: "center", behavior: "smooth" });
+      const targetRect = target.getBoundingClientRect();
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const overflowTop = targetRect.top - containerRect.top;
+      const overflowBottom = targetRect.bottom - containerRect.bottom;
+
+      if (overflowTop < 16) {
+        scrollContainer.scrollBy({ top: overflowTop - 16, behavior: "smooth" });
+      } else if (overflowBottom > -16) {
+        scrollContainer.scrollBy({ top: overflowBottom + 16, behavior: "smooth" });
+      }
     }, 120);
   }, []);
 
@@ -710,7 +721,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           width="100%"
           mask={true}
           styles={{
-            wrapper: { width: "100%", maxWidth: "100vw", height: "100dvh" },
+            wrapper: { width: "100%", maxWidth: "100vw", height: "var(--app-viewport-height, 100dvh)" },
             body: {
               overflowY: "auto",
               paddingBottom: "calc(28px + env(safe-area-inset-bottom))",
