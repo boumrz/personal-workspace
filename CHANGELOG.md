@@ -7,7 +7,7 @@
 
 ## [Unreleased]
 
-### Added
+### Added.
 
 - **Авторизация через Telegram** — вход и регистрация через Telegram Login Widget
 - **Авторизация через VK ID** — вход и регистрация через VK ID OAuth 2.0
