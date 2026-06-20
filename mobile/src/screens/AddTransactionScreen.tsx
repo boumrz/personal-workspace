@@ -170,14 +170,6 @@ export default function AddTransactionScreen({ navigation, route }: any) {
     setAmount(normalizeAmountInput(raw));
   }, []);
 
-  const appendAmountOperator = useCallback(() => {
-    setAmount((current) => {
-      const normalized = normalizeAmountInput(current);
-      if (!normalized || normalized.endsWith("+")) return normalized;
-      return `${normalized}+`;
-    });
-  }, []);
-
   const parsedAmount = useMemo(() => parseAmountInput(amount), [amount]);
   const amountExpressionHint = useMemo(
     () => getAmountExpressionHint(amount, parsedAmount),
@@ -529,7 +521,6 @@ export default function AddTransactionScreen({ navigation, route }: any) {
         addCategoryBtnText: { fontSize: 13, color: theme.accentMuted },
         // Inputs
         input: {
-          flex: 1,
           backgroundColor: theme.bgCard,
           borderWidth: 1,
           borderColor: theme.border,
@@ -540,28 +531,6 @@ export default function AddTransactionScreen({ navigation, route }: any) {
           fontSize: 16,
           marginBottom: 8,
           color: theme.textPrimary,
-        },
-        amountInputRow: {
-          flexDirection: "row",
-          alignItems: "stretch",
-          gap: 8,
-        },
-        amountOperatorBtn: {
-          minWidth: 52,
-          minHeight: 48,
-          marginBottom: 8,
-          borderRadius: theme.radiusMd,
-          borderWidth: 1,
-          borderColor: theme.border,
-          backgroundColor: theme.bgCard,
-          justifyContent: "center",
-          alignItems: "center",
-        },
-        amountOperatorText: {
-          fontSize: 24,
-          lineHeight: 28,
-          fontWeight: "700",
-          color: theme.accentMuted,
         },
         helperText: {
           fontSize: 12,
@@ -736,25 +705,16 @@ export default function AddTransactionScreen({ navigation, route }: any) {
       )}
 
       <Text style={styles.label}>Сумма, ₽</Text>
-      <View style={styles.amountInputRow}>
-        <TextInput
-          style={styles.input}
-          value={amount}
-          onChangeText={handleAmountChange}
-          placeholder="0.00"
-          placeholderTextColor={theme.textTertiary}
-          keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "default"}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <TouchableOpacity
-          style={styles.amountOperatorBtn}
-          activeOpacity={0.8}
-          onPress={appendAmountOperator}
-        >
-          <Text style={styles.amountOperatorText}>+</Text>
-        </TouchableOpacity>
-      </View>
+      <TextInput
+        style={styles.input}
+        value={amount}
+        onChangeText={handleAmountChange}
+        placeholder="0.00"
+        placeholderTextColor={theme.textTertiary}
+        keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "default"}
+        autoCapitalize="none"
+        autoCorrect={false}
+      />
       <Text style={styles.helperText}>В поле суммы есть калькулятор</Text>
       {amountExpressionHint ? <Text style={styles.amountExpressionHint}>{amountExpressionHint}</Text> : null}
 

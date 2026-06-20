@@ -365,27 +365,6 @@
   color: var(--text-tertiary);
 }
 
-.amountInput :global(.ant-input-group-addon) {
-  padding: 0 !important;
-  overflow: hidden;
-}
-
-.amountOperatorButton:global(.ant-btn) {
-  min-width: 48px;
-  height: 100%;
-  min-height: 32px;
-  border-radius: 0 !important;
-  color: var(--accent-muted) !important;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.amountOperatorButton:global(.ant-btn):hover,
-.amountOperatorButton:global(.ant-btn):focus {
-  color: var(--accent-muted-hover) !important;
-  background: var(--accent-muted-light) !important;
-}
-
 .calculatorHint {
   font-size: 12px;
   line-height: 1.45;
