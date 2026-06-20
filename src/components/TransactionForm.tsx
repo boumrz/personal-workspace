@@ -209,6 +209,12 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     [amountInputValue, enteredAmount]
   );
 
+  const appendAmountOperator = useCallback(() => {
+    const current = normalizeAmountInput(amountInputValue);
+    if (!current || current.endsWith("+")) return;
+    applyAmountInputValue(`${current}+`);
+  }, [amountInputValue, applyAmountInputValue]);
+
   const handleCategoryCreated = (categoryId: string) => {
     setSelectedCategory(categoryId);
     setShowCategoryForm(false);
@@ -460,11 +466,22 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         ]}
       >
         <Input
+          className={styles.amountInput}
           style={{ width: "100%" }}
           type="text"
           inputMode="decimal"
           placeholder="0.00"
           value={amountInputValue}
+          addonAfter={
+            <Button
+              type="text"
+              className={styles.amountOperatorButton}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={appendAmountOperator}
+            >
+              +
+            </Button>
+          }
           onChange={(event) => applyAmountInputValue(event.target.value)}
           onKeyDown={(event) => {
             const controlKeys = [
