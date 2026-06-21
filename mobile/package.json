@@ -1,9 +1,10 @@
 {
   "name": "mobile",
-  "version": "1.0.3",
+  "version": "1.0.7",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
+    "start:local": "node scripts/start-local.mjs",
     "start:lan": "expo start --lan",
     "start:tunnel": "expo start --tunnel --clear",
     "android": "expo run:android",

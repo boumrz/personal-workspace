@@ -1,7 +1,7 @@
 {
   "cli": {
     "version": ">= 12.0.0",
-    "appVersionSource": "remote"
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
@@ -9,6 +9,7 @@
       "distribution": "internal",
       "environment": "development",
       "env": {
+        "EXPO_PUBLIC_API_URL": "https://domiknote.ru/api",
         "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       },
       "android": {
@@ -19,6 +20,7 @@
       "distribution": "internal",
       "environment": "preview",
       "env": {
+        "EXPO_PUBLIC_API_URL": "https://domiknote.ru/api",
         "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       },
       "android": {
@@ -32,6 +34,7 @@
         "buildType": "app-bundle"
       },
       "env": {
+        "EXPO_PUBLIC_API_URL": "https://domiknote.ru/api",
         "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       }
     },
@@ -42,6 +45,7 @@
         "buildType": "apk"
       },
       "env": {
+        "EXPO_PUBLIC_API_URL": "https://domiknote.ru/api",
         "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       }
     }
