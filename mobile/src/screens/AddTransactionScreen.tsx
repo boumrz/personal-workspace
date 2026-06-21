@@ -444,6 +444,12 @@ export default function AddTransactionScreen({ navigation, route }: any) {
           color: theme.textPrimary,
           marginBottom: 8,
         },
+        amountLabel: {
+          fontSize: 16,
+          fontWeight: "700",
+          color: theme.textPrimary,
+          marginBottom: 10,
+        },
         // Budget info section — вся плашка цветом по условию (как в веб)
         budgetBox: {
           borderRadius: theme.radiusMd,
@@ -533,14 +539,17 @@ export default function AddTransactionScreen({ navigation, route }: any) {
           color: theme.textPrimary,
         },
         helperText: {
-          fontSize: 12,
+          fontSize: 14,
+          lineHeight: 19,
           color: theme.textSecondary,
-          marginBottom: 4,
+          marginBottom: 6,
         },
         amountExpressionHint: {
-          fontSize: 12,
+          fontSize: 15,
+          lineHeight: 21,
+          fontWeight: "700",
           color: theme.textSecondary,
-          marginBottom: 16,
+          marginBottom: 18,
         },
         dateBtn: {
           backgroundColor: theme.bgCard,
@@ -704,7 +713,7 @@ export default function AddTransactionScreen({ navigation, route }: any) {
         </View>
       )}
 
-      <Text style={styles.label}>Сумма, ₽</Text>
+      <Text style={styles.amountLabel}>Сумма, ₽</Text>
       <TextInput
         style={styles.input}
         value={amount}

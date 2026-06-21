@@ -163,7 +163,7 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving 
         width="100%"
         mask={true}
         styles={{
-          wrapper: { width: "100%", maxWidth: "100vw", height: "100dvh" },
+          wrapper: { width: "100%", maxWidth: "100vw", height: "100vh" },
           body: {
             overflowY: "auto",
             paddingBottom: "calc(28px + env(safe-area-inset-bottom))",

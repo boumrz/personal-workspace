@@ -435,6 +435,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       )}
 
       <Form.Item
+        className={styles.amountField}
         label="Сумма (₽)"
         name="amount"
         extra="В поле суммы есть калькулятор"
@@ -493,7 +494,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       </Form.Item>
 
       {amountExpressionHint ? (
-        <Form.Item style={{ marginTop: -14 }}>
+        <Form.Item style={{ marginTop: -10 }}>
           <div className={styles.amountSaveHint}>{amountExpressionHint}</div>
         </Form.Item>
       ) : null}
@@ -721,7 +722,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           width="100%"
           mask={true}
           styles={{
-            wrapper: { width: "100%", maxWidth: "100vw", height: "var(--app-viewport-height, 100dvh)" },
+            wrapper: { width: "100%", maxWidth: "100vw", height: "100vh" },
             body: {
               overflowY: "auto",
               paddingBottom: "calc(28px + env(safe-area-inset-bottom))",

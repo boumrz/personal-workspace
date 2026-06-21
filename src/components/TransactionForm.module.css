@@ -359,10 +359,32 @@
   background-color: var(--accent-muted-light) !important;
 }
 
+.amountField {
+  margin-bottom: 12px !important;
+}
+
+.amountField :global(.ant-form-item-label > label) {
+  min-height: 22px;
+  font-size: 15px !important;
+  font-weight: 650 !important;
+  line-height: 1.35 !important;
+  color: var(--text-primary) !important;
+}
+
+.amountField :global(.ant-form-item-extra) {
+  padding-top: 6px;
+  font-size: 13px !important;
+  font-weight: 500;
+  line-height: 1.35 !important;
+  color: var(--text-secondary) !important;
+}
+
 .amountSaveHint {
-  margin-top: -4px;
-  font-size: 12px;
-  color: var(--text-tertiary);
+  margin-top: 0;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--text-secondary);
 }
 
 .calculatorHint {
@@ -448,6 +470,18 @@
   .input {
     padding: 10px 14px;
     font-size: 16px;
+  }
+
+  .amountField :global(.ant-form-item-label > label) {
+    font-size: 16px !important;
+  }
+
+  .amountField :global(.ant-form-item-extra) {
+    font-size: 14px !important;
+  }
+
+  .amountSaveHint {
+    font-size: 15px;
   }
 
   .submitButton {

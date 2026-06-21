@@ -345,12 +345,12 @@
   .drawer :global(.ant-drawer-content-wrapper) {
     width: 100% !important;
     max-width: 100vw;
-    height: 100dvh;
+    height: 100vh;
   }
 
   .drawer :global(.ant-drawer-content) {
     border-radius: 0;
-    height: 100dvh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
   }

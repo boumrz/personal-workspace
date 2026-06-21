@@ -42,7 +42,7 @@ const GoalAddDrawer: React.FC<GoalAddDrawerProps> = ({
         mask={true}
         closable={true}
         styles={{
-          wrapper: { width: "100%", maxWidth: "100vw", height: "100dvh" },
+          wrapper: { width: "100%", maxWidth: "100vw", height: "100vh" },
           body: {
             overflowY: "auto",
             paddingBottom: "calc(28px + env(safe-area-inset-bottom))",
