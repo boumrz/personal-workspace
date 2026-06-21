@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Input, FloatButton, Button, Badge, Popconfirm, Segmented } from "antd";
 import {
   PlusOutlined,
@@ -13,6 +13,7 @@ import CategoryFilter from "../components/CategoryFilter";
 import TransactionDataTools from "../components/TransactionDataTools";
 import PageHeader from "../components/PageHeader";
 import IconRenderer from "../components/IconRenderer";
+import { useIsMobile } from "../hooks/useIsMobile";
 import * as styles from "./TransactionsPage.module.css";
 import dayjs from "dayjs";
 import "dayjs/locale/ru";
@@ -27,18 +28,9 @@ const TransactionsPage: React.FC = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(["all"]);
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<typeof transactions[0] | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   // Данные в зависимости от активного таба
   const currentData = activeTab === "actual" ? transactions : plannedExpenses;

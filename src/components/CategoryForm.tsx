@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Modal, Drawer, Form, Input, Button } from "antd";
 import { useFinance } from "../context/FinanceContext";
+import { useIsMobile } from "../hooks/useIsMobile";
 import IconRenderer from "./IconRenderer";
 import { AVAILABLE_ICONS } from "../utils/iconList";
 import * as styles from "./CategoryForm.module.css";
@@ -37,17 +38,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
   const [form] = Form.useForm();
   const [selectedColor, setSelectedColor] = useState<string>(COLOR_PALETTE[0]);
   const [selectedIcon, setSelectedIcon] = useState<string>(AVAILABLE_ICONS[0] || "Home");
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Определяем, мобильное ли устройство
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  const isMobile = useIsMobile();
 
   const handleSubmit = async () => {
     try {

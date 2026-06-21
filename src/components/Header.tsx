@@ -12,6 +12,7 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { VoiceAssistModal } from "./VoiceAssistModal";
+import { useIsMobile } from "../hooks/useIsMobile";
 import * as styles from "./Header.module.css";
 
 const { Header: AntHeader } = Layout;
@@ -24,7 +25,7 @@ const Header: React.FC<HeaderProps> = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [showBurger, setShowBurger] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -51,19 +52,11 @@ const Header: React.FC<HeaderProps> = () => {
       : []),
   ];
 
-  // Определяем, мобильное ли устройство
   useEffect(() => {
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (mobile) {
-        setShowBurger(true);
-      }
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+    if (isMobile) {
+      setShowBurger(true);
+    }
+  }, [isMobile]);
 
   // Проверяем, помещаются ли разделы в шапку (только для десктопа)
   useEffect(() => {

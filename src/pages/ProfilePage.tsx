@@ -52,6 +52,7 @@ import GoalEditDrawer from "../components/GoalEditDrawer";
 import GoalAddDrawer from "../components/GoalAddDrawer";
 import PageHeader from "../components/PageHeader";
 import IconRenderer from "../components/IconRenderer";
+import { useIsMobile } from "../hooks/useIsMobile";
 import * as styles from "./ProfilePage.module.css";
 
 const TELEGRAM_BOT_USERNAME = typeof __TELEGRAM_BOT_USERNAME__ !== "undefined" ? __TELEGRAM_BOT_USERNAME__ : "";
@@ -93,7 +94,7 @@ const ProfilePage: React.FC = () => {
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [profileForm] = Form.useForm();
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
   const [amountModalVisible, setAmountModalVisible] = useState(false);
   const [selectedGoalForAmount, setSelectedGoalForAmount] =
     useState<Goal | null>(null);
@@ -126,15 +127,6 @@ const ProfilePage: React.FC = () => {
       });
     }
   }, [profile, profileForm]);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   const handleGoalAdd = async (
     goal: Omit<Goal, "id" | "createdAt" | "updatedAt">

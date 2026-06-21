@@ -749,7 +749,9 @@ body .ant-tooltip-inner {
     left: 0 !important;
     right: 0 !important;
     height: 100vh !important;
+    height: 100dvh !important;
     max-height: 100vh !important;
+    max-height: 100dvh !important;
     top: 0 !important;
     bottom: auto !important;
   }
@@ -759,16 +761,31 @@ body .ant-tooltip-inner {
     width: 100% !important;
     max-width: 100% !important;
     height: 100% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
   .ant-drawer-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    max-height: calc(100vh - 48px) !important;
+    max-height: none !important;
     padding-bottom: max(20px, env(safe-area-inset-bottom)) !important;
   }
 
+  .ant-drawer-footer {
+    flex: 0 0 auto !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 2 !important;
+    background: var(--bg-card) !important;
+    padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  }
+
   .ant-drawer-header {
+    flex: 0 0 auto !important;
     position: sticky !important;
     top: 0 !important;
     z-index: 1 !important;

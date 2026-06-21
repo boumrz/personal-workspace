@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Input, FloatButton, Button, Modal } from "antd";
 import {
   PlusOutlined,
@@ -13,6 +13,7 @@ import {
 import { useFinance } from "../context/FinanceContext";
 import SavingsForm from "../components/SavingsForm";
 import PageHeader from "../components/PageHeader";
+import { useIsMobile } from "../hooks/useIsMobile";
 import * as styles from "./SavingsPage.module.css";
 import dayjs from "dayjs";
 import "dayjs/locale/ru";
@@ -23,17 +24,8 @@ const SavingsPage: React.FC = () => {
   const { savings, transactions, deleteSaving } = useFinance();
   const [showForm, setShowForm] = useState(false);
   const [editingSaving, setEditingSaving] = useState<typeof savings[0] | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   // Общая сумма накоплений
   const totalSavings = useMemo(() => {

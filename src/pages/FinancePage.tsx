@@ -1,24 +1,16 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Tabs } from "antd";
 import DashboardPage from "./DashboardPage";
 import TransactionsPage from "./TransactionsPage";
 import SavingsPage from "./SavingsPage";
+import { useIsMobile } from "../hooks/useIsMobile";
 import * as styles from "./FinancePage.module.css";
 
 const FinancePage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  const isMobile = useIsMobile();
 
   // Определяем активный таб на основе текущего роута
   const activeTab = useMemo(() => {

@@ -14,6 +14,7 @@ import {
 import { PlusOutlined, CloseOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useFinance } from "../context/FinanceContext";
+import { useIsMobile } from "../hooks/useIsMobile";
 import CategoryForm from "./CategoryForm";
 import IconRenderer from "./IconRenderer";
 import * as styles from "./TransactionForm.module.css";
@@ -125,7 +126,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   );
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [showCategoryForm, setShowCategoryForm] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
   const [enteredAmount, setEnteredAmount] = useState<number | null>(null);
   const [amountInputValue, setAmountInputValue] = useState("");
 
@@ -173,16 +174,6 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       alert(errorMessage);
     }
   };
-
-  // Определяем, мобильное ли устройство
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   // Сброс состояния суммы при закрытии формы
   useEffect(() => {
@@ -722,10 +713,10 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           width="100%"
           mask={true}
           styles={{
-            wrapper: { width: "100%", maxWidth: "100vw", height: "100vh" },
+            wrapper: { width: "100%", maxWidth: "100vw", height: "100dvh", maxHeight: "100dvh" },
             body: {
               overflowY: "auto",
-              paddingBottom: "calc(28px + env(safe-area-inset-bottom))",
+              paddingBottom: 20,
             },
           }}
           footer={

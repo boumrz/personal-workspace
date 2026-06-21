@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Modal, Drawer, Form, InputNumber, Input, Button, DatePicker } from "antd";
 import dayjs from "dayjs";
 import { useFinance } from "../context/FinanceContext";
+import { useIsMobile } from "../hooks/useIsMobile";
 import * as styles from "./SavingsForm.module.css";
 
 interface SavingsFormProps {
@@ -13,7 +14,7 @@ interface SavingsFormProps {
 const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving = null }) => {
   const { addSaving, updateSaving } = useFinance();
   const [form] = Form.useForm();
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
   const isEditMode = !!initialSaving;
   const handleFormFocusCapture = useCallback((event: React.FocusEvent<HTMLElement>) => {
     const target = event.target as HTMLElement | null;
@@ -21,15 +22,6 @@ const SavingsForm: React.FC<SavingsFormProps> = ({ open, onClose, initialSaving 
     window.setTimeout(() => {
       target.scrollIntoView({ block: "center", behavior: "smooth" });
     }, 120);
-  }, []);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   useEffect(() => {

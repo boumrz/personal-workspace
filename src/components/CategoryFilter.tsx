@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Drawer, Button, Tag, Space } from "antd";
 import { useFinance } from "../context/FinanceContext";
+import { useIsMobile } from "../hooks/useIsMobile";
 import IconRenderer from "./IconRenderer";
 import * as styles from "./CategoryFilter.module.css";
 
@@ -67,16 +68,7 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
   const isAllSelected = tempSelectedCategories.includes("all");
   const isCategorySelected = (categoryId: string) => tempSelectedCategories.includes(categoryId);
 
-  const [isMobile, setIsMobile] = React.useState(false);
-
-  React.useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  const isMobile = useIsMobile();
 
   return (
     <Drawer

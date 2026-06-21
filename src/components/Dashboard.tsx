@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, Tabs, FloatButton, Button } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { useFinance } from "../context/FinanceContext";
+import { useIsMobile } from "../hooks/useIsMobile";
 import TransactionList from "./TransactionList";
 import PlannedExpenses from "./PlannedExpenses";
 import TransactionForm from "./TransactionForm";
@@ -14,17 +15,7 @@ const Dashboard: React.FC = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(["all"]);
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<typeof transactions[0] | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Определяем, мобильное ли устройство
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  const isMobile = useIsMobile();
 
   const totalIncome = useMemo(
     () =>

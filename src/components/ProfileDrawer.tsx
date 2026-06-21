@@ -30,6 +30,7 @@ import {
   useDeleteGoalMutation,
 } from "../store/api";
 import GoalForm from "./GoalForm";
+import { useIsMobile } from "../hooks/useIsMobile";
 import * as styles from "./ProfileDrawer.module.css";
 
 interface ProfileDrawerProps {
@@ -38,7 +39,7 @@ interface ProfileDrawerProps {
 }
 
 const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
   const [editingProfile, setEditingProfile] = useState(false);
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
@@ -70,15 +71,6 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ open, onClose }) => {
   const profile = profileData || null;
   const goals = goalsData;
   const loading = profileLoading || goalsLoading;
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   useEffect(() => {
     if (open && profile) {
