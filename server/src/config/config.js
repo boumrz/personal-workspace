@@ -130,6 +130,7 @@ export default {
           : ""),
       scope: process.env.GIGACHAT_SCOPE || "GIGACHAT_API_PERS",
       model: process.env.GIGACHAT_MODEL || "GigaChat",
+      visionModel: process.env.GIGACHAT_VISION_MODEL || "GigaChat-Pro",
       allowInsecureTls: String(process.env.GIGACHAT_ALLOW_INSECURE_TLS || "").toLowerCase() === "true",
       caCertPem: process.env.GIGACHAT_CA_CERT_PEM || "",
       caCertBase64: process.env.GIGACHAT_CA_CERT_BASE64 || "",

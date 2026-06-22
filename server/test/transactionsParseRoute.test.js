@@ -9,6 +9,7 @@ process.env.RATE_LIMIT_ENABLED = "false";
 
 const { default: app } = await import("../src/app.js");
 const { default: pool } = await import("../src/database/db.js");
+const { buildReceiptPreview } = await import("../src/services/transactionsDataTools.js");
 
 const originalQuery = pool.query.bind(pool);
 
@@ -247,4 +248,24 @@ test("POST /api/v2/transactions/receipt/parse validates image upload", { concurr
 
   assert.equal(response.status, 400);
   assert.match(String(response.body.error || ""), /image|file/i);
+});
+
+test("receipt parser does not infer amount from numeric filename", { concurrency: false }, async () => {
+  await assert.rejects(
+    () =>
+      buildReceiptPreview({
+        imageFile: {
+          filename: "1000014568.webp",
+          mimeType: "image/webp",
+          buffer: Buffer.from("fake-image"),
+        },
+        timezone: "Europe/Moscow",
+        visionParser: async () => ({ items: [], warnings: [] }),
+      }),
+    (error) => {
+      assert.equal(error.statusCode, 422);
+      assert.match(String(error.message || ""), /no valid amount/i);
+      return true;
+    }
+  );
 });

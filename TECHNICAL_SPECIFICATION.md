@@ -223,6 +223,11 @@ Base API prefix: `/api`.
 - `POST /v2/transactions/receipt/parse`
 - `POST /v2/transactions/parse`
 
+Detailed receipt recognition behavior and regression requirements are specified
+in `docs/specs/SPEC-001-receipt-recognition.md`. QR-first recognition without
+LLM as the primary path is specified in
+`docs/specs/SPEC-002-receipt-qr-recognition.md`.
+
 ## 7. Voice and LLM Parsing
 
 The voice parser accepts short transaction phrases and returns normalized draft

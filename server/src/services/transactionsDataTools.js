@@ -1,6 +1,11 @@
 import { deflateRawSync } from "node:zlib";
 import config from "../config/config.js";
-import { parseTransactionsFromSpeech } from "./transactionSpeechParser.js";
+import {
+  callGigaChat,
+  extractJson,
+  parseTransactionsFromSpeech,
+  uploadGigaChatFile,
+} from "./transactionSpeechParser.js";
 
 function xmlEscape(value) {
   return String(value ?? "")
@@ -713,122 +718,116 @@ function normalizeReceiptItems(items) {
   }));
 }
 
-async function callGeminiVision({ imageBuffer, mimeType, timezone }) {
-  const apiKey = config.llm.gemini?.apiKey || config.llm.apiKey;
-  if (!apiKey) {
-    throw new Error("Gemini API key is not configured for receipt parsing.");
-  }
+function httpError(message, statusCode) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
 
-  const model = config.llm.gemini?.model || "gemini-2.0-flash";
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-    model
-  )}:generateContent?key=${encodeURIComponent(apiKey)}`;
+function sanitizeProviderMessage(error) {
+  const message = String(error?.message || error || "").trim();
+  if (!message) return "provider request failed";
+  return message.split("—")[0].trim().slice(0, 180) || "provider request failed";
+}
 
-  const prompt = {
-    instruction:
-      "Extract finance transactions from the receipt image. Return strict JSON with key 'items'. Each item: type, amount, description, categoryHint, categoryResolution, suggestedCategoryToCreate, date.",
-    locale: "ru-RU",
-    timezone: timezone || "Europe/Moscow",
-    schema: {
-      items: [
-        {
-          type: "income|expense",
-          amount: "number > 0",
-          description: "short string",
-          categoryHint: "string",
-          categoryResolution: "matched_existing|suggest_create|unknown",
-          suggestedCategoryToCreate: "string optional",
-          date: "YYYY-MM-DD optional",
-        },
+function buildReceiptVisionPrompt({ timezone }) {
+  return JSON.stringify(
+    {
+      task: "Extract a personal finance transaction from the receipt image.",
+      locale: "ru-RU",
+      timezone: timezone || "Europe/Moscow",
+      rules: [
+        "Use only information visible on the receipt image.",
+        "Never infer amount, date, merchant, or category from filename, file metadata, or upload id.",
+        "For Russian fiscal receipts with 'Кассовый чек/Приход', treat the user's operation as expense.",
+        "Prefer the final payable total: ИТОГ, ИТОГО, СУММА, paid by card/cash, total amount.",
+        "If a receipt contains one meaningful purchase, return one item using the receipt total.",
+        "If the total amount is not visible, return an empty items array and a warning.",
+        "If the receipt date is visible, return it as YYYY-MM-DD. Otherwise omit date.",
+        "Return only strict JSON. Do not add Markdown.",
       ],
-      warnings: ["string"],
-    },
-  };
-
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      generationConfig: {
-        temperature: 0.1,
-        responseMimeType: "application/json",
+      schema: {
+        items: [
+          {
+            type: "expense",
+            amount: "number > 0 from receipt total or line sum",
+            description: "short merchant or item description from receipt",
+            categoryHint: "short category hint in Russian or English",
+            categoryResolution: "suggest_create | unknown",
+            suggestedCategoryToCreate: "short category name when useful",
+            date: "optional YYYY-MM-DD",
+          },
+        ],
+        confidence: "number 0..1",
+        warnings: ["string"],
+        unparsedText: "optional recognized receipt text",
       },
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: JSON.stringify(prompt) },
-            {
-              inlineData: {
-                mimeType: mimeType || "image/jpeg",
-                data: imageBuffer.toString("base64"),
-              },
-            },
-          ],
-        },
-      ],
-    }),
+    },
+    null,
+    2
+  );
+}
+
+async function callGigaChatReceiptVision({ imageBuffer, filename, mimeType, timezone }) {
+  const timeoutMs = config.llm.gigaChat?.timeoutMs ?? config.llm.timeoutMs ?? 30000;
+  const fileId = await uploadGigaChatFile({
+    buffer: imageBuffer,
+    filename,
+    mimeType,
+    timeoutMs,
   });
-
-  if (!response.ok) {
-    throw new Error(`Gemini vision request failed: ${response.status}`);
+  const raw = await callGigaChat({
+    model: config.llm.gigaChat?.visionModel || "GigaChat-Pro",
+    prompt: buildReceiptVisionPrompt({ timezone }),
+    timeoutMs,
+    systemPrompt:
+      "You are a strict receipt parser for a personal finance app. Read the attached receipt image and return only valid JSON by the requested schema. Never infer values from filename or metadata.",
+    attachments: [fileId],
+    maxTokens: 2048,
+  });
+  const parsed = extractJson(raw);
+  if (!parsed) {
+    throw new Error("GigaChat receipt response is not valid JSON");
   }
-
-  const data = await response.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-  const parsed = JSON.parse(text);
-  const items = normalizeReceiptItems(parsed?.items || []);
   return {
-    items,
+    items: normalizeReceiptItems(parsed?.items || []),
     warnings: Array.isArray(parsed?.warnings) ? parsed.warnings.slice(0, 10) : [],
+    confidence: Number(parsed?.confidence),
+    unparsedText: typeof parsed?.unparsedText === "string" ? parsed.unparsedText : "",
   };
 }
 
-function guessAmountFromFilename(filename) {
-  const match = String(filename || "").match(/(\d{2,7}(?:[.,]\d{1,2})?)/);
-  if (!match) return null;
-  return parseDecimal(match[1]);
-}
-
-export async function buildReceiptPreview({ imageFile, timezone }) {
-  const warnings = [];
-  let items = [];
-
+export async function buildReceiptPreview({
+  imageFile,
+  timezone,
+  visionParser = callGigaChatReceiptVision,
+}) {
   try {
-    const parsed = await callGeminiVision({
+    const parsed = await visionParser({
       imageBuffer: imageFile.buffer,
+      filename: imageFile.filename,
       mimeType: imageFile.mimeType,
       timezone,
     });
-    items = parsed.items;
-    warnings.push(...parsed.warnings);
-  } catch (error) {
-    warnings.push(`Vision parsing fallback was used: ${String(error?.message || error)}`);
-  }
-
-  if (items.length === 0) {
-    const guessed = guessAmountFromFilename(imageFile.filename);
-    if (Number.isFinite(guessed) && guessed > 0) {
-      items = [
-        {
-          type: "expense",
-          amount: guessed,
-          description: "Receipt item",
-          categoryHint: "Other",
-          categoryResolution: "suggest_create",
-          suggestedCategoryToCreate: "Other",
-          date: undefined,
-        },
-      ];
-      warnings.push("Amount was inferred from filename because OCR/vision did not return structured data.");
+    const items = normalizeReceiptItems(parsed.items || []);
+    if (items.length === 0) {
+      throw httpError(
+        "Receipt was analyzed, but no valid amount was found in the image. Please retake the photo with the total amount visible.",
+        422
+      );
     }
+    const warnings = Array.isArray(parsed.warnings) ? parsed.warnings.slice(0, 20) : [];
+    return {
+      source: "receipt",
+      title: "Receipt Parse Preview",
+      warnings,
+      drafts: items.slice(0, 60),
+    };
+  } catch (error) {
+    if (error?.statusCode) {
+      throw error;
+    }
+    throw httpError(`GigaChat could not recognize the receipt: ${sanitizeProviderMessage(error)}`, 502);
   }
-
-  return {
-    source: "receipt",
-    title: "Receipt Parse Preview",
-    warnings: warnings.slice(0, 20),
-    drafts: clampDrafts(items).slice(0, 60),
-  };
 }
 

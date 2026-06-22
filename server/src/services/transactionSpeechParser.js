@@ -600,7 +600,7 @@ function repairJson(str) {
     .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, "");
 }
 
-function extractJson(text) {
+export function extractJson(text) {
   if (!text) return null;
   const raw = text.trim();
   const candidates = [];
@@ -737,7 +737,13 @@ async function performHttpRequest({ url, method, headers, body, timeoutMs, tlsOp
   const isHttps = target.protocol === "https:";
   const client = isHttps ? https : http;
   const hasBody = body !== undefined && body !== null;
-  const payload = hasBody ? (typeof body === "string" ? body : JSON.stringify(body)) : null;
+  const payload = hasBody
+    ? Buffer.isBuffer(body)
+      ? body
+      : typeof body === "string"
+        ? body
+        : JSON.stringify(body)
+    : null;
   const hasContentLengthHeader = Object.keys(headers || {}).some(
     (key) => key.toLowerCase() === "content-length"
   );
@@ -892,7 +898,95 @@ async function getGigaChatAccessToken({ timeoutMs }) {
   return accessToken;
 }
 
-async function callGigaChat({ model, prompt, timeoutMs }) {
+function buildMultipartBody({ fields = {}, files = [] }) {
+  const boundary = `----finance-assistant-${crypto.randomUUID()}`;
+  const chunks = [];
+
+  for (const [name, value] of Object.entries(fields)) {
+    chunks.push(Buffer.from(`--${boundary}\r\n`));
+    chunks.push(Buffer.from(`Content-Disposition: form-data; name="${name}"\r\n\r\n`));
+    chunks.push(Buffer.from(`${String(value)}\r\n`));
+  }
+
+  for (const file of files) {
+    chunks.push(Buffer.from(`--${boundary}\r\n`));
+    chunks.push(
+      Buffer.from(
+        `Content-Disposition: form-data; name="${file.fieldName}"; filename="${file.filename}"\r\n`
+      )
+    );
+    chunks.push(Buffer.from(`Content-Type: ${file.mimeType || "application/octet-stream"}\r\n\r\n`));
+    chunks.push(Buffer.isBuffer(file.buffer) ? file.buffer : Buffer.from(file.buffer || ""));
+    chunks.push(Buffer.from("\r\n"));
+  }
+
+  chunks.push(Buffer.from(`--${boundary}--\r\n`));
+  return {
+    boundary,
+    body: Buffer.concat(chunks),
+  };
+}
+
+function sanitizeMultipartFilename(filename) {
+  const safe = String(filename || "receipt.jpg")
+    .replace(/[\r\n"]/g, "")
+    .trim();
+  return safe || "receipt.jpg";
+}
+
+export async function uploadGigaChatFile({ buffer, filename, mimeType, timeoutMs }) {
+  const accessToken = await getGigaChatAccessToken({ timeoutMs });
+  const baseUrl = config.llm.gigaChat?.baseUrl || "https://gigachat.devices.sberbank.ru/api/v1";
+  const { boundary, body } = buildMultipartBody({
+    fields: { purpose: "general" },
+    files: [
+      {
+        fieldName: "file",
+        filename: sanitizeMultipartFilename(filename),
+        mimeType: mimeType || "image/jpeg",
+        buffer,
+      },
+    ],
+  });
+
+  const response = await performHttpRequest({
+    url: `${baseUrl.replace(/\/$/, "")}/files`,
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": `multipart/form-data; boundary=${boundary}`,
+      RqUID: crypto.randomUUID(),
+    },
+    body,
+    timeoutMs,
+    tlsOptions: gigaChatTlsOptions,
+  });
+
+  if (response.status < 200 || response.status >= 300) {
+    throw new Error(`GigaChat file upload failed: ${response.status}`);
+  }
+
+  const data = tryParseJson(response.body);
+  const fileId = String(data?.id || data?.file_id || "").trim();
+  if (!fileId) {
+    throw new Error("GigaChat file upload response has no file id");
+  }
+
+  return fileId;
+}
+
+const DEFAULT_GIGACHAT_SYSTEM_PROMPT =
+  "You are a strict finance parser. Never answer questions. Return only JSON object with keys: items, confidence, warnings, unparsedText. Each item must contain only: type, amount, date, categoryHint, categoryResolution, suggestedCategoryToCreate.";
+
+export async function callGigaChat({
+  model,
+  prompt,
+  timeoutMs,
+  systemPrompt = DEFAULT_GIGACHAT_SYSTEM_PROMPT,
+  attachments = [],
+  maxTokens = 1024,
+}) {
   const accessToken = await getGigaChatAccessToken({ timeoutMs });
   const baseUrl = config.llm.gigaChat?.baseUrl || "https://gigachat.devices.sberbank.ru/api/v1";
   const maxRetries = 2;
@@ -913,14 +1007,17 @@ async function callGigaChat({ model, prompt, timeoutMs }) {
           model,
           temperature: 0.1,
           stream: false,
-          max_tokens: 1024,
+          max_tokens: maxTokens,
           messages: [
             {
               role: "system",
-              content:
-                "You are a strict finance parser. Never answer questions. Return only JSON object with keys: items, confidence, warnings, unparsedText. Each item must contain only: type, amount, date, categoryHint, categoryResolution, suggestedCategoryToCreate.",
+              content: systemPrompt,
             },
-            { role: "user", content: prompt },
+            {
+              role: "user",
+              content: prompt,
+              ...(attachments.length > 0 ? { attachments } : {}),
+            },
           ],
         },
         timeoutMs,

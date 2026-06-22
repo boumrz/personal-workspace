@@ -129,6 +129,7 @@ export const TransactionDataTools: React.FC<TransactionDataToolsProps> = ({
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [importState, setImportState] = useState<DraftState | null>(null);
   const [receiptState, setReceiptState] = useState<DraftState | null>(null);
+  const [receiptError, setReceiptError] = useState<string | null>(null);
   const [importCategoryDrafts, setImportCategoryDrafts] = useState<string[]>([]);
   const [receiptCategoryDrafts, setReceiptCategoryDrafts] = useState<string[]>([]);
   const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -154,15 +155,6 @@ export const TransactionDataTools: React.FC<TransactionDataToolsProps> = ({
     setOpen(false);
   }, []);
 
-  const handleReceiptFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] || null;
-    setReceiptFile(file);
-    setReceiptState(null);
-    if (file) {
-      message.info(`Выбрано фото: ${file.name}`);
-    }
-  }, []);
-
   const resolveCategoryByName = useCallback(
     (rawName: string, transactionType: "income" | "expense" = "expense") => {
       const hint = normalizeText(rawName);
@@ -185,6 +177,45 @@ export const TransactionDataTools: React.FC<TransactionDataToolsProps> = ({
   const prepareTransactionDate = useCallback((item: ParsedTransactionDraft, target: TransactionsTargetMode) => {
     return safeDate(item.date, target);
   }, []);
+
+  const parseReceiptFile = useCallback(async (file: File) => {
+    setReceiptParsing(true);
+    setReceiptError(null);
+    setReceiptState(null);
+    setReceiptCategoryDrafts([]);
+    try {
+      const response = await parseReceiptPhoto(file);
+      const items = Array.isArray(response.items) ? response.items : [];
+      setReceiptState({
+        items,
+        warnings: Array.isArray(response.warnings) ? response.warnings : [],
+        confidence: response.confidence,
+        unparsedText: response.unparsedText,
+      });
+      setReceiptCategoryDrafts(items.map((item) => item.suggestedCategoryToCreate || item.categoryHint || ""));
+      message.success("Чек распознан. Проверьте черновики перед сохранением.");
+    } catch (error: any) {
+      const errorMessage = error?.message ?? "Не удалось распознать чек.";
+      setReceiptError(errorMessage);
+      message.error(errorMessage);
+    } finally {
+      setReceiptParsing(false);
+    }
+  }, []);
+
+  const handleReceiptFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0] || null;
+      setReceiptFile(file);
+      setReceiptState(null);
+      setReceiptError(null);
+      setReceiptCategoryDrafts([]);
+      if (file) {
+        void parseReceiptFile(file);
+      }
+    },
+    [parseReceiptFile]
+  );
 
   const parseItems = useCallback(
     async (kind: "import" | "receipt") => {
@@ -217,25 +248,9 @@ export const TransactionDataTools: React.FC<TransactionDataToolsProps> = ({
         message.warning("Сначала выберите фото чека.");
         return;
       }
-      setReceiptParsing(true);
-      try {
-        const response = await parseReceiptPhoto(receiptFile);
-        const items = Array.isArray(response.items) ? response.items : [];
-        setReceiptState({
-          items,
-          warnings: Array.isArray(response.warnings) ? response.warnings : [],
-          confidence: response.confidence,
-          unparsedText: response.unparsedText,
-        });
-        setReceiptCategoryDrafts(items.map((item) => item.suggestedCategoryToCreate || item.categoryHint || ""));
-        message.success("Чек распознан. Проверьте черновики перед сохранением.");
-      } catch (error: any) {
-        message.error(error?.message ?? "Не удалось распознать чек.");
-      } finally {
-        setReceiptParsing(false);
-      }
+      await parseReceiptFile(receiptFile);
     },
-    [importFile, importTarget, receiptFile]
+    [importFile, importTarget, parseReceiptFile, receiptFile]
   );
 
   const saveDrafts = useCallback(
@@ -636,6 +651,7 @@ export const TransactionDataTools: React.FC<TransactionDataToolsProps> = ({
               icon={<FileImageOutlined />}
               onClick={() => receiptGalleryInputRef.current?.click()}
               className={styles.secondaryAction}
+              disabled={receiptParsing}
               block
             >
               Выбрать фото
@@ -644,39 +660,52 @@ export const TransactionDataTools: React.FC<TransactionDataToolsProps> = ({
               icon={<CameraOutlined />}
               onClick={() => receiptCameraInputRef.current?.click()}
               className={styles.secondaryAction}
+              disabled={receiptParsing}
               block
             >
               Сделать снимок
             </Button>
           </div>
-          <Button
-            type="primary"
-            icon={<ScanOutlined />}
-            loading={receiptParsing}
-            disabled={!receiptFile}
-            onClick={() => void parseItems("receipt")}
-            className={styles.primaryAction}
-            block
-          >
-            Распознать чек
-          </Button>
         </div>
 
-        {receiptFile ? (
+        {receiptParsing ? (
           <Alert
-            type="success"
+            type="info"
             showIcon
-            message="Фото готово к распознаванию"
-            description={receiptFile.name}
+            message="Распознаю чек"
+            description="Фото загружено, выполняется анализ."
           />
-        ) : (
+        ) : !receiptFile && !receiptState ? (
           <Alert
             type="info"
             showIcon
             message="Фото чека еще не выбрано"
             description="Сфотографируйте чек или выберите изображение из галереи."
           />
-        )}
+        ) : null}
+
+        {receiptError ? (
+          <Alert
+            data-testid="receipt-error-alert"
+            type="error"
+            showIcon
+            message="Не удалось распознать чек"
+            description={receiptError}
+          />
+        ) : null}
+
+        {receiptError && receiptFile ? (
+          <Button
+            type="primary"
+            icon={<ScanOutlined />}
+            loading={receiptParsing}
+            onClick={() => void parseItems("receipt")}
+            className={styles.primaryAction}
+            block
+          >
+            Повторить распознавание
+          </Button>
+        ) : null}
 
         {renderDraftList(
           receiptState,
@@ -710,6 +739,7 @@ export const TransactionDataTools: React.FC<TransactionDataToolsProps> = ({
                   setReceiptState(null);
                   setReceiptCategoryDrafts([]);
                   setReceiptFile(null);
+                  setReceiptError(null);
                   if (receiptGalleryInputRef.current) {
                     receiptGalleryInputRef.current.value = "";
                   }

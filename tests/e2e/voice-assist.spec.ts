@@ -41,11 +41,17 @@ type ApiState = {
   parseResponse: DraftResponse;
   importParseResponse: DraftResponse;
   receiptParseResponse: DraftResponse;
+  receiptParseError?: {
+    status: number;
+    body?: unknown;
+    contentType?: string;
+  };
   createdCategories: Array<{ id: string; name: string; color: string; icon: string; type?: "income" | "expense" | "both" }>;
   createdTransactions: TransactionPayload[];
   parseCalls: number;
   importCalls: number;
   receiptCalls: number;
+  receiptUploadBodies: string[];
   exportCalls: number;
 };
 
@@ -123,6 +129,7 @@ function buildDefaultState(): ApiState {
     parseCalls: 0,
     importCalls: 0,
     receiptCalls: 0,
+    receiptUploadBodies: [],
     exportCalls: 0,
   };
 }
@@ -270,6 +277,15 @@ async function setupApiMocks(page: Page, state: ApiState) {
 
     if (method === "POST" && path === "/api/v2/transactions/receipt/parse") {
       state.receiptCalls += 1;
+      state.receiptUploadBodies.push(request.postDataBuffer()?.toString("latin1") || "");
+      if (state.receiptParseError) {
+        const { status, body = "", contentType = "application/json" } = state.receiptParseError;
+        return route.fulfill({
+          status,
+          contentType,
+          body: typeof body === "string" ? body : JSON.stringify(body),
+        });
+      }
       return route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -406,6 +422,24 @@ async function openDataToolsModal(page: Page, tool: "export" | "import" | "recei
     await expect(drawer.locator('[data-testid="receipt-gallery-file-input"]')).toHaveCount(1);
     await expect(drawer.locator('[data-testid="receipt-camera-file-input"]')).toHaveCount(1);
   }
+}
+
+async function createWebpBuffer(page: Page) {
+  const bytes = await page.evaluate(async () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 2;
+    canvas.height = 2;
+    const context = canvas.getContext("2d");
+    if (!context) return [];
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, 2, 2);
+    context.fillStyle = "#111111";
+    context.fillRect(0, 0, 1, 1);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp"));
+    if (!blob) return [];
+    return Array.from(new Uint8Array(await blob.arrayBuffer()));
+  });
+  return Buffer.from(bytes);
 }
 
 function getDataToolsModal(page: Page) {
@@ -594,14 +628,18 @@ test("transaction tools receipt flow parses photo and saves operations", async (
   await openDataToolsModal(page, "receipt");
 
   const modal = getDataToolsModal(page);
+  const webpBuffer = await createWebpBuffer(page);
+  expect(webpBuffer.length).toBeGreaterThan(0);
   await modal.locator('[data-testid="receipt-gallery-file-input"]').setInputFiles({
-    name: "receipt.png",
-    mimeType: "image/png",
-    buffer: Buffer.from("fake-image"),
+    name: "1000014568.webp",
+    mimeType: "image/webp",
+    buffer: webpBuffer,
   });
-  await modal.locator(".ant-btn:has(.anticon-scan)").first().click();
 
   await expect.poll(() => state.receiptCalls).toBe(1);
+  expect(state.receiptUploadBodies[0]).toContain('filename="1000014568.png"');
+  expect(state.receiptUploadBodies[0]).toContain("Content-Type: image/png");
+  await expect(modal).not.toContainText("Фото готово к распознаванию");
   await expect(modal).toContainText("Cafe receipt");
 
   await modal.locator(".ant-btn:has(.anticon-upload)").first().click();
@@ -611,6 +649,70 @@ test("transaction tools receipt flow parses photo and saves operations", async (
   expect(state.createdCategories[0].name).toBe("Cafe");
   expect(state.createdTransactions[0].date).toBe("2026-03-17");
 });
+
+test("transaction tools receipt flow shows server error inline and allows retry", async ({ page }) => {
+  const state = buildDefaultState();
+  state.receiptParseError = {
+    status: 400,
+    body: { error: "Uploaded file must be an image." },
+  };
+
+  await setupAuthStorage(page);
+  await setupApiMocks(page, state);
+
+  await page.goto("/finance/transactions");
+  await openDataToolsModal(page, "receipt");
+
+  const modal = getDataToolsModal(page);
+  await modal.locator('[data-testid="receipt-gallery-file-input"]').setInputFiles({
+    name: "receipt.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("not-an-image"),
+  });
+
+  await expect.poll(() => state.receiptCalls).toBe(1);
+  await expect(modal.locator('[data-testid="receipt-error-alert"]')).toContainText(
+    "Uploaded file must be an image."
+  );
+  await expect(modal).not.toContainText("Фото готово к распознаванию");
+
+  state.receiptParseError = undefined;
+  const retryButton = modal.getByRole("button", { name: /Повторить распознавание/i });
+  await expect(retryButton).toBeEnabled();
+  await retryButton.click();
+
+  await expect.poll(() => state.receiptCalls).toBe(2);
+  await expect(modal.locator('[data-testid="receipt-error-alert"]')).toHaveCount(0);
+  await expect(modal).toContainText("Cafe receipt");
+});
+
+test("transaction tools receipt flow shows HTTP status when API body is empty", async ({ page }) => {
+  const state = buildDefaultState();
+  state.receiptParseError = {
+    status: 502,
+    body: "",
+    contentType: "text/plain",
+  };
+
+  await setupAuthStorage(page);
+  await setupApiMocks(page, state);
+
+  await page.goto("/finance/transactions");
+  await openDataToolsModal(page, "receipt");
+
+  const modal = getDataToolsModal(page);
+  await modal.locator('[data-testid="receipt-camera-file-input"]').setInputFiles({
+    name: "receipt.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("fake-image"),
+  });
+
+  await expect.poll(() => state.receiptCalls).toBe(1);
+  await expect(modal.locator('[data-testid="receipt-error-alert"]')).toContainText(
+    /API error: HTTP 502/
+  );
+});
+
 test("transaction form lets you choose a date from the calendar", async ({ page }) => {
   const state = buildDefaultState();
   const targetDate = dayjs().date(dayjs().date() === 15 ? 16 : 15);
