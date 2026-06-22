@@ -87,6 +87,9 @@ Express app under `server/src/` with:
 - Expo/React Native app under `mobile/`.
 - Uses `@finance-assistant/shared` for types and API client.
 - Android-first assumptions for local dev API URL.
+- VK ID mobile auth uses the Android native module when available and falls
+  back to Expo browser PKCE exchange when native token exchange fails or the
+  native module is unavailable.
 - Navigation stacks for dashboard, operations, savings, and profile.
 - Voice/data-tool flows share backend contracts with web.
 

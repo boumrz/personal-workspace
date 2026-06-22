@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, Switch, AppState, AppStateStatus, Modal, TextInput, NativeModules, Platform } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, Switch, AppState, AppStateStatus, Modal, TextInput, NativeModules } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -8,6 +8,7 @@ import { useAuth, useTheme } from "../context";
 import { usePreserveScrollOnThemeChange } from "../hooks";
 import { ConfirmModal, ErrorView } from "../components";
 import { VK_ID_APP_ID } from "../constants/config";
+import { getVkIdAccessToken } from "../services/vkIdAuth";
 import type { Profile, Goal } from "@finance-assistant/shared";
 
 const VkIdNative = NativeModules.VkIdModule as
@@ -101,24 +102,12 @@ export default function ProfileScreen({ navigation }: any) {
       );
       return;
     }
-    if (Platform.OS !== "android") {
-      Alert.alert(
-        "VK ID",
-        "Нативная VK авторизация сейчас поддерживается только на Android.",
-      );
-      return;
-    }
-    if (!VkIdNative?.login) {
-      Alert.alert(
-        "VK ID не настроен",
-        "Нативный модуль VK ID не найден. Пересоберите Android-приложение.",
-      );
-      return;
-    }
-
     try {
       setLinkVkLoading(true);
-      const accessToken = await VkIdNative.login();
+      const accessToken = await getVkIdAccessToken({
+        appId: VK_ID_APP_ID,
+        nativeLogin: VkIdNative?.login,
+      });
       await api.linkVkId({ access_token: accessToken, app_id: VK_ID_APP_ID });
       Alert.alert("Успешно", "VK привязан");
       await loadData();

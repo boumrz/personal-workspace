@@ -15,6 +15,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth, useTheme } from "../context";
 import { VK_ID_APP_ID } from "../constants/config";
+import { getVkIdAccessToken } from "../services/vkIdAuth";
 
 const SESSION_EXPIRED_KEY = "sessionExpired";
 
@@ -65,24 +66,12 @@ export default function LoginScreen() {
       );
       return;
     }
-    if (Platform.OS !== "android") {
-      Alert.alert(
-        "VK ID",
-        "Нативная VK авторизация сейчас поддерживается только на Android.",
-      );
-      return;
-    }
-    if (!VkIdNative?.login) {
-      Alert.alert(
-        "VK ID не настроен",
-        "Нативный модуль VK ID не найден. Пересоберите Android-приложение.",
-      );
-      return;
-    }
-
     try {
       setVkLoading(true);
-      const accessToken = await VkIdNative.login();
+      const accessToken = await getVkIdAccessToken({
+        appId: VK_ID_APP_ID,
+        nativeLogin: VkIdNative?.login,
+      });
       await loginWithVkId(accessToken, VK_ID_APP_ID);
     } catch (e: any) {
       Alert.alert("Ошибка VK ID", e?.message || "Не удалось войти через VK");
