@@ -1,7 +1,5 @@
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
-import { VK_ID_REDIRECT_SCHEME } from "../constants/config";
-
 WebBrowser.maybeCompleteAuthSession();
 
 const VK_AUTHORIZATION_ENDPOINT = "https://id.vk.ru/authorize";
@@ -46,11 +44,8 @@ function readUrlParam(url: string, key: string): string | null {
   return params.get(key);
 }
 
-function getVkRedirectUri(): string {
-  return AuthSession.makeRedirectUri({
-    scheme: VK_ID_REDIRECT_SCHEME,
-    path: "vkid",
-  });
+function getVkRedirectUri(appId: string): string {
+  return `vk${appId}://vk.ru/blank.html`;
 }
 
 async function exchangeVkCodeForToken({
@@ -89,14 +84,14 @@ async function exchangeVkCodeForToken({
 }
 
 async function loginWithVkIdBrowser(appId: string): Promise<string> {
-  const redirectUri = getVkRedirectUri();
+  const redirectUri = getVkRedirectUri(appId);
   const request = new AuthSession.AuthRequest({
     clientId: appId,
     redirectUri,
     responseType: AuthSession.ResponseType.Code,
     scopes: ["email"],
     usePKCE: true,
-    extraParams: { v: "2.3" },
+    extraParams: { v: "2.3", prompt: "login" },
   });
 
   const authUrl = await request.makeAuthUrlAsync({

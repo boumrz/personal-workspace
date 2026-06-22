@@ -3,7 +3,7 @@
     "name": "Мой бюджет - расходы и доходы",
     "slug": "finance-assistant",
     "scheme": "financeassistant",
-    "version": "1.0.7",
+    "version": "1.0.8",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -18,7 +18,7 @@
     },
     "android": {
       "package": "ru.financeassistant.app",
-      "versionCode": 8,
+      "versionCode": 9,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -31,6 +31,22 @@
         "ACCESS_NETWORK_STATE",
         "com.google.android.gms.permission.AD_ID",
         "RECORD_AUDIO"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": false,
+          "data": [
+            {
+              "scheme": "vk54468830",
+              "host": "vk.ru"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
       ],
       "blockedPermissions": [
         "android.permission.SYSTEM_ALERT_WINDOW",
