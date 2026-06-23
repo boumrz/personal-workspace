@@ -3,8 +3,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const serverRoot = path.resolve(__dirname, "../..");
 // Путь к .env в корне проекта (рядом с server/)
-const envPath = path.resolve(__dirname, "../../.env");
+const envPath = path.resolve(serverRoot, ".env");
 const result = dotenv.config({ path: envPath });
 if (result.error) {
   console.error("[config] Failed to load .env from", envPath, result.error.message);
@@ -74,6 +75,28 @@ function resolveCorsOrigin(nodeEnv) {
   return parsedOrigins.length > 0 ? parsedOrigins : "*";
 }
 
+function resolveReceiptPython() {
+  const raw = String(process.env.RECEIPT_QR_PYTHON || "").trim();
+  if (!raw) return "python3";
+  if (path.isAbsolute(raw)) return raw;
+  if (raw.includes("/") || raw.includes("\\")) {
+    return path.resolve(serverRoot, raw);
+  }
+  return raw;
+}
+
+function resolveReceiptDecoderScript() {
+  const raw = String(process.env.RECEIPT_QR_DECODER_SCRIPT || "").trim();
+  if (!raw) return path.resolve(__dirname, "../services/receipt_qr_decoder.py");
+  return path.isAbsolute(raw) ? raw : path.resolve(serverRoot, raw);
+}
+
+function resolveReceiptOcrReaderScript() {
+  const raw = String(process.env.RECEIPT_OCR_READER_SCRIPT || "").trim();
+  if (!raw) return path.resolve(__dirname, "../services/receipt_ocr_reader.py");
+  return path.isAbsolute(raw) ? raw : path.resolve(serverRoot, raw);
+}
+
 const vkAppIds = parseVkAppIds();
 const llmProviderChain = parseProviderChain();
 const llmEnabledProviders = parseEnabledProviders();
@@ -99,6 +122,13 @@ export default {
     authMax: parsePositiveNumber(process.env.RATE_LIMIT_AUTH_MAX, 3000),
     voiceWindowMs: parsePositiveNumber(process.env.RATE_LIMIT_VOICE_WINDOW_MS, 5 * 60 * 1000),
     voiceMax: parsePositiveNumber(process.env.RATE_LIMIT_VOICE_MAX, 3000),
+  },
+  receipt: {
+    qrPython: resolveReceiptPython(),
+    qrDecoderScript: resolveReceiptDecoderScript(),
+    qrDecodeTimeoutMs: parsePositiveNumber(process.env.RECEIPT_QR_DECODE_TIMEOUT_MS, 20000),
+    ocrReaderScript: resolveReceiptOcrReaderScript(),
+    ocrReadTimeoutMs: parsePositiveNumber(process.env.RECEIPT_OCR_READ_TIMEOUT_MS, 30000),
   },
   llm: {
     provider: llmProviderChain[0] || "gpt4free",
@@ -130,7 +160,6 @@ export default {
           : ""),
       scope: process.env.GIGACHAT_SCOPE || "GIGACHAT_API_PERS",
       model: process.env.GIGACHAT_MODEL || "GigaChat",
-      visionModel: process.env.GIGACHAT_VISION_MODEL || "GigaChat-Pro",
       allowInsecureTls: String(process.env.GIGACHAT_ALLOW_INSECURE_TLS || "").toLowerCase() === "true",
       caCertPem: process.env.GIGACHAT_CA_CERT_PEM || "",
       caCertBase64: process.env.GIGACHAT_CA_CERT_BASE64 || "",

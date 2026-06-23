@@ -14,11 +14,24 @@ export interface ParsedTransactionDraft {
   confidence?: number;
 }
 
+export interface ReceiptMeta {
+  source: "qr" | "ocr";
+  qrPayload?: string;
+  ocrEngine?: string;
+  fiscalDriveNumber: string;
+  fiscalDocumentNumber: string;
+  fiscalSign: string;
+  operationType: string;
+  operationDateTime: string;
+  amount: number;
+}
+
 export interface ParsedTransactionsResponse {
   items: ParsedTransactionDraft[];
   confidence?: number;
   warnings?: string[];
   unparsedText?: string;
+  receiptMeta?: ReceiptMeta;
 }
 
 interface BlobDownloadResponse {
@@ -45,6 +58,12 @@ async function readErrorMessage(response: Response): Promise<string> {
   const fallback = `API error: ${statusLabel}`;
   try {
     const data = await response.clone().json();
+    if (data?.code === "receipt_qr_not_found") {
+      return "Сфотографируйте нижнюю часть чека крупнее или введите операцию вручную.";
+    }
+    if (data?.code === "receipt_qr_unreadable") {
+      return "QR-код найден, но не читается. Сфотографируйте его крупнее, ровнее и без перекрывающего текста.";
+    }
     if (typeof data?.error === "string" && data.error.trim()) {
       return data.error;
     }

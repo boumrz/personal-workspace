@@ -34,6 +34,26 @@ createdb finance_assistant
 npm run migrate
 ```
 
+6. Для распознавания QR-кодов и OCR-фолбэка чеков установите локальный
+   Tesseract и Python-зависимости OpenCV/ZXing/pytesseract.
+
+На macOS:
+```bash
+brew install tesseract tesseract-lang
+```
+
+Python-зависимости:
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+```
+
+И укажите Python из venv в `.env`:
+```bash
+RECEIPT_QR_PYTHON=.venv/bin/python
+RECEIPT_OCR_READ_TIMEOUT_MS=30000
+```
+
 ## Запуск
 
 Для разработки (с автоматической перезагрузкой):

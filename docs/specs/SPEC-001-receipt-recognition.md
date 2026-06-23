@@ -10,7 +10,10 @@ or upload metadata.
 
 - Web data tools receipt tab.
 - `POST /api/v2/transactions/receipt/parse` client error handling.
-- GigaChat-based receipt image recognition.
+- QR-first receipt image recognition as specified in
+  `docs/specs/SPEC-002-receipt-qr-recognition.md`.
+- Local OCR fallback for unreadable QR as specified in
+  `docs/specs/SPEC-003-receipt-ocr-fallback.md`.
 - User-visible retryable error state.
 - End-to-end coverage for receipt success and failure paths on desktop and
   mobile web projects.
@@ -32,7 +35,11 @@ or upload metadata.
 - Successful recognition renders draft operations before anything is saved.
 - Failed recognition keeps the selected image available for retry.
 - Failed recognition shows a persistent inline error in the receipt tab.
-- Receipt recognition must use GigaChat vision/file attachment flow.
+- Receipt recognition must use the local QR-first backend path from
+  `docs/specs/SPEC-002-receipt-qr-recognition.md`.
+- If QR is missing or unreadable, receipt recognition may use the local OCR
+  fallback from `docs/specs/SPEC-003-receipt-ocr-fallback.md`, including printed
+  product line items when the item block is readable.
 - Receipt amounts, dates, descriptions, and categories must come from receipt
   image content only.
 - The backend must not infer receipt amount from filename, upload id, metadata,
@@ -89,16 +96,18 @@ Failure response:
 
 ## Provider Contract
 
-This section describes the current LLM fallback contract. The target primary
-receipt recognition path is QR-first and is specified in
-`docs/specs/SPEC-002-receipt-qr-recognition.md`.
+The legacy receipt LLM provider path has been removed. Receipt parsing must not
+upload receipt images to GigaChat, Gemini, or any other LLM provider. The active
+contract is QR-first with local OCR fallback, server-side, and specified in
+`docs/specs/SPEC-002-receipt-qr-recognition.md` and
+`docs/specs/SPEC-003-receipt-ocr-fallback.md`.
 
-- Provider: GigaChat.
-- File upload: upload the image to GigaChat `/files` with `purpose=general`.
-- Prompting: pass the uploaded file id as a chat completion attachment.
-- Default receipt vision model: `GIGACHAT_VISION_MODEL` or `GigaChat-Pro`.
-- Voice assistant GigaChat auth, TLS, timeout, and retry settings are reused.
-- Gemini and filename-based fallback are not allowed for this flow.
+- Primary path: local QR decoding.
+- Fallback path: local OCR of printed fiscal fields when QR is not decoded.
+- Backend implementation: OpenCV/Tesseract helpers invoked by the Node/Express endpoint.
+- Filename-based fallback is not allowed.
+- LLM fallback for receipt images is not allowed by default or as an automatic
+  retry path.
 
 ## UX States
 

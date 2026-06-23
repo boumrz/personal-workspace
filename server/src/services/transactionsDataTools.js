@@ -1,11 +1,9 @@
 import { deflateRawSync } from "node:zlib";
-import config from "../config/config.js";
-import {
-  callGigaChat,
-  extractJson,
-  parseTransactionsFromSpeech,
-  uploadGigaChatFile,
-} from "./transactionSpeechParser.js";
+import { parseTransactionsFromSpeech } from "./transactionSpeechParser.js";
+import { parseFiscalQrPayload } from "./fiscalQrParser.js";
+import { parseFiscalOcrText } from "./fiscalOcrParser.js";
+import { decodeReceiptQrFromImage } from "./receiptQrDecoder.js";
+import { readReceiptOcrText } from "./receiptOcrReader.js";
 
 function xmlEscape(value) {
   return String(value ?? "")
@@ -193,6 +191,7 @@ function clampDrafts(items) {
           .trim()
           .slice(0, 80),
         date: normalizeDate(item?.date) || undefined,
+        ...(Number.isFinite(Number(item?.confidence)) ? { confidence: Number(item.confidence) } : {}),
       };
     })
     .filter(Boolean);
@@ -718,116 +717,105 @@ function normalizeReceiptItems(items) {
   }));
 }
 
-function httpError(message, statusCode) {
+function httpError(message, statusCode, code) {
   const error = new Error(message);
   error.statusCode = statusCode;
+  if (code) {
+    error.code = code;
+  }
   return error;
 }
 
-function sanitizeProviderMessage(error) {
-  const message = String(error?.message || error || "").trim();
-  if (!message) return "provider request failed";
-  return message.split("—")[0].trim().slice(0, 180) || "provider request failed";
-}
-
-function buildReceiptVisionPrompt({ timezone }) {
-  return JSON.stringify(
-    {
-      task: "Extract a personal finance transaction from the receipt image.",
-      locale: "ru-RU",
-      timezone: timezone || "Europe/Moscow",
-      rules: [
-        "Use only information visible on the receipt image.",
-        "Never infer amount, date, merchant, or category from filename, file metadata, or upload id.",
-        "For Russian fiscal receipts with 'Кассовый чек/Приход', treat the user's operation as expense.",
-        "Prefer the final payable total: ИТОГ, ИТОГО, СУММА, paid by card/cash, total amount.",
-        "If a receipt contains one meaningful purchase, return one item using the receipt total.",
-        "If the total amount is not visible, return an empty items array and a warning.",
-        "If the receipt date is visible, return it as YYYY-MM-DD. Otherwise omit date.",
-        "Return only strict JSON. Do not add Markdown.",
-      ],
-      schema: {
-        items: [
-          {
-            type: "expense",
-            amount: "number > 0 from receipt total or line sum",
-            description: "short merchant or item description from receipt",
-            categoryHint: "short category hint in Russian or English",
-            categoryResolution: "suggest_create | unknown",
-            suggestedCategoryToCreate: "short category name when useful",
-            date: "optional YYYY-MM-DD",
-          },
-        ],
-        confidence: "number 0..1",
-        warnings: ["string"],
-        unparsedText: "optional recognized receipt text",
-      },
-    },
-    null,
-    2
-  );
-}
-
-async function callGigaChatReceiptVision({ imageBuffer, filename, mimeType, timezone }) {
-  const timeoutMs = config.llm.gigaChat?.timeoutMs ?? config.llm.timeoutMs ?? 30000;
-  const fileId = await uploadGigaChatFile({
-    buffer: imageBuffer,
-    filename,
-    mimeType,
-    timeoutMs,
-  });
-  const raw = await callGigaChat({
-    model: config.llm.gigaChat?.visionModel || "GigaChat-Pro",
-    prompt: buildReceiptVisionPrompt({ timezone }),
-    timeoutMs,
-    systemPrompt:
-      "You are a strict receipt parser for a personal finance app. Read the attached receipt image and return only valid JSON by the requested schema. Never infer values from filename or metadata.",
-    attachments: [fileId],
-    maxTokens: 2048,
-  });
-  const parsed = extractJson(raw);
-  if (!parsed) {
-    throw new Error("GigaChat receipt response is not valid JSON");
-  }
+function buildReceiptPreviewResult(parsed) {
+  const items = normalizeReceiptItems([parsed.item]);
+  const warnings = Array.isArray(parsed.warnings) ? parsed.warnings.slice(0, 20) : [];
   return {
-    items: normalizeReceiptItems(parsed?.items || []),
-    warnings: Array.isArray(parsed?.warnings) ? parsed.warnings.slice(0, 10) : [],
-    confidence: Number(parsed?.confidence),
-    unparsedText: typeof parsed?.unparsedText === "string" ? parsed.unparsedText : "",
+    source: "receipt",
+    title: "Receipt Parse Preview",
+    warnings,
+    drafts: items.slice(0, 60),
+    confidence: parsed.confidence,
+    receiptMeta: parsed.receiptMeta,
   };
+}
+
+function isRecoverableQrError(error) {
+  return error?.code === "receipt_qr_not_found" || error?.code === "receipt_qr_unreadable";
+}
+
+function receiptOcrNotFoundError() {
+  return httpError(
+    "QR-код не прочитан, а OCR не смог извлечь фискальные реквизиты. Сфотографируйте нижнюю часть чека крупнее или введите операцию вручную.",
+    422,
+    "receipt_ocr_not_found"
+  );
 }
 
 export async function buildReceiptPreview({
   imageFile,
-  timezone,
-  visionParser = callGigaChatReceiptVision,
+  qrDecoder = decodeReceiptQrFromImage,
+  ocrReader = readReceiptOcrText,
 }) {
+  const imagePayload = {
+    imageBuffer: imageFile.buffer,
+    filename: imageFile.filename,
+    mimeType: imageFile.mimeType,
+  };
+
+  let qrFailure = null;
   try {
-    const parsed = await visionParser({
-      imageBuffer: imageFile.buffer,
-      filename: imageFile.filename,
-      mimeType: imageFile.mimeType,
-      timezone,
-    });
-    const items = normalizeReceiptItems(parsed.items || []);
-    if (items.length === 0) {
-      throw httpError(
-        "Receipt was analyzed, but no valid amount was found in the image. Please retake the photo with the total amount visible.",
-        422
-      );
+    const qrPayload = await qrDecoder(imagePayload);
+
+    if (qrPayload) {
+      const parsed = parseFiscalQrPayload(qrPayload);
+      if (!parsed.ok) {
+        throw httpError(parsed.error, 422, parsed.code);
+      }
+      return buildReceiptPreviewResult(parsed);
     }
-    const warnings = Array.isArray(parsed.warnings) ? parsed.warnings.slice(0, 20) : [];
-    return {
-      source: "receipt",
-      title: "Receipt Parse Preview",
-      warnings,
-      drafts: items.slice(0, 60),
-    };
+
+    qrFailure = httpError(
+      "QR-код чека не распознан. Попробуйте сфотографировать нижнюю часть чека крупнее или введите операцию вручную.",
+      422,
+      "receipt_qr_not_found"
+    );
   } catch (error) {
+    if (!isRecoverableQrError(error)) {
+      if (error?.statusCode) {
+        throw error;
+      }
+      qrFailure = httpError(
+        "QR-код чека не распознан. Попробуйте сфотографировать нижнюю часть чека крупнее или введите операцию вручную.",
+        422,
+        "receipt_qr_not_found"
+      );
+    } else {
+      qrFailure = error;
+    }
+  }
+
+  try {
+    const ocrResult = await ocrReader(imagePayload);
+    if (!ocrResult?.text) {
+      throw receiptOcrNotFoundError();
+    }
+
+    const parsed = parseFiscalOcrText(ocrResult.text, {
+      engine: ocrResult.engine,
+      confidence: ocrResult.confidence,
+    });
+    if (!parsed.ok) {
+      throw httpError(parsed.error, 422, parsed.code);
+    }
+
+    return buildReceiptPreviewResult(parsed);
+  } catch (error) {
+    if (error?.code === "receipt_ocr_unavailable" && qrFailure?.statusCode) {
+      throw receiptOcrNotFoundError();
+    }
     if (error?.statusCode) {
       throw error;
     }
-    throw httpError(`GigaChat could not recognize the receipt: ${sanitizeProviderMessage(error)}`, 502);
+    throw receiptOcrNotFoundError();
   }
 }
-

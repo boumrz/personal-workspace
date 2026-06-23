@@ -622,7 +622,7 @@ export const TransactionDataTools: React.FC<TransactionDataToolsProps> = ({
         <div>
           <div className={styles.panelTitle}>Фото чека</div>
           <div className={styles.panelText}>
-            Загрузите снимок чека, чтобы распознать покупки и превратить их в черновики операций.
+            Загрузите снимок чека, чтобы найти QR-код и превратить сумму с датой в черновик операции.
           </div>
         </div>
       </div>
@@ -672,8 +672,8 @@ export const TransactionDataTools: React.FC<TransactionDataToolsProps> = ({
           <Alert
             type="info"
             showIcon
-            message="Распознаю чек"
-            description="Фото загружено, выполняется анализ."
+            message="Ищу QR-код чека"
+            description="Фото загружено, выполняется локальный анализ QR."
           />
         ) : !receiptFile && !receiptState ? (
           <Alert

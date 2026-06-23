@@ -328,13 +328,17 @@ router.post(
       res.json({
         items: preview.drafts,
         warnings: preview.warnings,
-        confidence: preview.drafts.length > 0 ? 0.7 : 0.2,
+        confidence: Number.isFinite(Number(preview.confidence)) ? Number(preview.confidence) : 0,
         unparsedText: "",
+        receiptMeta: preview.receiptMeta,
         preview,
       });
     } catch (error) {
       const statusCode = Number(error?.statusCode) || 400;
-      return res.status(statusCode).json({ error: String(error?.message || "Receipt parsing failed.") });
+      return res.status(statusCode).json({
+        error: String(error?.message || "Receipt parsing failed."),
+        ...(error?.code ? { code: error.code } : {}),
+      });
     }
   })
 );

@@ -44,11 +44,33 @@ export interface TransactionDraft {
   suggestedCategoryToCreate?: string;
 }
 
+export interface ReceiptLineItem {
+  name: string;
+  quantity?: number;
+  unitPrice?: number;
+  lineTotal: number;
+}
+
+export interface ReceiptMeta {
+  source: "qr" | "ocr";
+  qrPayload?: string;
+  ocrEngine?: string;
+  fiscalDriveNumber: string;
+  fiscalDocumentNumber: string;
+  fiscalSign: string;
+  operationType: string;
+  operationDateTime: string;
+  amount: number;
+  lineItems?: ReceiptLineItem[];
+}
+
 export interface TransactionImportPreview {
   source: "excel" | "receipt";
   title: string;
   warnings: string[];
   drafts: TransactionDraft[];
+  confidence?: number;
+  receiptMeta?: ReceiptMeta;
 }
 
 export interface ParseTransactionsFromSpeechRequest {

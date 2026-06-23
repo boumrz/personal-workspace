@@ -50,8 +50,8 @@ User image/camera
        3. decode cropped/lower-half variants
   -> fiscal QR parser
   -> draft transaction response
-  -> optional fallback: OCR
-  -> optional fallback: LLM only when explicitly enabled
+  -> OCR fallback for unreadable/missing QR
+       (specified in docs/specs/SPEC-003-receipt-ocr-fallback.md)
 ```
 
 ## Library Choices
@@ -225,26 +225,26 @@ Failure response when QR is decoded but invalid:
 - Do not ask the user to press a separate "Recognize" button after selecting a
   photo.
 
-## Optional Fallback Policy
+## Fallback Policy
 
-MVP fallback:
+Implemented fallback:
 
-- QR decode fails -> show actionable error.
-- No OCR/LLM fallback enabled by default.
+- QR decode succeeds -> parse QR and skip OCR.
+- QR is not found or is detected but unreadable -> run local OCR fallback from
+  `docs/specs/SPEC-003-receipt-ocr-fallback.md`.
+- QR is decoded but invalid -> return `receipt_qr_invalid`; do not override
+  structured QR data with noisier OCR.
+- OCR fails -> show actionable error and keep retry/manual entry available.
 
-Later fallback:
-
-- QR decode fails -> local OCR attempts to find QR-like fiscal fields or total.
-- OCR confidence low -> ask user to retake/manual entry.
 - LLM fallback only behind an explicit env flag, for diagnostics or premium
   flows, never as default.
 
 Feature flags:
 
 ```text
-RECEIPT_RECOGNITION_MODE=qr
+RECEIPT_RECOGNITION_MODE=qr_ocr
 RECEIPT_QR_DECODER=opencv
-RECEIPT_ENABLE_OCR_FALLBACK=false
+RECEIPT_ENABLE_OCR_FALLBACK=true
 RECEIPT_ENABLE_LLM_FALLBACK=false
 ```
 

@@ -1,0 +1,5 @@
+opencv-contrib-python-headless>=4.10,<5
+numpy>=2,<3
+Pillow>=10,<13
+zxing-cpp>=2,<4
+pytesseract>=0.3,<0.4

@@ -1,5 +1,52 @@
 ﻿import { test, expect, type Page } from "@playwright/test";
 import dayjs from "dayjs";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REAL_RECEIPT_FIXTURES = [
+  {
+    filename: "cloud-payments-390.png",
+    source: "qr" as const,
+    amount: 390,
+    date: "2017-12-18",
+    description: "Чек ФН 8710000100983019",
+    fiscalDriveNumber: "8710000100983019",
+    qrPayload: "t=20171218T131500&s=390.00&fn=8710000100983019&i=13513&fp=3647700053&n=1",
+    ocrEngine: undefined,
+  },
+  {
+    filename: "four-paws-419-49.png",
+    source: "qr" as const,
+    amount: 419.49,
+    date: "2026-06-09",
+    description: "Чек ФН 7380440902817443",
+    fiscalDriveNumber: "7380440902817443",
+    qrPayload: "t=20260609T1021&s=419.49&fn=7380440902817443&i=3267&fp=2742137682&n=1",
+    ocrEngine: undefined,
+  },
+  {
+    filename: "four-paws-phone-419-49.png",
+    source: "qr" as const,
+    amount: 419.49,
+    date: "2026-06-09",
+    description: "Чек ФН 7380440902817443",
+    fiscalDriveNumber: "7380440902817443",
+    qrPayload: "t=20260609T1021&s=419.49&fn=7380440902817443&i=3267&fp=2742137682&n=1",
+    ocrEngine: undefined,
+  },
+  {
+    filename: "receipt-photo-polza-300.png",
+    source: "ocr" as const,
+    amount: 300,
+    date: "2026-06-22",
+    description: "Флэт Уайт 350 мл",
+    fiscalDriveNumber: "7382410900253926",
+    qrPayload: undefined,
+    ocrEngine: "tesseract",
+  },
+];
 
 type TransactionPayload = {
   type: "income" | "expense";
@@ -24,6 +71,17 @@ type DraftResponse = {
   confidence: number;
   warnings: string[];
   unparsedText?: string;
+  receiptMeta?: {
+    source: "qr" | "ocr";
+    qrPayload?: string;
+    ocrEngine?: string;
+    fiscalDriveNumber: string;
+    fiscalDocumentNumber: string;
+    fiscalSign: string;
+    operationType: string;
+    operationDateTime: string;
+    amount: number;
+  };
 };
 
 type ApiState = {
@@ -520,7 +578,9 @@ test("voice assistant creates missing category suggestion before saving", async 
   await page.goto("/finance/transactions");
   await openVoiceModal(page);
   await processVoiceInput(page, state);
-  await expect(getVoiceModal(page).locator(".ant-modal-body input")).toHaveCount(1);
+  await expect(
+    getVoiceModal(page).getByPlaceholder("Введите категорию (создадим автоматически)")
+  ).toHaveValue("Coffee Shops");
   await clickVoiceSaveAction(page);
 
   await expect.poll(() => state.createdCategories.length).toBe(1);
@@ -602,23 +662,33 @@ test("transaction tools import parses excel and saves drafts", async ({ page }) 
   ]);
 });
 
-test("transaction tools receipt flow parses photo and saves operations", async ({ page }) => {
+test("transaction tools receipt flow parses QR photo and saves operations", async ({ page }) => {
   const state = buildDefaultState();
   state.receiptParseResponse = {
     items: [
       {
         type: "expense",
-        amount: 540,
-        description: "Cafe receipt",
-        categoryHint: "Cafe",
+        amount: 390,
+        description: "Чек ФН 8710000100983019",
+        categoryHint: "Другое",
         categoryResolution: "suggest_create",
-        suggestedCategoryToCreate: "Cafe",
-        date: "2026-03-17",
+        suggestedCategoryToCreate: "Другое",
+        date: "2017-12-18",
       },
     ],
-    confidence: 0.89,
+    confidence: 0.98,
     warnings: [],
     unparsedText: "",
+    receiptMeta: {
+      source: "qr",
+      qrPayload: "t=20171218T1312&s=390.00&fn=8710000100983019&i=3647700053&fp=13513&n=1",
+      fiscalDriveNumber: "8710000100983019",
+      fiscalDocumentNumber: "3647700053",
+      fiscalSign: "13513",
+      operationType: "1",
+      operationDateTime: "2017-12-18T13:12:00",
+      amount: 390,
+    },
   };
 
   await setupAuthStorage(page);
@@ -640,15 +710,69 @@ test("transaction tools receipt flow parses photo and saves operations", async (
   expect(state.receiptUploadBodies[0]).toContain('filename="1000014568.png"');
   expect(state.receiptUploadBodies[0]).toContain("Content-Type: image/png");
   await expect(modal).not.toContainText("Фото готово к распознаванию");
-  await expect(modal).toContainText("Cafe receipt");
+  await expect(modal).toContainText("Чек ФН 8710000100983019");
+  await expect(modal).toContainText("390");
 
   await modal.locator(".ant-btn:has(.anticon-upload)").first().click();
 
   await expect.poll(() => state.createdCategories.length).toBe(1);
   await expect.poll(() => state.createdTransactions.length).toBe(1);
-  expect(state.createdCategories[0].name).toBe("Cafe");
-  expect(state.createdTransactions[0].date).toBe("2026-03-17");
+  expect(state.createdCategories[0].name).toBe("Другое");
+  expect(state.createdTransactions[0].date).toBe("2017-12-18");
+  expect(state.createdTransactions[0].amount).toBe(390);
 });
+
+for (const fixture of REAL_RECEIPT_FIXTURES) {
+  test(`transaction tools receipt flow shows draft for real receipt fixture ${fixture.filename}`, async ({ page }) => {
+    const state = buildDefaultState();
+    state.receiptParseResponse = {
+      items: [
+        {
+          type: "expense",
+          amount: fixture.amount,
+          description: fixture.description,
+          categoryHint: "Другое",
+          categoryResolution: "suggest_create",
+          suggestedCategoryToCreate: "Другое",
+          date: fixture.date,
+        },
+      ],
+      confidence: fixture.source === "ocr" ? 0.72 : 0.98,
+      warnings: fixture.source === "ocr" ? ["QR-код не прочитан, реквизиты извлечены OCR."] : [],
+      unparsedText: "",
+      receiptMeta: {
+        source: fixture.source,
+        ...(fixture.qrPayload ? { qrPayload: fixture.qrPayload } : {}),
+        ...(fixture.ocrEngine ? { ocrEngine: fixture.ocrEngine } : {}),
+        fiscalDriveNumber: fixture.fiscalDriveNumber,
+        fiscalDocumentNumber: "",
+        fiscalSign: "",
+        operationType: "1",
+        operationDateTime: `${fixture.date}T00:00:00`,
+        amount: fixture.amount,
+      },
+    };
+
+    await setupAuthStorage(page);
+    await setupApiMocks(page, state);
+
+    await page.goto("/finance/transactions");
+    await openDataToolsModal(page, "receipt");
+
+    const modal = getDataToolsModal(page);
+    const image = readFileSync(path.join(__dirname, "../../server/test/fixtures/receipts", fixture.filename));
+    await modal.locator('[data-testid="receipt-gallery-file-input"]').setInputFiles({
+      name: fixture.filename,
+      mimeType: "image/png",
+      buffer: image,
+    });
+
+    await expect.poll(() => state.receiptCalls).toBe(1);
+    expect(state.receiptUploadBodies[0]).toContain(`filename="${fixture.filename}"`);
+    await expect(modal).toContainText(fixture.description);
+    await expect(modal).toContainText(String(fixture.amount).replace(".", ",").split(",")[0]);
+  });
+}
 
 test("transaction tools receipt flow shows server error inline and allows retry", async ({ page }) => {
   const state = buildDefaultState();
@@ -684,6 +808,36 @@ test("transaction tools receipt flow shows server error inline and allows retry"
   await expect.poll(() => state.receiptCalls).toBe(2);
   await expect(modal.locator('[data-testid="receipt-error-alert"]')).toHaveCount(0);
   await expect(modal).toContainText("Cafe receipt");
+});
+
+test("transaction tools receipt flow shows QR-specific retake instruction", async ({ page }) => {
+  const state = buildDefaultState();
+  state.receiptParseError = {
+    status: 422,
+    body: {
+      error: "QR-код чека не распознан. Попробуйте сфотографировать нижнюю часть чека крупнее или введите операцию вручную.",
+      code: "receipt_qr_not_found",
+    },
+  };
+
+  await setupAuthStorage(page);
+  await setupApiMocks(page, state);
+
+  await page.goto("/finance/transactions");
+  await openDataToolsModal(page, "receipt");
+
+  const modal = getDataToolsModal(page);
+  await modal.locator('[data-testid="receipt-camera-file-input"]').setInputFiles({
+    name: "receipt.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("fake-image"),
+  });
+
+  await expect.poll(() => state.receiptCalls).toBe(1);
+  await expect(modal.locator('[data-testid="receipt-error-alert"]')).toContainText(
+    "Сфотографируйте нижнюю часть чека крупнее"
+  );
+  await expect(modal.getByRole("button", { name: /Повторить распознавание/i })).toBeVisible();
 });
 
 test("transaction tools receipt flow shows HTTP status when API body is empty", async ({ page }) => {
@@ -747,4 +901,3 @@ test("transaction form lets you choose a date from the calendar", async ({ page 
   expect(state.createdTransactions[0].amount).toBe(200);
   expect(state.createdTransactions[0].date).toBe(targetDate.format("YYYY-MM-DD"));
 });
-
