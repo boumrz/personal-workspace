@@ -53,7 +53,6 @@ export default function RootNavigator() {
               screen: "DataImportReview",
               params: {
                 preview: parsed.preview,
-                kind: parsed.kind,
               },
             },
           } as never
@@ -87,7 +86,6 @@ export default function RootNavigator() {
           screen: "DataImportReview",
           params: {
             preview: pending.preview,
-            kind: pending.kind,
           },
         },
       } as never

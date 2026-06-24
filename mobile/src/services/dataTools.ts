@@ -15,7 +15,6 @@ type WebUploadArgs = {
   capture?: string;
   fieldName: string;
   title: string;
-  kind: "excel" | "receipt";
   apiBaseUrl: string;
   token: string;
 };
@@ -58,7 +57,6 @@ export function parseImportDeepLink(url: string) {
       return null;
     }
 
-    const kind = parsed.searchParams.get("kind");
     const payload = parsed.searchParams.get("payload");
     if (!payload) {
       return null;
@@ -69,17 +67,14 @@ export function parseImportDeepLink(url: string) {
       return null;
     }
 
-    return {
-      kind: kind === "receipt" ? "receipt" : "excel",
-      preview,
-    } as const;
+    return { preview } as const;
   } catch {
     return null;
   }
 }
 
-function buildSuccessCallbackUrl(kind: "excel" | "receipt", payload: string) {
-  return `${APP_DEEP_LINK_SCHEME}://import?kind=${encodeURIComponent(kind)}&payload=${encodeURIComponent(payload)}`;
+function buildSuccessCallbackUrl(payload: string) {
+  return `${APP_DEEP_LINK_SCHEME}://import?payload=${encodeURIComponent(payload)}`;
 }
 
 function buildUploadPageHtml({
@@ -88,7 +83,6 @@ function buildUploadPageHtml({
   capture,
   fieldName,
   title,
-  kind,
   apiBaseUrl,
   token,
 }: WebUploadArgs) {
@@ -185,9 +179,7 @@ function buildUploadPageHtml({
   <body>
     <div class="card">
       <h1>${htmlEscape(title)}</h1>
-      <p>${kind === "receipt"
-        ? "Загрузите фото чека. Браузер отправит его на сервер и вернёт результат в приложение."
-        : "Загрузите Excel/CSV файл. После обработки вы вернётесь в приложение на экран проверки."}</p>
+      <p>Загрузите фото чека. Браузер отправит его на сервер и вернёт результат в приложение.</p>
       <div class="drop">
         <input id="file" type="file" accept="${htmlEscape(accept)}"${capture ? ` capture="${htmlEscape(capture)}"` : ""} />
       </div>
@@ -201,7 +193,6 @@ function buildUploadPageHtml({
       const apiBaseUrl = ${JSON.stringify(apiBaseUrl.replace(/\/$/, ""))};
       const token = ${JSON.stringify(token)};
       const endpoint = ${JSON.stringify(endpoint)};
-      const kind = ${JSON.stringify(kind)};
       const fieldName = ${JSON.stringify(fieldName)};
       const statusEl = document.getElementById("status");
       const resultEl = document.getElementById("result");
@@ -242,7 +233,7 @@ function buildUploadPageHtml({
         }
         const preview = parsed && parsed.preview ? parsed.preview : parsed;
         const payload = b64(JSON.stringify(preview));
-        const callbackUrl = ${JSON.stringify(callbackPrefix)} + "?kind=" + encodeURIComponent(kind) + "&payload=" + encodeURIComponent(payload);
+        const callbackUrl = ${JSON.stringify(callbackPrefix)} + "?payload=" + encodeURIComponent(payload);
         statusEl.textContent = "Готово. Возвращаемся в приложение...";
         resultEl.style.display = "block";
         resultEl.textContent = JSON.stringify(preview, null, 2);
@@ -262,166 +253,17 @@ function buildUploadPageHtml({
 </html>`;
 }
 
-function buildExportPageHtml({ apiBaseUrl, token }: { apiBaseUrl: string; token: string }) {
-  return `<!doctype html>
-<html lang="ru">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Экспорт в Excel</title>
-    <style>
-      body {
-        margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background: linear-gradient(180deg, #1a1f33, #0d1220);
-        color: #f5f7ff;
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        box-sizing: border-box;
-      }
-      .card {
-        width: min(100%, 420px);
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.14);
-        border-radius: 24px;
-        padding: 20px;
-        text-align: center;
-        box-shadow: 0 24px 80px rgba(0,0,0,0.35);
-        backdrop-filter: blur(18px);
-      }
-      .spinner {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        border: 4px solid rgba(255,255,255,0.18);
-        border-top-color: #68d2ff;
-        margin: 14px auto 0;
-        animation: spin 1s linear infinite;
-      }
-      @keyframes spin { to { transform: rotate(360deg); } }
-      p { color: rgba(245,247,255,0.78); line-height: 1.5; }
-    </style>
-  </head>
-  <body>
-    <div class="card">
-      <h1>Экспорт операций</h1>
-      <p>Файл Excel будет сформирован и загружен в браузере автоматически.</p>
-      <div class="spinner"></div>
-    </div>
-    <script>
-      (async () => {
-        const authToken = ${JSON.stringify(token)};
-        const response = await fetch(${JSON.stringify(apiBaseUrl.replace(/\/$/, ""))} + ${JSON.stringify(DATA_TOOL_ENDPOINTS.exportExcel)}, {
-          headers: { Authorization: "Bearer " + authToken },
-        });
-        if (!response.ok) {
-          throw new Error("Export failed: " + response.status);
-        }
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const anchor = document.createElement("a");
-        anchor.href = url;
-        anchor.download = "finance-assistant-export.xlsx";
-        document.body.appendChild(anchor);
-        anchor.click();
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-          window.close();
-        }, 1500);
-      })().catch((error) => {
-        document.body.innerHTML = "<pre style='white-space:pre-wrap;padding:20px;color:#fff'>" + String(error && error.message ? error.message : error) + "</pre>";
-      });
-    </script>
-  </body>
-</html>`;
-}
-
 async function openNativeToolPage({ title, body }: OpenNativeToolArgs) {
   const url = toDataUrl(body);
   try {
     await WebBrowser.openBrowserAsync(url);
-  } catch (error) {
+  } catch {
     try {
       await Linking.openURL(url);
     } catch {
       Alert.alert(title, "Не удалось открыть системный браузер для этой операции.");
     }
   }
-}
-
-export async function openExcelExportFlow(apiBaseUrl: string, token: string) {
-  if (Platform.OS === "web") {
-    const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}${DATA_TOOL_ENDPOINTS.exportExcel}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!response.ok) {
-      throw new Error(`Export failed: ${response.status}`);
-    }
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "finance-assistant-export.xlsx";
-    anchor.click();
-    window.URL.revokeObjectURL(url);
-    return;
-  }
-
-  await openNativeToolPage({
-    title: "Экспорт в Excel",
-    body: buildExportPageHtml({ apiBaseUrl, token }),
-  });
-}
-
-export async function openExcelImportFlow(apiBaseUrl: string, token: string) {
-  if (Platform.OS === "web") {
-    return new Promise<TransactionImportPreview | null>((resolve, reject) => {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".xlsx,.xls,.csv";
-      input.oncancel = () => resolve(null);
-      input.onchange = async () => {
-        try {
-          const file = input.files?.[0];
-          if (!file) {
-            resolve(null);
-            return;
-          }
-          const formData = new FormData();
-          formData.append("file", file);
-          const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}${DATA_TOOL_ENDPOINTS.importExcel}`, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${token}` },
-            body: formData,
-          });
-          const data = await response.json();
-          if (!response.ok) {
-            throw new Error(data?.error || data?.message || "Import failed");
-          }
-          resolve((data.preview ?? data) as TransactionImportPreview);
-        } catch (error) {
-          reject(error);
-        }
-      };
-      input.click();
-    });
-  }
-
-  await openNativeToolPage({
-    title: "Импорт из Excel",
-    body: buildUploadPageHtml({
-      endpoint: DATA_TOOL_ENDPOINTS.importExcel,
-      accept: ".xlsx,.xls,.csv",
-      fieldName: "file",
-      title: "Импорт из Excel",
-      kind: "excel",
-      apiBaseUrl,
-      token,
-    }),
-  });
 }
 
 export async function openReceiptImportFlow(apiBaseUrl: string, token: string, source: "gallery" | "camera" = "gallery") {
@@ -469,7 +311,6 @@ export async function openReceiptImportFlow(apiBaseUrl: string, token: string, s
       capture: source === "camera" ? "environment" : undefined,
       fieldName: "image",
       title: "Фото чека",
-      kind: "receipt",
       apiBaseUrl,
       token,
     }),

@@ -65,7 +65,7 @@ export interface ReceiptMeta {
 }
 
 export interface TransactionImportPreview {
-  source: "excel" | "receipt";
+  source: "receipt";
   title: string;
   warnings: string[];
   drafts: TransactionDraft[];

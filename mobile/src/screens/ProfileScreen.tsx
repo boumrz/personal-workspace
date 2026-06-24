@@ -358,7 +358,7 @@ export default function ProfileScreen({ navigation }: any) {
             <View style={dynamicStyles.settingsItemIcon}><Ionicons name="layers-outline" size={18} color={theme.accentMuted} /></View>
             <View style={dynamicStyles.settingsItemContent}>
               <Text style={dynamicStyles.settingsItemTitle}>Инструменты данных</Text>
-              <Text style={dynamicStyles.settingsItemSubtitle}>Экспорт, импорт и фото чека</Text>
+              <Text style={dynamicStyles.settingsItemSubtitle}>Распознавание фото чеков</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
           </TouchableOpacity>

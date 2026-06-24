@@ -29,7 +29,7 @@ Finance Assistant helps a user track personal finances across web and mobile:
 - dashboard visualizations;
 - profile and authentication methods;
 - voice-assisted transaction parsing;
-- data import/export and receipt preview flows.
+- receipt preview flows.
 
 The product should optimize for fast personal entry, safe financial data
 handling, predictable mobile/web parity, and recoverable auth/session behavior.
@@ -68,7 +68,7 @@ handling, predictable mobile/web parity, and recoverable auth/session behavior.
 - Ant Design theming with light/dark tokens.
 - CSS Modules for component styling.
 - Voice assistant UI for transaction parsing.
-- Data tools UI for import/export/receipt preview.
+- Data tools UI for receipt preview.
 
 ### Backend API
 
@@ -218,8 +218,6 @@ Base API prefix: `/api`.
 ### Transaction data tools
 
 - `GET /v2/transactions/llm-options`
-- `GET|POST /v2/transactions/export`
-- `POST /v2/transactions/import`
 - `POST /v2/transactions/receipt/parse`
 - `POST /v2/transactions/parse`
 
@@ -314,7 +312,7 @@ changes.
 1. Normalize shared API contracts across web and mobile.
 2. Split migration script into smaller documented schema sections or migration files.
 3. Add regression tests for auth refresh behavior on web and mobile clients.
-4. Expand data import/export e2e coverage.
+4. Expand receipt recognition e2e coverage.
 5. Add admin LLM provider UI smoke tests.
 6. Add structured spec pages for finance operations, voice parsing, and mobile parity.
 7. Document production observability and retention policy for analytics events.

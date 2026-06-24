@@ -97,7 +97,6 @@ type ApiState = {
   plannedExpenses: unknown[];
   savings: unknown[];
   parseResponse: DraftResponse;
-  importParseResponse: DraftResponse;
   receiptParseResponse: DraftResponse;
   receiptParseError?: {
     status: number;
@@ -107,10 +106,7 @@ type ApiState = {
   createdCategories: Array<{ id: string; name: string; color: string; icon: string; type?: "income" | "expense" | "both" }>;
   createdTransactions: TransactionPayload[];
   parseCalls: number;
-  importCalls: number;
   receiptCalls: number;
-  receiptUploadBodies: string[];
-  exportCalls: number;
 };
 
 function buildDefaultState(): ApiState {
@@ -118,6 +114,7 @@ function buildDefaultState(): ApiState {
     categories: [
       { id: "1", name: "Food", color: "#4a9ed6", icon: "Utensils", type: "expense" },
       { id: "2", name: "Transport", color: "#5fb972", icon: "Car", type: "expense" },
+      { id: "3", name: "Другое", color: "#888888", icon: "Tag", type: "both" },
     ],
     profile: {
       id: "42",
@@ -144,29 +141,6 @@ function buildDefaultState(): ApiState {
       warnings: [],
       unparsedText: "",
     },
-    importParseResponse: {
-      items: [
-        {
-          type: "expense",
-          amount: 1280,
-          description: "Groceries",
-          categoryHint: "Food",
-          categoryResolution: "matched_existing",
-          date: "2026-03-15",
-        },
-        {
-          type: "expense",
-          amount: 220,
-          description: "Taxi",
-          categoryHint: "Transport",
-          categoryResolution: "matched_existing",
-          date: "2026-03-16",
-        },
-      ],
-      confidence: 0.91,
-      warnings: [],
-      unparsedText: "",
-    },
     receiptParseResponse: {
       items: [
         {
@@ -185,10 +159,8 @@ function buildDefaultState(): ApiState {
     createdCategories: [],
     createdTransactions: [],
     parseCalls: 0,
-    importCalls: 0,
     receiptCalls: 0,
     receiptUploadBodies: [],
-    exportCalls: 0,
   };
 }
 
@@ -309,28 +281,6 @@ async function setupApiMocks(page: Page, state: ApiState) {
     if (method === "POST" && path === "/api/v2/transactions/parse") {
       state.parseCalls += 1;
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(state.parseResponse) });
-    }
-
-    if (method === "POST" && path === "/api/v2/transactions/export") {
-      state.exportCalls += 1;
-      return route.fulfill({
-        status: 200,
-        headers: {
-          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          "Content-Disposition": 'attachment; filename="finance-assistant-export.xlsx"',
-          "Access-Control-Expose-Headers": "Content-Disposition",
-        },
-        body: Buffer.from("fake-xlsx"),
-      });
-    }
-
-    if (method === "POST" && path === "/api/v2/transactions/import") {
-      state.importCalls += 1;
-      return route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(state.importParseResponse),
-      });
     }
 
     if (method === "POST" && path === "/api/v2/transactions/receipt/parse") {
@@ -457,29 +407,24 @@ async function clickVoiceSaveAction(page: Page) {
   await actionButton.click({ force: true });
 }
 
-async function openDataToolsModal(page: Page, tool: "export" | "import" | "receipt") {
+async function openDataToolsModal(page: Page) {
   const openButton = page.locator('[data-testid="data-tools-open-button"]').first();
   await expect(openButton).toBeVisible();
   await openButton.click();
 
   const drawer = getDataToolsModal(page);
   await expect(drawer).toBeVisible();
+  await expect(drawer.locator('[data-testid="receipt-gallery-file-input"]')).toHaveCount(1);
+  await expect(drawer.locator('[data-testid="receipt-camera-file-input"]')).toHaveCount(1);
+}
 
-  if (tool === "import") {
-    const importTab = drawer.getByRole("tab", { name: /Загрузить таблицу/i }).first();
-    await expect(importTab).toBeVisible();
-    await importTab.click();
-    await expect(drawer.locator('[data-testid="import-file-input"]')).toHaveCount(1);
-    return;
-  }
-
-  if (tool === "receipt") {
-    const receiptTab = drawer.getByRole("tab", { name: /Распознать чек/i }).first();
-    await expect(receiptTab).toBeVisible();
-    await receiptTab.click();
-    await expect(drawer.locator('[data-testid="receipt-gallery-file-input"]')).toHaveCount(1);
-    await expect(drawer.locator('[data-testid="receipt-camera-file-input"]')).toHaveCount(1);
-  }
+async function expectReceiptDraftForm(
+  modal: ReturnType<typeof getDataToolsModal>,
+  draft: { description: string; amount: number }
+) {
+  await expect(modal.getByPlaceholder("Описание операции")).toHaveValue(draft.description);
+  const amountValue = await modal.locator(".ant-input-number-input").first().inputValue();
+  expect(Number(amountValue.replace(/\s+/g, "").replace(",", "."))).toBe(draft.amount);
 }
 
 async function createWebpBuffer(page: Page) {
@@ -588,80 +533,6 @@ test("voice assistant creates missing category suggestion before saving", async 
   expect(state.createdCategories[0].name).toBe("Coffee Shops");
 });
 
-test("transaction tools export starts an Excel download", async ({ page }) => {
-  const state = buildDefaultState();
-
-  await setupAuthStorage(page);
-  await setupApiMocks(page, state);
-
-  await page.goto("/finance/transactions");
-  await openDataToolsModal(page, "export");
-
-  const modal = getDataToolsModal(page);
-  const downloadPromise = page.waitForEvent("download");
-  await modal.locator("button:has(.anticon-download)").first().click();
-  const download = await downloadPromise;
-
-  expect(download.suggestedFilename()).toBe("finance-assistant-export.xlsx");
-  await expect.poll(() => state.exportCalls).toBe(1);
-});
-
-test("transaction tools import parses excel and saves drafts", async ({ page }) => {
-  const state = buildDefaultState();
-  state.importParseResponse = {
-    items: [
-      {
-        type: "expense",
-        amount: 1280,
-        description: "Groceries",
-        categoryHint: "Food",
-        categoryResolution: "matched_existing",
-        date: "2026-03-15",
-      },
-      {
-        type: "expense",
-        amount: 220,
-        description: "Taxi",
-        categoryHint: "Bakery",
-        categoryResolution: "suggest_create",
-        suggestedCategoryToCreate: "Bakery",
-        date: "2026-03-16",
-      },
-    ],
-    confidence: 0.91,
-    warnings: [],
-    unparsedText: "",
-  };
-
-  await setupAuthStorage(page);
-  await setupApiMocks(page, state);
-
-  await page.goto("/finance/transactions");
-  await openDataToolsModal(page, "import");
-
-  const modal = getDataToolsModal(page);
-  await modal.locator('[data-testid="import-file-input"]').setInputFiles({
-    name: "transactions.xlsx",
-    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    buffer: Buffer.from("fake-xlsx"),
-  });
-  await modal.locator(".ant-btn:has(.anticon-file-excel)").first().click();
-
-  await expect.poll(() => state.importCalls).toBe(1);
-  await expect(modal).toContainText("Groceries");
-  await expect(modal).toContainText("Taxi");
-
-  await modal.locator(".ant-btn:has(.anticon-upload)").first().click();
-
-  await expect.poll(() => state.createdCategories.length).toBe(1);
-  await expect.poll(() => state.createdTransactions.length).toBe(2);
-  expect(state.createdCategories[0].name).toBe("Bakery");
-  expect(state.createdTransactions.map((transaction) => transaction.date)).toEqual([
-    "2026-03-15",
-    "2026-03-16",
-  ]);
-});
-
 test("transaction tools receipt flow parses QR photo and saves operations", async ({ page }) => {
   const state = buildDefaultState();
   state.receiptParseResponse = {
@@ -695,7 +566,7 @@ test("transaction tools receipt flow parses QR photo and saves operations", asyn
   await setupApiMocks(page, state);
 
   await page.goto("/finance/transactions");
-  await openDataToolsModal(page, "receipt");
+  await openDataToolsModal(page);
 
   const modal = getDataToolsModal(page);
   const webpBuffer = await createWebpBuffer(page);
@@ -710,14 +581,16 @@ test("transaction tools receipt flow parses QR photo and saves operations", asyn
   expect(state.receiptUploadBodies[0]).toContain('filename="1000014568.png"');
   expect(state.receiptUploadBodies[0]).toContain("Content-Type: image/png");
   await expect(modal).not.toContainText("Фото готово к распознаванию");
-  await expect(modal).toContainText("Чек ФН 8710000100983019");
-  await expect(modal).toContainText("390");
+  await expectReceiptDraftForm(modal, {
+    description: "Чек ФН 8710000100983019",
+    amount: 390,
+  });
 
   await modal.locator(".ant-btn:has(.anticon-upload)").first().click();
 
-  await expect.poll(() => state.createdCategories.length).toBe(1);
+  await expect.poll(() => state.createdCategories.length).toBe(0);
   await expect.poll(() => state.createdTransactions.length).toBe(1);
-  expect(state.createdCategories[0].name).toBe("Другое");
+  expect(state.createdTransactions[0].category.id).toBe("3");
   expect(state.createdTransactions[0].date).toBe("2017-12-18");
   expect(state.createdTransactions[0].amount).toBe(390);
 });
@@ -757,7 +630,7 @@ for (const fixture of REAL_RECEIPT_FIXTURES) {
     await setupApiMocks(page, state);
 
     await page.goto("/finance/transactions");
-    await openDataToolsModal(page, "receipt");
+    await openDataToolsModal(page);
 
     const modal = getDataToolsModal(page);
     const image = readFileSync(path.join(__dirname, "../../server/test/fixtures/receipts", fixture.filename));
@@ -769,8 +642,10 @@ for (const fixture of REAL_RECEIPT_FIXTURES) {
 
     await expect.poll(() => state.receiptCalls).toBe(1);
     expect(state.receiptUploadBodies[0]).toContain(`filename="${fixture.filename}"`);
-    await expect(modal).toContainText(fixture.description);
-    await expect(modal).toContainText(String(fixture.amount).replace(".", ",").split(",")[0]);
+    await expectReceiptDraftForm(modal, {
+      description: fixture.description,
+      amount: fixture.amount,
+    });
   });
 }
 
@@ -785,7 +660,7 @@ test("transaction tools receipt flow shows server error inline and allows retry"
   await setupApiMocks(page, state);
 
   await page.goto("/finance/transactions");
-  await openDataToolsModal(page, "receipt");
+  await openDataToolsModal(page);
 
   const modal = getDataToolsModal(page);
   await modal.locator('[data-testid="receipt-gallery-file-input"]').setInputFiles({
@@ -807,7 +682,10 @@ test("transaction tools receipt flow shows server error inline and allows retry"
 
   await expect.poll(() => state.receiptCalls).toBe(2);
   await expect(modal.locator('[data-testid="receipt-error-alert"]')).toHaveCount(0);
-  await expect(modal).toContainText("Cafe receipt");
+  await expectReceiptDraftForm(modal, {
+    description: "Cafe receipt",
+    amount: 540,
+  });
 });
 
 test("transaction tools receipt flow shows QR-specific retake instruction", async ({ page }) => {
@@ -824,7 +702,7 @@ test("transaction tools receipt flow shows QR-specific retake instruction", asyn
   await setupApiMocks(page, state);
 
   await page.goto("/finance/transactions");
-  await openDataToolsModal(page, "receipt");
+  await openDataToolsModal(page);
 
   const modal = getDataToolsModal(page);
   await modal.locator('[data-testid="receipt-camera-file-input"]').setInputFiles({
@@ -852,7 +730,7 @@ test("transaction tools receipt flow shows HTTP status when API body is empty", 
   await setupApiMocks(page, state);
 
   await page.goto("/finance/transactions");
-  await openDataToolsModal(page, "receipt");
+  await openDataToolsModal(page);
 
   const modal = getDataToolsModal(page);
   await modal.locator('[data-testid="receipt-camera-file-input"]').setInputFiles({

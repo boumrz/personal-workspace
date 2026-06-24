@@ -8,7 +8,9 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth, useTheme } from "../context";
@@ -24,7 +26,6 @@ type Props = {
   route: {
     params?: {
       preview?: TransactionImportPreview;
-      kind?: "excel" | "receipt";
     };
   };
   navigation: any;
@@ -39,10 +40,12 @@ function normalize(value: string) {
     .trim();
 }
 
-function formatDate(value?: string) {
-  if (!value) return "Не указана";
-  const parsed = dayjs(value);
-  return parsed.isValid() ? parsed.format("DD.MM.YYYY") : value;
+function safeDate(value?: string) {
+  const parsed = value ? dayjs(value) : null;
+  if (parsed && parsed.isValid()) {
+    return parsed.format("YYYY-MM-DD");
+  }
+  return dayjs().format("YYYY-MM-DD");
 }
 
 function categoryMatchesTransactionType(category: Category, transactionType: "income" | "expense") {
@@ -54,6 +57,23 @@ function categoryMatchesTransactionType(category: Category, transactionType: "in
         ? "both"
         : "expense");
   return scope === "both" || scope === transactionType;
+}
+
+function parseDraftAmount(value: string) {
+  const normalized = String(value || "").replace(/\s+/g, "").replace(",", ".");
+  const amount = Number(normalized);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  return Math.round(amount * 100) / 100;
+}
+
+function getAvailableCategories(categories: Category[], transactionType: "income" | "expense") {
+  return categories
+    .filter((category) => categoryMatchesTransactionType(category, transactionType))
+    .sort((a, b) => {
+      if (a.name === "Другое") return 1;
+      if (b.name === "Другое") return -1;
+      return a.name.localeCompare(b.name, "ru");
+    });
 }
 
 function resolveCategoryName(
@@ -78,26 +98,51 @@ function resolveCategoryName(
   return fuzzy ?? null;
 }
 
+function resolveInitialCategoryName(draft: TransactionDraft, categories: Category[]) {
+  const hint = draft.categoryHint ?? draft.suggestedCategoryToCreate ?? "";
+  if (hint) {
+    const match = resolveCategoryName(draft, hint, categories);
+    if (match) return match.name;
+  }
+
+  const other = categories.find((category) => category.name === "Другое");
+  if (other && categoryMatchesTransactionType(other, draft.type)) {
+    return other.name;
+  }
+
+  return getAvailableCategories(categories, draft.type)[0]?.name ?? "";
+}
+
+function buildDraftEdits(drafts: TransactionDraft[], categories: Category[]) {
+  return drafts.map((draft) => ({
+    amount: String(draft.amount),
+    description: draft.description?.trim() || "",
+    date: safeDate(draft.date),
+    category: resolveInitialCategoryName(draft, categories),
+  }));
+}
+
 export default function DataImportReviewScreen({ route, navigation }: Props) {
   const { api } = useAuth();
   const { theme } = useTheme();
   const [preview, setPreview] = useState<TransactionImportPreview | null>(route.params?.preview ?? null);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [categoryDrafts, setCategoryDrafts] = useState<string[]>(
-    route.params?.preview?.drafts.map((draft) => draft.categoryHint ?? draft.suggestedCategoryToCreate ?? "") ?? []
-  );
+  const [draftEdits, setDraftEdits] = useState<Array<{ amount: string; description: string; date: string; category: string }>>([]);
+  const [datePickerIndex, setDatePickerIndex] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (route.params?.preview) {
       setPreview(route.params.preview);
-      setCategoryDrafts(
-        route.params.preview.drafts.map(
-          (draft) => draft.categoryHint ?? draft.suggestedCategoryToCreate ?? ""
-        )
-      );
     }
   }, [route.params?.preview]);
+
+  useEffect(() => {
+    if (!preview?.drafts.length || categories.length === 0) {
+      return;
+    }
+    setDraftEdits(buildDraftEdits(preview.drafts, categories));
+  }, [preview, categories]);
 
   useEffect(() => {
     let mounted = true;
@@ -121,13 +166,16 @@ export default function DataImportReviewScreen({ route, navigation }: Props) {
   const draftCount = preview?.drafts.length ?? 0;
   const warnings = preview?.warnings ?? [];
 
-  const updateCategoryDraft = useCallback((index: number, value: string) => {
-    setCategoryDrafts((prev) => {
-      const next = [...prev];
-      next[index] = value;
-      return next;
-    });
-  }, []);
+  const updateDraftEdit = useCallback(
+    (index: number, patch: Partial<{ amount: string; description: string; date: string; category: string }>) => {
+      setDraftEdits((prev) => {
+        const next = [...prev];
+        next[index] = { ...next[index], ...patch };
+        return next;
+      });
+    },
+    []
+  );
 
   const saveDrafts = useCallback(async () => {
     if (!preview?.drafts.length) {
@@ -136,59 +184,24 @@ export default function DataImportReviewScreen({ route, navigation }: Props) {
     }
 
     setSaving(true);
-    let createdCategories = 0;
     let savedTransactions = 0;
     let skippedTransactions = 0;
-    const createdByName = new Map<string, Category>();
 
     try {
       for (let index = 0; index < preview.drafts.length; index += 1) {
         const draft = preview.drafts[index];
-        const desiredName = (
-          categoryDrafts[index] ||
-          draft.suggestedCategoryToCreate ||
-          draft.categoryHint ||
-          ""
-        ).trim();
+        const edit = draftEdits[index];
+        const amount = parseDraftAmount(edit?.amount ?? String(draft.amount));
+        const description = edit?.description?.trim() || draft.description?.trim() || preview.title;
+        const date = safeDate(edit?.date || draft.date);
+        const desiredName = edit?.category?.trim() ?? "";
 
-        if (!desiredName) {
+        if (!amount || !desiredName) {
+          skippedTransactions += 1;
           continue;
         }
 
-        const resolved = resolveCategoryName(draft, desiredName, categories);
-        if (resolved) {
-          continue;
-        }
-
-        const normalizedName = normalize(desiredName);
-        if (createdByName.has(normalizedName)) {
-          continue;
-        }
-
-        const created = await api.createCategory({
-          name: desiredName[0].toUpperCase() + desiredName.slice(1),
-          color: theme.accentMuted,
-          icon: "pricetag-outline",
-          type: draft.type,
-        });
-        createdByName.set(normalizedName, created);
-        createdCategories += 1;
-      }
-
-      for (let index = 0; index < preview.drafts.length; index += 1) {
-        const draft = preview.drafts[index];
-        const desiredName = (
-          categoryDrafts[index] ||
-          draft.suggestedCategoryToCreate ||
-          draft.categoryHint ||
-          ""
-        ).trim();
-
-        let category = resolveCategoryName(draft, desiredName, categories);
-        if (!category && desiredName) {
-          category = createdByName.get(normalize(desiredName)) ?? null;
-        }
-
+        const category = resolveCategoryName(draft, desiredName, categories);
         if (!category) {
           skippedTransactions += 1;
           continue;
@@ -196,9 +209,9 @@ export default function DataImportReviewScreen({ route, navigation }: Props) {
 
         await api.createTransaction({
           type: draft.type,
-          amount: draft.amount,
-          description: draft.description?.trim() || preview.title,
-          date: draft.date || dayjs().format("YYYY-MM-DD"),
+          amount,
+          description,
+          date,
           category,
         });
         savedTransactions += 1;
@@ -210,8 +223,8 @@ export default function DataImportReviewScreen({ route, navigation }: Props) {
       Alert.alert(
         "Импорт завершен",
         skippedTransactions > 0
-          ? `Сохранено: ${savedTransactions}. Создано категорий: ${createdCategories}. Пропущено: ${skippedTransactions}.`
-          : `Сохранено: ${savedTransactions}. Создано категорий: ${createdCategories}.`
+          ? `Сохранено: ${savedTransactions}. Пропущено: ${skippedTransactions}.`
+          : `Сохранено: ${savedTransactions}.`
       );
     } catch (error: any) {
       Alert.alert("Импорт", error?.message ?? "Не удалось сохранить импортированные строки.");
@@ -221,10 +234,9 @@ export default function DataImportReviewScreen({ route, navigation }: Props) {
   }, [
     api,
     categories,
-    categoryDrafts,
+    draftEdits,
     navigation,
     preview,
-    theme.accentMuted,
   ]);
 
   const styles = useMemo(
@@ -336,6 +348,42 @@ export default function DataImportReviewScreen({ route, navigation }: Props) {
           letterSpacing: 0.4,
           marginBottom: 6,
         },
+        dateButton: {
+          borderWidth: 1,
+          borderColor: theme.border,
+          borderRadius: theme.radiusMd,
+          backgroundColor: theme.bgSurface,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+        },
+        dateButtonText: {
+          fontSize: 15,
+          color: theme.textPrimary,
+        },
+        categoryChips: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: 8,
+        },
+        categoryChip: {
+          borderWidth: 1,
+          borderColor: theme.border,
+          borderRadius: 999,
+          paddingHorizontal: 12,
+          paddingVertical: 8,
+          backgroundColor: theme.bgSurface,
+        },
+        categoryChipActive: {
+          borderColor: theme.accentMuted,
+        },
+        categoryChipText: {
+          fontSize: 13,
+          color: theme.textPrimary,
+        },
+        categoryChipTextActive: {
+          color: "#fff",
+          fontWeight: "700",
+        },
         input: {
           borderWidth: 1,
           borderColor: theme.border,
@@ -402,7 +450,7 @@ export default function DataImportReviewScreen({ route, navigation }: Props) {
           <View style={styles.hero}>
             <Text style={styles.heroTitle}>Импорт не найден</Text>
             <Text style={styles.heroText}>
-              Откройте импорт из Excel или фото чека еще раз.
+              Откройте распознавание чека еще раз.
             </Text>
           </View>
         </View>
@@ -420,8 +468,8 @@ export default function DataImportReviewScreen({ route, navigation }: Props) {
           <Text style={styles.heroTitle}>{preview.title}</Text>
         </View>
         <Text style={styles.heroText}>
-          Проверьте распознанные строки и при необходимости скорректируйте
-          категории перед сохранением.
+          Проверьте распознанные операции и при необходимости исправьте сумму,
+          описание, дату и категорию перед сохранением.
         </Text>
       </View>
 
@@ -433,35 +481,99 @@ export default function DataImportReviewScreen({ route, navigation }: Props) {
 
       <View style={styles.summary}>
         <Text style={styles.summaryText}>
-          Строк для обработки: {draftCount}. Дата в каждой операции сохраняется
-          в том виде, как ее распознал LLM или импорт из файла.
+          Операций для сохранения: {draftCount}.
         </Text>
       </View>
 
       {preview.drafts.map((draft, index) => {
-        const resolved = resolveCategoryName(draft, categoryDrafts[index] ?? "", categories);
+        const edit = draftEdits[index];
+        const categoryName = edit?.category?.trim() || "";
+        const resolved = categoryName ? resolveCategoryName(draft, categoryName, categories) : null;
+        const draftDate = safeDate(edit?.date || draft.date);
+        const availableCategories = getAvailableCategories(categories, draft.type);
         return (
           <View key={`${draft.type}-${draft.amount}-${index}`} style={styles.draftCard}>
             <View style={styles.draftHeader}>
-              <Text style={styles.draftTitle}>{draft.description?.trim() || `Строка ${index + 1}`}</Text>
+              <Text style={styles.draftTitle}>Операция {index + 1}</Text>
               <View style={styles.typeBadge}>
                 <Text style={styles.typeBadgeText}>{draft.type === "income" ? "Доход" : "Расход"}</Text>
               </View>
             </View>
 
-            <Text style={styles.amount}>₽{draft.amount.toLocaleString("ru-RU", { minimumFractionDigits: 2 })}</Text>
-            <Text style={styles.draftMeta}>Дата: {formatDate(draft.date)}</Text>
-            <Text style={styles.draftMeta}>Категория: {resolved?.name ?? "Не определена"}</Text>
+            {resolved ? <Text style={styles.draftMeta}>Категория: {resolved.name}</Text> : null}
+
+            <View>
+              <Text style={styles.inputLabel}>Описание</Text>
+              <TextInput
+                style={styles.input}
+                value={edit?.description ?? ""}
+                onChangeText={(value) => updateDraftEdit(index, { description: value })}
+                placeholder="Описание операции"
+                placeholderTextColor={theme.textTertiary}
+              />
+            </View>
+
+            <View>
+              <Text style={styles.inputLabel}>Сумма</Text>
+              <TextInput
+                style={styles.input}
+                value={edit?.amount ?? ""}
+                onChangeText={(value) => updateDraftEdit(index, { amount: value })}
+                placeholder="0,00"
+                placeholderTextColor={theme.textTertiary}
+                keyboardType="decimal-pad"
+              />
+            </View>
+
+            <View>
+              <Text style={styles.inputLabel}>Дата</Text>
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => setDatePickerIndex(index)}
+              >
+                <Text style={styles.dateButtonText}>
+                  {dayjs(draftDate).format("DD.MM.YYYY")}
+                </Text>
+              </TouchableOpacity>
+              {datePickerIndex === index && (
+                <DateTimePicker
+                  value={dayjs(draftDate).toDate()}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={(_, selectedDate) => {
+                    if (Platform.OS !== "ios") {
+                      setDatePickerIndex(null);
+                    }
+                    if (selectedDate) {
+                      updateDraftEdit(index, { date: dayjs(selectedDate).format("YYYY-MM-DD") });
+                    }
+                  }}
+                />
+              )}
+            </View>
 
             <View>
               <Text style={styles.inputLabel}>Категория</Text>
-              <TextInput
-                style={styles.input}
-                value={categoryDrafts[index] ?? ""}
-                onChangeText={(value) => updateCategoryDraft(index, value)}
-                placeholder="Введите или исправьте категорию"
-                placeholderTextColor={theme.textTertiary}
-              />
+              <View style={styles.categoryChips}>
+                {availableCategories.map((category) => {
+                  const isActive = edit?.category === category.name;
+                  return (
+                    <TouchableOpacity
+                      key={category.id}
+                      style={[
+                        styles.categoryChip,
+                        isActive && styles.categoryChipActive,
+                        isActive && { backgroundColor: category.color, borderColor: category.color },
+                      ]}
+                      onPress={() => updateDraftEdit(index, { category: category.name })}
+                    >
+                      <Text style={[styles.categoryChipText, isActive && styles.categoryChipTextActive]}>
+                        {category.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
           </View>
         );

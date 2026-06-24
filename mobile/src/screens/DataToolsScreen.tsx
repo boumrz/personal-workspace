@@ -13,11 +13,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth, useTheme } from "../context";
 import { API_BASE_URL } from "../constants/config";
-import {
-  openExcelExportFlow,
-  openExcelImportFlow,
-  openReceiptImportFlow,
-} from "../services/dataTools";
+import { openReceiptImportFlow } from "../services/dataTools";
 
 type Props = {
   navigation: any;
@@ -26,7 +22,7 @@ type Props = {
 export default function DataToolsScreen({ navigation }: Props) {
   const { token } = useAuth();
   const { theme } = useTheme();
-  const [busy, setBusy] = useState<"export" | "import" | "receiptGallery" | "receiptCamera" | null>(null);
+  const [busy, setBusy] = useState<"receiptGallery" | "receiptCamera" | null>(null);
 
   const ensureToken = () => {
     if (!token) {
@@ -34,46 +30,6 @@ export default function DataToolsScreen({ navigation }: Props) {
       return null;
     }
     return token;
-  };
-
-  const handleExport = async () => {
-    const authToken = ensureToken();
-    if (!authToken) return;
-    setBusy("export");
-    try {
-      await openExcelExportFlow(API_BASE_URL, authToken);
-      if (Platform.OS !== "web") {
-        Alert.alert("Экспорт запущен", "Файл Excel откроется в системном браузере.");
-      }
-    } catch (error: any) {
-      Alert.alert("Не удалось экспортировать", error?.message ?? "Попробуйте еще раз.");
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const handleImport = async () => {
-    const authToken = ensureToken();
-    if (!authToken) return;
-    setBusy("import");
-    try {
-      const preview = await openExcelImportFlow(API_BASE_URL, authToken);
-      if (preview) {
-        navigation.navigate("DataImportReview", {
-          preview,
-          kind: "excel",
-        });
-      } else if (Platform.OS !== "web") {
-        Alert.alert(
-          "Импорт открыт",
-          "Выберите файл в браузере, после загрузки вы вернетесь в приложение."
-        );
-      }
-    } catch (error: any) {
-      Alert.alert("Не удалось импортировать", error?.message ?? "Попробуйте еще раз.");
-    } finally {
-      setBusy(null);
-    }
   };
 
   const handleReceipt = async (source: "gallery" | "camera") => {
@@ -85,7 +41,6 @@ export default function DataToolsScreen({ navigation }: Props) {
       if (preview) {
         navigation.navigate("DataImportReview", {
           preview,
-          kind: "receipt",
         });
       } else if (Platform.OS !== "web") {
         Alert.alert(
@@ -113,56 +68,13 @@ export default function DataToolsScreen({ navigation }: Props) {
         style={styles.hero}
       >
         <View style={styles.heroIcon}>
-          <Ionicons name="layers-outline" size={26} color="#fff" />
+          <Ionicons name="camera-outline" size={26} color="#fff" />
         </View>
-        <Text style={styles.heroTitle}>Инструменты данных</Text>
+        <Text style={styles.heroTitle}>Распознавание чеков</Text>
         <Text style={styles.heroText}>
-          Экспортируйте операции в Excel, импортируйте таблицы и распознавайте
-          чеки без лишних шагов.
+          Загрузите фото чека, проверьте черновик операции и сохраните его в приложение.
         </Text>
       </LinearGradient>
-
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={styles.cardIcon}>
-            <Ionicons name="download-outline" size={20} color={theme.accentMuted} />
-          </View>
-          <View style={styles.cardTextWrap}>
-            <Text style={styles.cardTitle}>Экспорт в Excel</Text>
-            <Text style={styles.cardSubtitle}>
-              Красивый файл с операциями для анализа и архива.
-            </Text>
-          </View>
-        </View>
-        <TouchableOpacity style={styles.primaryButton} onPress={handleExport} disabled={busy !== null}>
-          {busy === "export" ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.primaryButtonText}>Скачать Excel</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={styles.cardIcon}>
-            <Ionicons name="document-text-outline" size={20} color={theme.accentMuted} />
-          </View>
-          <View style={styles.cardTextWrap}>
-            <Text style={styles.cardTitle}>Импорт из Excel</Text>
-            <Text style={styles.cardSubtitle}>
-              Загрузите таблицу и проверьте распознанные строки перед сохранением.
-            </Text>
-          </View>
-        </View>
-        <TouchableOpacity style={styles.secondaryButton} onPress={handleImport} disabled={busy !== null}>
-          {busy === "import" ? (
-            <ActivityIndicator color={theme.accentMuted} />
-          ) : (
-            <Text style={styles.secondaryButtonText}>Выбрать файл</Text>
-          )}
-        </TouchableOpacity>
-      </View>
 
       <View style={styles.card}>
         <View style={styles.cardHeader}>
@@ -172,7 +84,7 @@ export default function DataToolsScreen({ navigation }: Props) {
           <View style={styles.cardTextWrap}>
             <Text style={styles.cardTitle}>Фото чека</Text>
             <Text style={styles.cardSubtitle}>
-              Отправьте снимок чека и проверьте распознанные операции.
+              QR-код и фискальные поля распознаются локально, без LLM.
             </Text>
           </View>
         </View>
@@ -205,8 +117,7 @@ export default function DataToolsScreen({ navigation }: Props) {
       <View style={styles.noteCard}>
         <Ionicons name="information-circle-outline" size={18} color={theme.textSecondary} />
         <Text style={styles.noteText}>
-          На Android импорт и фото-чек открываются через системный браузер, чтобы
-          не требовать отдельного file picker.
+          На Android загрузка фото открывается через системный браузер, чтобы не требовать отдельного file picker.
         </Text>
       </View>
     </ScrollView>
@@ -294,18 +205,6 @@ function useMemoStyles(theme: any) {
           fontSize: 13,
           lineHeight: 18,
           color: theme.textSecondary,
-        },
-        primaryButton: {
-          minHeight: theme.btnHeight,
-          borderRadius: theme.radiusMd,
-          backgroundColor: theme.accentMuted,
-          justifyContent: "center",
-          alignItems: "center",
-        },
-        primaryButtonText: {
-          color: "#fff",
-          fontSize: 15,
-          fontWeight: "700",
         },
         secondaryButton: {
           minHeight: theme.btnHeight,

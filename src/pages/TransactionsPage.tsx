@@ -125,7 +125,7 @@ const TransactionsPage: React.FC = () => {
               <TransactionDataTools
                 activeTab={activeTab}
                 triggerClassName={styles.filterBtn}
-                triggerLabel="Файлы и чеки"
+                triggerLabel="Чеки"
               />
               <Badge
                 count={hasActiveFilters ? selectedCategories.length : 0}

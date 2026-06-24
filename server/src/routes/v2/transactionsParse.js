@@ -5,11 +5,7 @@ import config from "../../config/config.js";
 import { authenticateToken } from "../../middleware/auth.js";
 import { parseTransactionsFromSpeech } from "../../services/transactionSpeechParser.js";
 import { parseMultipartForm } from "../../services/multipartFormParser.js";
-import {
-  buildExcelWorkbookXlsx,
-  buildImportPreview,
-  buildReceiptPreview,
-} from "../../services/transactionsDataTools.js";
+import { buildReceiptPreview } from "../../services/transactionsDataTools.js";
 
 const router = express.Router();
 
@@ -98,12 +94,6 @@ function sanitizeDateValue(value) {
   )}`;
 }
 
-function normalizeScope(rawScope) {
-  const scope = String(rawScope || "all").trim().toLowerCase();
-  if (scope === "actual" || scope === "planned" || scope === "all") return scope;
-  return null;
-}
-
 async function loadUserCategories(userId) {
   const categoriesResult = await pool.query(
     "SELECT id, name, color, icon, type FROM categories WHERE user_id = $1 ORDER BY id ASC",
@@ -116,90 +106,6 @@ async function loadUserCategories(userId) {
     icon: row.icon,
     type: row.type || (row.name === "Зарплата" ? "income" : row.name === "Другое" ? "both" : "expense"),
   }));
-}
-
-async function loadTransactionsForExport(userId, scope) {
-  const result = [];
-  if (scope === "all" || scope === "actual") {
-    const transactionsResult = await pool.query(
-      `
-      SELECT
-        t.id,
-        t.type,
-        t.amount,
-        t.description,
-        t.date,
-        c.id AS category_id,
-        c.name AS category_name,
-        c.color AS category_color,
-        c.icon AS category_icon,
-        c.type AS category_type
-      FROM transactions t
-      JOIN categories c ON c.id = t.category_id
-      WHERE t.user_id = $1
-      ORDER BY t.date DESC, t.created_at DESC
-    `,
-      [userId]
-    );
-
-    result.push(
-      ...transactionsResult.rows.map((row) => ({
-        mode: "actual",
-        type: row.type === "income" ? "income" : "expense",
-        amount: Number(row.amount) || 0,
-        description: row.description || "",
-        date: sanitizeDateValue(row.date) || "",
-        category: {
-          id: String(row.category_id),
-          name: row.category_name || "",
-          color: row.category_color || "",
-          icon: row.category_icon || "",
-          type: row.category_type || (row.category_name === "Зарплата" ? "income" : row.category_name === "Другое" ? "both" : "expense"),
-        },
-      }))
-    );
-  }
-
-  if (scope === "all" || scope === "planned") {
-    const plannedResult = await pool.query(
-      `
-      SELECT
-        pe.id,
-        pe.amount,
-        pe.description,
-        pe.date,
-        c.id AS category_id,
-        c.name AS category_name,
-        c.color AS category_color,
-        c.icon AS category_icon,
-        c.type AS category_type
-      FROM planned_expenses pe
-      JOIN categories c ON c.id = pe.category_id
-      WHERE pe.user_id = $1
-      ORDER BY pe.date DESC, pe.created_at DESC
-    `,
-      [userId]
-    );
-
-    result.push(
-      ...plannedResult.rows.map((row) => ({
-        mode: "planned",
-        type: "expense",
-        amount: Number(row.amount) || 0,
-        description: row.description || "",
-        date: sanitizeDateValue(row.date) || "",
-        category: {
-          id: String(row.category_id),
-          name: row.category_name || "",
-          color: row.category_color || "",
-          icon: row.category_icon || "",
-          type: row.category_type || (row.category_name === "Другое" ? "both" : "expense"),
-        },
-      }))
-    );
-  }
-
-  return result;
 }
 
 router.use(authenticateToken);
@@ -235,69 +141,6 @@ router.get(
           : null,
       },
     });
-  })
-);
-
-router.all(
-  "/export",
-  asyncHandler(async (req, res) => {
-    const scope = normalizeScope(req.method === "GET" ? req.query?.scope : req.body?.scope);
-    if (!scope) {
-      return res.status(400).json({ error: "Field 'scope' must be one of: all, actual, planned." });
-    }
-
-    const userId = req.user.userId;
-    const transactions = await loadTransactionsForExport(userId, scope);
-    const workbook = buildExcelWorkbookXlsx({
-      transactions,
-      scopeLabel: scope,
-    });
-    const stamp = new Date().toISOString().slice(0, 10);
-    const filename = `finance-assistant-${scope}-${stamp}.xlsx`;
-
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-    res.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
-    res.status(200).send(workbook);
-  })
-);
-
-router.post(
-  "/import",
-  asyncHandler(async (req, res) => {
-    try {
-      const { fields, files } = await parseMultipartForm(req, {
-        maxBytes: MAX_IMPORT_FILE_BYTES,
-      });
-      const file = files.file;
-      if (!file) {
-        return res.status(400).json({ error: "Field 'file' is required for import." });
-      }
-
-      const targetMode = String(fields.targetMode || "actual").toLowerCase() === "planned" ? "planned" : "actual";
-      const timezone =
-        typeof fields.timezone === "string" && SAFE_TIMEZONE_PATTERN.test(fields.timezone.trim())
-          ? fields.timezone.trim()
-          : "Europe/Moscow";
-      const categories = await loadUserCategories(req.user.userId);
-      const preview = await buildImportPreview({
-        file,
-        targetMode,
-        categories,
-        timezone,
-      });
-
-      res.json({
-        items: preview.drafts,
-        warnings: preview.warnings,
-        confidence: preview.drafts.length > 0 ? 0.74 : 0.2,
-        unparsedText: "",
-        preview,
-      });
-    } catch (error) {
-      const statusCode = Number(error?.statusCode) || 400;
-      return res.status(statusCode).json({ error: String(error?.message || "Import parsing failed.") });
-    }
   })
 );
 

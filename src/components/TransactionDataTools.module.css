@@ -337,6 +337,32 @@
   margin-top: 12px;
 }
 
+.draftFields {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.draftField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.draftFieldLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.draftAmountInput,
+.draftDatePicker,
+.draftCategorySelect {
+  width: 100%;
+}
+
 @media (max-width: 768px) {
   .fileActionsGrid {
     grid-template-columns: 1fr;
