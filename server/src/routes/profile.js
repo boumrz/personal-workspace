@@ -9,6 +9,7 @@ import { authenticateToken } from "../middleware/auth.js";
 const saltRounds = 10;
 
 const router = express.Router();
+const VK_USER_INFO_TIMEOUT_MS = 10000;
 
 function verifyTelegramAuth(authData, botToken) {
   const { hash, ...data } = authData;
@@ -42,10 +43,13 @@ async function fetchVkUserInfo(appId, accessToken) {
 
   let lastError = null;
   for (const endpoint of endpoints) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), VK_USER_INFO_TIMEOUT_MS);
     try {
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        signal: controller.signal,
         body: new URLSearchParams({
           client_id: appId,
           access_token: accessToken,
@@ -64,7 +68,12 @@ async function fetchVkUserInfo(appId, accessToken) {
         `HTTP ${response.status}`;
       lastError = `${endpoint}: ${providerError}`;
     } catch (error) {
-      lastError = `${endpoint}: ${error.message || "network error"}`;
+      lastError =
+        error?.name === "AbortError"
+          ? `${endpoint}: timeout after ${VK_USER_INFO_TIMEOUT_MS}ms`
+          : `${endpoint}: ${error.message || "network error"}`;
+    } finally {
+      clearTimeout(timeout);
     }
   }
 
@@ -373,6 +382,11 @@ router.post(
 
     let vkUser = null;
     let vkError = null;
+
+    console.info("[profile/link/vkid] verifying VK token", {
+      requestedAppId,
+      appIdsTried: appIdsToTry,
+    });
 
     for (const appId of appIdsToTry) {
       const result = await fetchVkUserInfo(appId, accessToken);
