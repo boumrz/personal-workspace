@@ -1,8 +1,10 @@
 import { Alert, Linking, Platform } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import * as WebBrowser from "expo-web-browser";
 import { Buffer } from "buffer";
 import type { TransactionImportPreview } from "@finance-assistant/shared";
 import { APP_DEEP_LINK_SCHEME, DATA_TOOL_ENDPOINTS } from "../constants/config";
+import { createReceiptImportFlow, type ReceiptImportSource } from "./receiptImport";
 
 type OpenNativeToolArgs = {
   title: string;
@@ -71,10 +73,6 @@ export function parseImportDeepLink(url: string) {
   } catch {
     return null;
   }
-}
-
-function buildSuccessCallbackUrl(payload: string) {
-  return `${APP_DEEP_LINK_SCHEME}://import?payload=${encodeURIComponent(payload)}`;
 }
 
 function buildUploadPageHtml({
@@ -266,7 +264,7 @@ async function openNativeToolPage({ title, body }: OpenNativeToolArgs) {
   }
 }
 
-export async function openReceiptImportFlow(apiBaseUrl: string, token: string, source: "gallery" | "camera" = "gallery") {
+export async function openReceiptImportFlow(apiBaseUrl: string, token: string, source: ReceiptImportSource = "gallery") {
   if (Platform.OS === "web") {
     return new Promise<TransactionImportPreview | null>((resolve, reject) => {
       const input = document.createElement("input");
@@ -303,6 +301,24 @@ export async function openReceiptImportFlow(apiBaseUrl: string, token: string, s
     });
   }
 
+  const flow = createReceiptImportFlow({
+    platformOS: Platform.OS,
+    imagePicker: ImagePicker,
+    openBrowserBridge: async (args) => openReceiptBrowserBridge(args),
+  });
+
+  return flow.openReceiptImportFlow(apiBaseUrl, token, source);
+}
+
+async function openReceiptBrowserBridge({
+  apiBaseUrl,
+  token,
+  source,
+}: {
+  apiBaseUrl: string;
+  token: string;
+  source: ReceiptImportSource;
+}) {
   await openNativeToolPage({
     title: "Фото чека",
     body: buildUploadPageHtml({

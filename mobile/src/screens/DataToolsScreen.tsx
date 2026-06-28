@@ -42,7 +42,7 @@ export default function DataToolsScreen({ navigation }: Props) {
         navigation.navigate("DataImportReview", {
           preview,
         });
-      } else if (Platform.OS !== "web") {
+      } else if (Platform.OS !== "web" && Platform.OS !== "android") {
         Alert.alert(
           "Фото чека",
           source === "camera"
@@ -117,7 +117,7 @@ export default function DataToolsScreen({ navigation }: Props) {
       <View style={styles.noteCard}>
         <Ionicons name="information-circle-outline" size={18} color={theme.textSecondary} />
         <Text style={styles.noteText}>
-          На Android загрузка фото открывается через системный браузер, чтобы не требовать отдельного file picker.
+          На Android фото выбирается или снимается прямо в приложении и отправляется в тот же анализ чека, что и веб-версия.
         </Text>
       </View>
     </ScrollView>
