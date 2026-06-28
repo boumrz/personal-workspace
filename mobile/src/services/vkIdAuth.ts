@@ -4,6 +4,8 @@ WebBrowser.maybeCompleteAuthSession();
 
 const VK_AUTHORIZATION_ENDPOINT = "https://id.vk.ru/authorize";
 const VK_TOKEN_ENDPOINT = "https://id.vk.ru/oauth2/auth";
+const VK_AUTH_SESSION_TIMEOUT_MS = 60000;
+const VK_TOKEN_EXCHANGE_TIMEOUT_MS = 20000;
 
 type NativeVkLogin = (() => Promise<string>) | undefined;
 
@@ -25,6 +27,17 @@ interface VkTokenResponse {
   access_token?: string;
   error?: string;
   error_description?: string;
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timeoutId) clearTimeout(timeoutId);
+  });
 }
 
 export function isVkCertificatePinningError(error: unknown): boolean {
@@ -56,6 +69,8 @@ async function exchangeVkCodeForToken({
   redirectUri,
   state,
 }: ExchangeVkCodeParams): Promise<string> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), VK_TOKEN_EXCHANGE_TIMEOUT_MS);
   const query = new URLSearchParams({
     grant_type: "authorization_code",
     redirect_uri: redirectUri,
@@ -65,12 +80,24 @@ async function exchangeVkCodeForToken({
     device_id: deviceId,
   });
 
-  const response = await fetch(`${VK_TOKEN_ENDPOINT}?${query.toString()}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ code }).toString(),
-  });
-  const payload = (await response.json().catch(() => null)) as VkTokenResponse | null;
+  let response: Response;
+  let payload: VkTokenResponse | null;
+  try {
+    response = await fetch(`${VK_TOKEN_ENDPOINT}?${query.toString()}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      signal: controller.signal,
+      body: new URLSearchParams({ code }).toString(),
+    });
+    payload = (await response.json().catch(() => null)) as VkTokenResponse | null;
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("VK ID не ответил при обмене кода на токен. Попробуйте ещё раз.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (response.ok && payload?.access_token) {
     return payload.access_token;
@@ -97,7 +124,11 @@ async function loginWithVkIdBrowser(appId: string): Promise<string> {
   const authUrl = await request.makeAuthUrlAsync({
     authorizationEndpoint: VK_AUTHORIZATION_ENDPOINT,
   });
-  const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+  const result = await withTimeout(
+    WebBrowser.openAuthSessionAsync(authUrl, redirectUri),
+    VK_AUTH_SESSION_TIMEOUT_MS,
+    `VK ID не вернул управление в приложение. Проверьте redirect URI ${redirectUri} в настройках VK ID.`,
+  );
 
   if (result.type !== "success") {
     throw new Error(
@@ -132,7 +163,11 @@ export async function getVkIdAccessToken({
 }: GetVkIdAccessTokenParams): Promise<string> {
   if (nativeLogin) {
     try {
-      return await nativeLogin();
+      return await withTimeout(
+        nativeLogin(),
+        VK_AUTH_SESSION_TIMEOUT_MS,
+        "VK ID не вернул управление в приложение. Попробуйте ещё раз.",
+      );
     } catch (error) {
       if (!isVkCertificatePinningError(error)) {
         throw error;
