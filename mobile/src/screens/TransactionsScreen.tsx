@@ -159,6 +159,7 @@ export default function TransactionsScreen({ navigation }: any) {
     searchContainer: { flexDirection: "row", marginHorizontal: 16, marginBottom: 12, gap: 12 },
     searchInput: { flex: 1, height: 48, backgroundColor: theme.bgCard, borderRadius: theme.radiusXl, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, fontSize: 15, color: theme.textPrimary, paddingVertical: 12 },
     searchBtn: { width: 48, height: 48, backgroundColor: theme.bgCard, borderRadius: theme.radiusXl, borderWidth: 1, borderColor: theme.border, justifyContent: "center", alignItems: "center" },
+    scanBtn: { width: 48, height: 48, backgroundColor: theme.accentMutedLight, borderRadius: theme.radiusXl, borderWidth: 1, borderColor: theme.accentMuted, justifyContent: "center", alignItems: "center" },
     filterBtn: { width: 48, height: 48, backgroundColor: theme.bgCard, borderRadius: theme.radiusXl, borderWidth: 1, borderColor: theme.border, justifyContent: "center", alignItems: "center", position: "relative" },
     filterBadge: { position: "absolute", top: 6, right: 6, width: 18, height: 18, borderRadius: 9, backgroundColor: theme.accent, justifyContent: "center", alignItems: "center" },
     filterBadgeText: { fontSize: 10, fontWeight: "600", color: "#fff" },
@@ -254,6 +255,14 @@ export default function TransactionsScreen({ navigation }: any) {
       <View style={styles.searchContainer}>
         <TextInput style={styles.searchInput} placeholder="Поиск по описанию" placeholderTextColor={theme.textTertiary} value={searchQuery} onChangeText={setSearchQuery} numberOfLines={1} />
         <TouchableOpacity style={styles.searchBtn}><Ionicons name="search" size={18} color={theme.textPrimary} /></TouchableOpacity>
+        <TouchableOpacity
+          style={styles.scanBtn}
+          onPress={() => navigation.navigate("DataTools")}
+          accessibilityRole="button"
+          accessibilityLabel="Scan receipt"
+        >
+          <Ionicons name="receipt-outline" size={20} color={theme.accentMuted} />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.filterBtn} onPress={openFilter}>
           <Ionicons name="funnel-outline" size={18} color={theme.textPrimary} />
           {filterCount > 0 && <View style={styles.filterBadge}><Text style={styles.filterBadgeText}>{filterCount}</Text></View>}

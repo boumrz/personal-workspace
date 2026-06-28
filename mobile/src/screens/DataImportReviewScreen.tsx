@@ -218,7 +218,11 @@ export default function DataImportReviewScreen({ route, navigation }: Props) {
       }
 
       emitRefresh("transactions");
-      navigation.goBack();
+      if (typeof navigation.popToTop === "function") {
+        navigation.popToTop();
+      } else {
+        navigation.goBack();
+      }
       navigateToOperations();
       Alert.alert(
         "Импорт завершен",

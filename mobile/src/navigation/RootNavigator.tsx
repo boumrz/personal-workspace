@@ -48,7 +48,7 @@ export default function RootNavigator() {
         (navigationRef as any).navigate(
           "Main",
           {
-            screen: "Profile",
+            screen: "Operations",
             params: {
               screen: "DataImportReview",
               params: {
@@ -81,7 +81,7 @@ export default function RootNavigator() {
     (navigationRef as any).navigate(
       "Main",
       {
-        screen: "Profile",
+        screen: "Operations",
         params: {
           screen: "DataImportReview",
           params: {

@@ -1,0 +1,10 @@
+schema: spec-driven
+status: active
+created: 2026-06-28
+owners:
+  - specification-agent
+  - mobile-agent
+  - shared-contract-agent
+  - autotest-agent
+  - qa-agent
+summary: Make Android receipt scanning discoverable from operations and recover VK ID login callback handling.

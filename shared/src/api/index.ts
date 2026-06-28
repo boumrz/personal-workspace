@@ -39,6 +39,7 @@ export interface VkIdLinkRequest {
 export interface ApiClientOptions {
   baseUrl?: string;
   getToken: GetTokenFn;
+  requestTimeoutMs?: number;
   /** Для обновления access по 401/403. Если не задан, при 401/403 вызывается только onSessionExpired */
   getRefreshToken?: () => string | null | Promise<string | null>;
   /** Вызывается после успешного refresh; нужно сохранить новые токены */
@@ -54,6 +55,7 @@ export class ApiClient {
   private onTokensRefreshed?: ApiClientOptions["onTokensRefreshed"];
   private onSessionExpired?: ApiClientOptions["onSessionExpired"];
   private refreshPromise: Promise<RefreshResponse | null> | null = null;
+  private requestTimeoutMs: number;
 
   constructor(options: ApiClientOptions) {
     this.getToken = options.getToken;
@@ -61,6 +63,7 @@ export class ApiClient {
     this.getRefreshToken = options.getRefreshToken;
     this.onTokensRefreshed = options.onTokensRefreshed;
     this.onSessionExpired = options.onSessionExpired;
+    this.requestTimeoutMs = options.requestTimeoutMs ?? 30000;
   }
 
   private async resolveToken(): Promise<string | null> {
@@ -103,6 +106,29 @@ export class ApiClient {
     return this.refreshPromise;
   }
 
+  private async fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+    if (
+      this.requestTimeoutMs <= 0 ||
+      typeof AbortController === "undefined" ||
+      init.signal
+    ) {
+      return fetch(url, init);
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.requestTimeoutMs);
+    try {
+      return await fetch(url, { ...init, signal: controller.signal });
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error("Сервер не ответил вовремя. Проверьте подключение и попробуйте снова.");
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
   private async request<T>(endpoint: string, options?: RequestInit, isRetry = false): Promise<T> {
     const token = await this.resolveToken();
     const headers: Record<string, string> = {
@@ -118,7 +144,7 @@ export class ApiClient {
     }
     let response: Response;
     try {
-      response = await fetch(url, { ...options, headers });
+      response = await this.fetchWithTimeout(url, { ...options, headers });
     } catch (err: any) {
       if (typeof __DEV__ !== "undefined" && __DEV__) {
         console.warn("[API] Network error:", url, err?.message ?? err);

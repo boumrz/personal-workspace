@@ -8,6 +8,8 @@ const TransactionsScreen = lazy(() => import("../screens/TransactionsScreen"));
 const AddTransactionScreen = lazy(() => import("../screens/AddTransactionScreen"));
 const CategoryFilterScreen = lazy(() => import("../screens/CategoryFilterScreen"));
 const AddCategoryScreen = lazy(() => import("../screens/AddCategoryScreen"));
+const DataToolsScreen = lazy(() => import("../screens/DataToolsScreen"));
+const DataImportReviewScreen = lazy(() => import("../screens/DataImportReviewScreen"));
 
 function Fallback() {
   const { theme } = useTheme();
@@ -59,6 +61,16 @@ export default function OperationsStack() {
         name="AddCategory"
         component={withSuspense(AddCategoryScreen)}
         options={{ title: "Новая категория" }}
+      />
+      <Stack.Screen
+        name="DataTools"
+        component={withSuspense(DataToolsScreen)}
+        options={{ title: "Файлы и чеки" }}
+      />
+      <Stack.Screen
+        name="DataImportReview"
+        component={withSuspense(DataImportReviewScreen)}
+        options={{ title: "Проверка импорта" }}
       />
     </Stack.Navigator>
   );

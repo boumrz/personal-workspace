@@ -1,13 +1,20 @@
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
+import { VK_ID_REDIRECT_SCHEME } from "../constants/config";
+import {
+  buildVkRedirectUri,
+  getVkIdAccessTokenCore,
+  isVkCertificatePinningError,
+  withTimeout,
+  type NativeVkLogin,
+} from "./vkIdAuthCore";
 WebBrowser.maybeCompleteAuthSession();
 
 const VK_AUTHORIZATION_ENDPOINT = "https://id.vk.ru/authorize";
 const VK_TOKEN_ENDPOINT = "https://id.vk.ru/oauth2/auth";
 const VK_AUTH_SESSION_TIMEOUT_MS = 60000;
+const VK_NATIVE_AUTH_TIMEOUT_MS = 20000;
 const VK_TOKEN_EXCHANGE_TIMEOUT_MS = 20000;
-
-type NativeVkLogin = (() => Promise<string>) | undefined;
 
 interface GetVkIdAccessTokenParams {
   appId: string;
@@ -29,27 +36,8 @@ interface VkTokenResponse {
   error_description?: string;
 }
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  const timeout = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
-  });
+export { isVkCertificatePinningError };
 
-  return Promise.race([promise, timeout]).finally(() => {
-    if (timeoutId) clearTimeout(timeoutId);
-  });
-}
-
-export function isVkCertificatePinningError(error: unknown): boolean {
-  const message =
-    error instanceof Error
-      ? error.message
-      : typeof error === "string"
-        ? error
-        : "";
-
-  return /certificate pinning|pinning failure/i.test(message);
-}
 
 function readUrlParam(url: string, key: string): string | null {
   const query = url.includes("?") ? url.slice(url.indexOf("?") + 1) : "";
@@ -57,8 +45,8 @@ function readUrlParam(url: string, key: string): string | null {
   return params.get(key);
 }
 
-function getVkRedirectUri(appId: string): string {
-  return `vk${appId}://vk.ru/blank.html`;
+function getVkRedirectUri(): string {
+  return buildVkRedirectUri(VK_ID_REDIRECT_SCHEME);
 }
 
 async function exchangeVkCodeForToken({
@@ -111,7 +99,7 @@ async function exchangeVkCodeForToken({
 }
 
 async function loginWithVkIdBrowser(appId: string): Promise<string> {
-  const redirectUri = getVkRedirectUri(appId);
+  const redirectUri = getVkRedirectUri();
   const request = new AuthSession.AuthRequest({
     clientId: appId,
     redirectUri,
@@ -161,19 +149,13 @@ export async function getVkIdAccessToken({
   appId,
   nativeLogin,
 }: GetVkIdAccessTokenParams): Promise<string> {
-  if (nativeLogin) {
-    try {
-      return await withTimeout(
-        nativeLogin(),
-        VK_AUTH_SESSION_TIMEOUT_MS,
-        "VK ID не вернул управление в приложение. Попробуйте ещё раз.",
-      );
-    } catch (error) {
-      if (!isVkCertificatePinningError(error)) {
-        throw error;
-      }
-    }
-  }
-
-  return loginWithVkIdBrowser(appId);
+  return getVkIdAccessTokenCore({
+    appId,
+    nativeLogin,
+    browserLogin: loginWithVkIdBrowser,
+    nativeTimeoutMs: VK_NATIVE_AUTH_TIMEOUT_MS,
+    logger: (event, payload) => {
+      console.info(`[vkid] ${event}`, payload ?? {});
+    },
+  });
 }
