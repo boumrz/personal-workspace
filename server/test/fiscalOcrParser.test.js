@@ -51,16 +51,61 @@ test("parseFiscalOcrText builds an expense draft from printed fiscal fields", ()
   assert.match(parsed.warnings.join("\n"), /OCR/);
 });
 
-test("parseFiscalOcrText rejects incomplete OCR text instead of fabricating a draft", () => {
+test("parseFiscalOcrText returns a partial draft when amount is visible but fiscal fields are incomplete", () => {
   const parsed = parseFiscalOcrText("ИТОГ 300.00\nФН 7382440300255976\n22.06.26 10:50");
 
-  assert.equal(parsed.ok, false);
-  assert.equal(parsed.code, "receipt_ocr_not_found");
-  assert.match(parsed.error, /фискальные реквизиты/i);
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.item.type, "expense");
+  assert.equal(parsed.item.amount, 300);
+  assert.equal(parsed.item.date, "2026-06-22");
+  assert.equal(parsed.item.description, "Чек ФН 7382440300255976");
+  assert.equal(parsed.confidence, 0.56);
+  assert.equal(parsed.receiptMeta.source, "ocr_partial");
+  assert.deepEqual(parsed.receiptMeta.missingFiscalFields, [
+    "fiscalDocumentNumber",
+    "fiscalSign",
+    "operationType",
+  ]);
+  assert.match(parsed.warnings.join("\n"), /Проверьте черновик/i);
 });
 
-test("parseFiscalOcrText rejects invalid printed operation dates", () => {
+test("parseFiscalOcrText keeps a partial draft when only the printed operation date is invalid", () => {
   const parsed = parseFiscalOcrText(POLZA_OCR_TEXT.replace("22.06.26 10:50", "32.13.26 10:50"));
+
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.item.amount, 300);
+  assert.equal(parsed.item.date, undefined);
+  assert.equal(parsed.receiptMeta.source, "ocr_partial");
+  assert.deepEqual(parsed.receiptMeta.missingFiscalFields, ["operationDateTime"]);
+});
+
+test("parseFiscalOcrText extracts an amount printed on the line after the total label", () => {
+  const parsed = parseFiscalOcrText(`
+    КАССОВЫЙ ЧЕК
+    ИТОГ
+    390,00
+  `);
+
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.item.amount, 390);
+  assert.equal(parsed.item.description, "Чек по фото");
+  assert.equal(parsed.receiptMeta.source, "ocr_partial");
+  assert.ok(parsed.receiptMeta.missingFiscalFields.includes("fiscalDriveNumber"));
+});
+
+test("parseFiscalOcrText extracts integer totals from labeled OCR lines", () => {
+  const parsed = parseFiscalOcrText(`
+    КАССОВЫЙ ЧЕК
+    ОПЛАТА КАРТОЙ 390
+  `);
+
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.item.amount, 390);
+  assert.equal(parsed.receiptMeta.source, "ocr_partial");
+});
+
+test("parseFiscalOcrText still rejects OCR text without an image-derived amount", () => {
+  const parsed = parseFiscalOcrText("ФН 7382440300255976\nФД 5201\nФП 1424567415");
 
   assert.equal(parsed.ok, false);
   assert.equal(parsed.code, "receipt_ocr_not_found");

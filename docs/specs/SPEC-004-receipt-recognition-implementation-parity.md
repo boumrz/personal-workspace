@@ -54,8 +54,10 @@ Authoritative files:
 - OCR fiscal-field parsing for amount, operation date/time, fiscal drive
   number, fiscal document number, fiscal sign, operation type, and product
   line items when readable.
+- Partial OCR review drafts when the receipt amount is extracted from image
+  text but one or more fiscal fields are missing.
 - Backend rejection instead of draft fabrication when QR/OCR cannot provide
-  required image-derived fields.
+  an image-derived amount.
 - Web gallery upload and camera capture file inputs.
 - Web auto-analysis immediately after file selection/capture.
 - Web retry button only after a failed parse.
@@ -119,9 +121,16 @@ Response includes both the legacy direct shape and mobile-friendly preview:
 
 - QR success returns `receiptMeta.source = "qr"` and bypasses OCR.
 - QR not found or unreadable may continue to OCR.
+- QR decoder timeout may continue to OCR because it is a recoverable helper
+  timeout, not decoded fiscal data.
 - QR decoded but invalid fails with `receipt_qr_invalid`.
 - OCR success returns `receiptMeta.source = "ocr"` and includes a warning that
   QR was not read.
+- OCR partial success returns `receiptMeta.source = "ocr_partial"` when amount
+  is visible but fiscal fields are incomplete. It must include warnings and
+  `receiptMeta.missingFiscalFields`; the draft is for user review only.
+- OCR runtime failure returns `receipt_ocr_unavailable` with HTTP 503 and must
+  not be masked as a generic content parsing failure.
 - OCR failure returns an actionable error such as `receipt_ocr_not_found`.
 - Numeric filenames must not affect amount/date/type.
 - Web and Android must show a draft for user review before saving anything.

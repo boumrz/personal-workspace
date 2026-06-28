@@ -1,5 +1,6 @@
 ﻿import test from "node:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,6 +17,14 @@ const { buildReceiptPreview } = await import("../src/services/transactionsDataTo
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const originalQuery = pool.query.bind(pool);
+const tesseractLanguages = spawnSync("tesseract", ["--list-langs"], {
+  encoding: "utf8",
+  windowsHide: true,
+});
+const hasTesseractOcrRuntime =
+  tesseractLanguages.status === 0 &&
+  /\brus\b/i.test(tesseractLanguages.stdout || "") &&
+  /\beng\b/i.test(tesseractLanguages.stdout || "");
 const SAMPLE_QR_PAYLOAD =
   "t=20171218T1312&s=390.00&fn=8710000100983019&i=3647700053&fp=13513&n=1";
 const SAMPLE_QR_RECEIPT_PNG = Buffer.from(
@@ -258,7 +267,13 @@ test("POST /api/v2/transactions/receipt/parse decodes a QR image into a draft", 
 });
 
 for (const fixture of REAL_RECEIPT_FIXTURES) {
-  test(`POST /api/v2/transactions/receipt/parse decodes real receipt fixture ${fixture.filename}`, { concurrency: false }, async () => {
+  test(`POST /api/v2/transactions/receipt/parse decodes real receipt fixture ${fixture.filename}`, {
+    concurrency: false,
+    skip:
+      fixture.expected.source === "ocr" && !hasTesseractOcrRuntime
+        ? "Tesseract rus/eng runtime is not installed locally."
+        : false,
+  }, async () => {
     const token = buildAccessToken();
     const image = readFileSync(path.join(__dirname, "fixtures", "receipts", fixture.filename));
     const response = await request(app)
@@ -324,6 +339,63 @@ test("buildReceiptPreview builds a QR preview without calling an LLM parser", { 
   assert.equal(preview.drafts.length, 1);
   assert.equal(preview.drafts[0].amount, 390);
   assert.equal(preview.receiptMeta?.source, "qr");
+});
+
+test("buildReceiptPreview falls back to OCR after a QR decoder timeout", { concurrency: false }, async () => {
+  let ocrCalls = 0;
+  const timeoutError = new Error("QR decoder timed out.");
+  timeoutError.statusCode = 503;
+  timeoutError.code = "receipt_qr_decoder_unavailable";
+
+  const preview = await buildReceiptPreview({
+    imageFile: {
+      filename: "receipt.png",
+      mimeType: "image/png",
+      buffer: Buffer.from("fake-image"),
+    },
+    qrDecoder: async () => {
+      throw timeoutError;
+    },
+    ocrReader: async () => {
+      ocrCalls += 1;
+      return {
+        text: "КАССОВЫЙ ЧЕК\nИТОГ\n390.00",
+        engine: "tesseract",
+      };
+    },
+  });
+
+  assert.equal(ocrCalls, 1);
+  assert.equal(preview.drafts.length, 1);
+  assert.equal(preview.drafts[0].amount, 390);
+  assert.equal(preview.receiptMeta?.source, "ocr_partial");
+  assert.match(preview.warnings.join("\n"), /Проверьте черновик/i);
+});
+
+test("buildReceiptPreview surfaces OCR runtime failures as unavailable", { concurrency: false }, async () => {
+  await assert.rejects(
+    () =>
+      buildReceiptPreview({
+        imageFile: {
+          filename: "receipt.png",
+          mimeType: "image/png",
+          buffer: Buffer.from("fake-image"),
+        },
+        qrDecoder: async () => null,
+        ocrReader: async () => {
+          const error = new Error("Tesseract binary is not available.");
+          error.statusCode = 503;
+          error.code = "receipt_ocr_unavailable";
+          throw error;
+        },
+      }),
+    (error) => {
+      assert.equal(error.statusCode, 503);
+      assert.equal(error.code, "receipt_ocr_unavailable");
+      assert.match(String(error.message || ""), /Tesseract/i);
+      return true;
+    }
+  );
 });
 
 test("receipt parser does not infer amount from numeric filename", { concurrency: false }, async () => {

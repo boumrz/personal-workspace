@@ -12,14 +12,14 @@ export interface ParsedTransactionDraft {
 }
 
 export interface ReceiptMeta {
-  source: "qr" | "ocr";
+  source: "qr" | "ocr" | "ocr_partial";
   qrPayload?: string;
   ocrEngine?: string;
-  fiscalDriveNumber: string;
-  fiscalDocumentNumber: string;
-  fiscalSign: string;
-  operationType: string;
-  operationDateTime: string;
+  fiscalDriveNumber?: string;
+  fiscalDocumentNumber?: string;
+  fiscalSign?: string;
+  operationType?: string;
+  operationDateTime?: string;
   amount: number;
   lineItems?: Array<{
     name: string;
@@ -27,6 +27,7 @@ export interface ReceiptMeta {
     unitPrice?: number;
     lineTotal: number;
   }>;
+  missingFiscalFields?: string[];
 }
 
 export interface ParsedTransactionsResponse {

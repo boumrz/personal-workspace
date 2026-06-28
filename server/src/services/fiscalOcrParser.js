@@ -2,6 +2,7 @@ const OCR_NOT_FOUND_ERROR =
   "QR-код не прочитан, а OCR не смог извлечь фискальные реквизиты. Сфотографируйте нижнюю часть чека крупнее или введите операцию вручную.";
 
 const OCR_CONFIDENCE = 0.72;
+const OCR_PARTIAL_CONFIDENCE = 0.56;
 
 const PRODUCT_LINE_PATTERN =
   /(\d+[.,]\d{3}|\d+)\s*(?:шт\.?|ш\.|wi\.?)\s*[xх×*]\s*(\d+[.,]\d{2})\s*=\s*(\d{1,7}(?:[.,]\d{2})?)/i;
@@ -91,11 +92,30 @@ function amountsRoughlyEqual(left, right) {
   return Math.abs(left - right) < 0.01;
 }
 
+function isItogLine(line) {
+  return /ит[о0u]г|иго|итoг/i.test(String(line || "").toLowerCase());
+}
+
+function isPaymentTotalLine(line) {
+  return /безнал|налич|карт|оплат|сумм.*без\s*ндс/i.test(String(line || "").toLowerCase());
+}
+
+function adjacentTotalBoost(lines, index) {
+  const previousLine = lines[index - 1] || "";
+  const nextLine = lines[index + 1] || "";
+
+  if (isItogLine(previousLine)) return 95;
+  if (isPaymentTotalLine(previousLine)) return 70;
+  if (isItogLine(nextLine)) return 35;
+  if (isPaymentTotalLine(nextLine)) return 25;
+  return 0;
+}
+
 function amountLineScore(line) {
   const normalized = line.toLowerCase();
   let score = 0;
-  if (/ит[о0u]г|иго|итoг/.test(normalized)) score += 100;
-  if (/безнал|налич|карт|оплат/.test(normalized)) score += 70;
+  if (isItogLine(normalized)) score += 100;
+  if (isPaymentTotalLine(normalized)) score += 70;
   if (/сумм.*без\s*ндс/.test(normalized)) score += 65;
   if (line.includes("=")) score += 40;
   if (PRODUCT_LINE_PATTERN.test(line)) score += 55;
@@ -108,8 +128,9 @@ function extractAmountCandidates(lines) {
   const candidates = [];
   lines.forEach((line, index) => {
     const normalized = line.toLowerCase();
-    const isItog = /ит[о0u]г|иго|итoг/.test(normalized);
-    const isPaymentTotal = /безнал|налич|карт|оплат|сумм.*без\s*ндс/.test(normalized);
+    const previousLine = lines[index - 1] || "";
+    const isItog = isItogLine(normalized) || isItogLine(previousLine);
+    const isPaymentTotal = isPaymentTotalLine(normalized) || isPaymentTotalLine(previousLine);
     const isProductLine = PRODUCT_LINE_PATTERN.test(line);
     const dateLikeLine = /\b\d{1,2}[.\-/]\d{1,2}[.\-/]\d{2,4}\s+\d{1,2}[:.]\d{2}\b/.test(
       normalizeDigitText(line)
@@ -117,6 +138,10 @@ function extractAmountCandidates(lines) {
     const tokens =
       line.match(/[0-9OoОоQDUuIl|!iЗзSsбБ]{1,7}[\s.,]+[0-9OoОоQDUuIl|!iЗзSsбБ]{1,2}(?![0-9OoОоQDUuIl|!iЗзSsбБ])/g) ||
       [];
+    if ((isItog || isPaymentTotal) && !FISCAL_OR_ADDRESS_PATTERN.test(line)) {
+      const integerTokens = line.match(/[0-9OoОоQDUuIl|!iЗзSsбБ]{1,7}/g) || [];
+      tokens.push(...integerTokens);
+    }
 
     for (const token of tokens) {
       if (dateLikeLine && !isItog && !isPaymentTotal && !isProductLine) continue;
@@ -124,7 +149,7 @@ function extractAmountCandidates(lines) {
       if (amount === null) continue;
       candidates.push({
         amount,
-        score: amountLineScore(line) - index / 100,
+        score: amountLineScore(line) + adjacentTotalBoost(lines, index) - index / 100,
         isItog,
         isPaymentTotal,
         isProductLine,
@@ -175,6 +200,18 @@ function reconcileAmount(lines, lineItems) {
   if (!candidates.some((candidate) => agreesWithProducts(candidate.amount))) {
     warnings.push("Сумма восстановлена по товарным позициям чека.");
     return { amount: productTotal, warnings };
+  }
+
+  if (
+    topCandidate &&
+    agreesWithProducts(topCandidate.amount) &&
+    candidates.some(
+      (candidate) =>
+        !agreesWithProducts(candidate.amount) &&
+        (candidate.isItog || candidate.isPaymentTotal || candidate.isProductLine || /=\s*\d/.test(candidate.line))
+    )
+  ) {
+    warnings.push("Сумма сверена по товарным позициям чека.");
   }
 
   return {
@@ -234,7 +271,20 @@ function buildReceiptDescription(lineItems, fiscalDriveNumber) {
   if (names.length > 0) {
     return names.join(", ").slice(0, 160);
   }
-  return `Чек ФН ${fiscalDriveNumber}`;
+  if (fiscalDriveNumber) {
+    return `Чек ФН ${fiscalDriveNumber}`;
+  }
+  return "Чек по фото";
+}
+
+function collectMissingFiscalFields({ operationDateTime, fiscalDriveNumber, fiscalDocumentNumber, fiscalSign, operationType }) {
+  const missing = [];
+  if (!operationDateTime) missing.push("operationDateTime");
+  if (!fiscalDriveNumber) missing.push("fiscalDriveNumber");
+  if (!fiscalDocumentNumber) missing.push("fiscalDocumentNumber");
+  if (!fiscalSign) missing.push("fiscalSign");
+  if (!operationType) missing.push("operationType");
+  return missing;
 }
 
 function parseFiscalDateTimeParts(rawDay, rawMonth, rawYear, rawHour, rawMinute) {
@@ -384,22 +434,35 @@ export function parseFiscalOcrText(text, { engine = "unknown" } = {}) {
   const fiscalDocumentNumber = extractFiscalDocumentNumber(lines);
   const fiscalSign = extractFiscalSign(lines);
   const operationType = extractOperationType(sourceText);
+  const missingFiscalFields = collectMissingFiscalFields({
+    operationDateTime,
+    fiscalDriveNumber,
+    fiscalDocumentNumber,
+    fiscalSign,
+    operationType,
+  });
 
-  if (
-    amount === null ||
-    !operationDateTime ||
-    !fiscalDriveNumber ||
-    !fiscalDocumentNumber ||
-    !fiscalSign ||
-    !operationType
-  ) {
+  if (amount === null) {
     return notFound();
   }
 
   const type = operationType === "2" ? "income" : "expense";
-  const warnings = ["QR-код не прочитан, реквизиты извлечены OCR."];
+  const isPartial = missingFiscalFields.length > 0;
+  const confidence = isPartial ? OCR_PARTIAL_CONFIDENCE : OCR_CONFIDENCE;
+  const warnings = isPartial
+    ? ["QR-код не прочитан, сумма извлечена OCR. Проверьте черновик перед сохранением."]
+    : ["QR-код не прочитан, реквизиты извлечены OCR."];
   if (operationType === "2") {
     warnings.push("Возврат прихода");
+  }
+  if (isPartial) {
+    warnings.push(`OCR не распознал все фискальные реквизиты: ${missingFiscalFields.join(", ")}.`);
+    if (!operationDateTime) {
+      warnings.push("Дата чека не распознана. Проверьте дату перед сохранением.");
+    }
+    if (!operationType) {
+      warnings.push("Тип операции не распознан, предложен расход.");
+    }
   }
   warnings.push(...amountWarnings);
 
@@ -414,19 +477,20 @@ export function parseFiscalOcrText(text, { engine = "unknown" } = {}) {
       categoryHint: "Другое",
       categoryResolution: "suggest_create",
       suggestedCategoryToCreate: "Другое",
-      date: operationDateTime.date,
-      confidence: OCR_CONFIDENCE,
+      ...(operationDateTime ? { date: operationDateTime.date } : {}),
+      confidence,
     },
-    confidence: OCR_CONFIDENCE,
+    confidence,
     warnings,
     receiptMeta: {
-      source: "ocr",
+      source: isPartial ? "ocr_partial" : "ocr",
       ocrEngine: engine,
-      fiscalDriveNumber,
-      fiscalDocumentNumber,
-      fiscalSign,
-      operationType,
-      operationDateTime: operationDateTime.dateTime,
+      ...(fiscalDriveNumber ? { fiscalDriveNumber } : {}),
+      ...(fiscalDocumentNumber ? { fiscalDocumentNumber } : {}),
+      ...(fiscalSign ? { fiscalSign } : {}),
+      ...(operationType ? { operationType } : {}),
+      ...(operationDateTime ? { operationDateTime: operationDateTime.dateTime } : {}),
+      ...(isPartial ? { missingFiscalFields } : {}),
       amount,
       ...(lineItems.length > 0 ? { lineItems } : {}),
     },

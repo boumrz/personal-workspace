@@ -1,0 +1,9 @@
+schema: spec-driven
+status: active
+created: 2026-06-28
+owners:
+  - specification-agent
+  - backend-agent
+  - autotest-agent
+  - qa-agent
+summary: Harden receipt QR/OCR failures, runtime diagnostics, and partial OCR review drafts.

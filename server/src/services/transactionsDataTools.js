@@ -99,7 +99,10 @@ function buildReceiptPreviewResult(parsed) {
 }
 
 function isRecoverableQrError(error) {
-  return error?.code === "receipt_qr_not_found" || error?.code === "receipt_qr_unreadable";
+  if (error?.code === "receipt_qr_not_found" || error?.code === "receipt_qr_unreadable") {
+    return true;
+  }
+  return error?.code === "receipt_qr_decoder_unavailable" && /timed out/i.test(String(error?.message || ""));
 }
 
 function receiptOcrNotFoundError() {
@@ -169,9 +172,6 @@ export async function buildReceiptPreview({
 
     return buildReceiptPreviewResult(parsed);
   } catch (error) {
-    if (error?.code === "receipt_ocr_unavailable" && qrFailure?.statusCode) {
-      throw receiptOcrNotFoundError();
-    }
     if (error?.statusCode) {
       throw error;
     }
