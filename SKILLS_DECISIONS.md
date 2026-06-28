@@ -12,6 +12,13 @@ If unavailable, continue with the best local fallback and report the limitation.
 
 ## Development And Verification
 
+- `sdd-openspec-multiagent`: required for every project change; enforce SDD,
+  OpenSpec artifacts, and multi-agent routing before implementation.
+- `openspec-explore`: inspect OpenSpec state and active changes.
+- `openspec-propose`: create proposal, design/spec, and tasks before work.
+- `openspec-apply-change`: implement OpenSpec tasks and update checkboxes.
+- `openspec-sync-specs`: sync accepted changes to canonical specs.
+- `openspec-archive-change`: archive completed OpenSpec changes.
 - `playwright`: browser automation, UI flow checks, screenshots.
 - `playwright-interactive`: persistent browser debugging.
 - `browser:control-in-app-browser`: in-app browser testing for localhost and websites.
@@ -65,5 +72,6 @@ If unavailable, continue with the best local fallback and report the limitation.
 ## Trigger Policy
 
 - Prefer the smallest skill set that fits the task.
+- Project changes must include `sdd-openspec-multiagent`.
 - Read the selected skill instructions before acting.
 - Do not invent skill behavior; if missing or blocked, state that and continue.

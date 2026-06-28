@@ -11,6 +11,12 @@ best local fallback and mention the limitation.
 
 ## Reviews
 
+- `$sdd-openspec-multiagent`: required SDD/OpenSpec and multi-agent workflow before project changes.
+- `$openspec-explore`: inspect current OpenSpec project state and active changes.
+- `$openspec-propose`: create proposal/design/spec/tasks for a new change.
+- `$openspec-apply-change`: implement tasks from an active OpenSpec change.
+- `$openspec-sync-specs`: sync completed change specs into canonical specs.
+- `$openspec-archive-change`: archive completed OpenSpec changes.
 - `$build-graph`: build/update code graph before reviews.
 - `$review-delta`: review local diffs.
 - `$review-pr`: review PR or branch diffs.

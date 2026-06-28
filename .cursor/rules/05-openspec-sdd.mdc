@@ -1,0 +1,47 @@
+---
+description: Required SDD/OpenSpec workflow for finance-assistant changes.
+alwaysApply: true
+---
+
+# OpenSpec SDD Workflow
+
+Use Specification-Driven Development for every project change.
+
+## Required Gate
+
+Before implementation, create or update an OpenSpec change under:
+
+```text
+openspec/changes/<change-name>/
+```
+
+Required artifacts:
+
+- `.openspec.yaml`
+- `proposal.md`
+- `design.md`
+- `tasks.md`
+- `specs/<capability>/spec.md`
+
+If the OpenSpec CLI is unavailable, create the artifacts manually using the
+existing repository structure.
+
+## Required Skill
+
+Use `$sdd-openspec-multiagent` before project changes.
+
+Use the OpenSpec skills when available:
+
+- `$openspec-explore`
+- `$openspec-propose`
+- `$openspec-apply-change`
+- `$openspec-sync-specs`
+- `$openspec-archive-change`
+
+## Apply Rule
+
+Do not edit product, API, UI, mobile, backend, test, deployment, security, or
+infrastructure behavior unless the OpenSpec change has tasks and acceptance
+criteria.
+
+Mark tasks complete as implementation progresses.

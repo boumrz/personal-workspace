@@ -5,11 +5,13 @@ alwaysApply: true
 
 # Finance Assistant Multi-Agent System
 
-This repository is developed specification-first.
+This repository is developed with SDD through OpenSpec.
 
 Primary artifacts:
 
 - `TECHNICAL_SPECIFICATION.md`
+- `docs/specs/`
+- `openspec/changes/`
 - `MULTI_AGENT_SYSTEM.md`
 - `agents/README.md`
 - `agents/common/shared-contract.md`
@@ -21,7 +23,9 @@ Primary artifacts:
 For broad or unclear work, route through:
 
 ```text
-orchestrator-agent
+SDD/OpenSpec triage
+  -> OpenSpec proposal/design/spec/tasks
+  -> orchestrator-agent
   -> specification-agent
   -> product-owner-agent
   -> architect-agent
@@ -32,6 +36,9 @@ orchestrator-agent
 ```
 
 For small scoped changes, load only the relevant executor role and reviewer role.
+
+Do not implement product, API, UI, mobile, backend, test, deployment, security,
+or infrastructure changes without an active OpenSpec change and task list.
 
 ## Executor Mapping
 
@@ -46,6 +53,8 @@ For small scoped changes, load only the relevant executor role and reviewer role
 ## Non-Negotiable Rules
 
 - Read the spec before changing behavior.
+- Use `$sdd-openspec-multiagent` before project changes.
+- Create or update `openspec/changes/<change-name>/` before implementation.
 - Update the spec when behavior or contracts change.
 - API payload changes must update backend, shared, web, mobile, and tests.
 - User-owned finance data must remain scoped by `user_id`.

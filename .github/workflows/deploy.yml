@@ -7,9 +7,16 @@ on:
       - master
   workflow_dispatch: # Позволяет запускать вручную из GitHub UI
 
+    inputs:
+      deploy_legacy_host:
+        description: "Run legacy host/PM2 deploy jobs"
+        required: false
+        default: "false"
+
 jobs:
   # Деплой фронтенда на удаленный сервер
   deploy-frontend:
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_legacy_host == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -62,6 +69,7 @@ jobs:
 
   # Деплой бэкенда на удаленный сервер
   deploy-backend:
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_legacy_host == 'true'
     runs-on: ubuntu-latest
     # Запускаем параллельно с фронтендом для ускорения
     # needs: deploy-frontend  # Раскомментируйте, если хотите последовательный деплой

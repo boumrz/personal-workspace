@@ -2,10 +2,11 @@
 
 Project-level Codex instructions for `finance-assistant`.
 
-This repository is developed specification-first. Treat `TECHNICAL_SPECIFICATION.md`
-as the product and architecture source of truth, and use the multi-agent contracts
-in `agents/` before making non-trivial product, API, UI, mobile, or infrastructure
-changes.
+This repository is developed with SDD (Specification-Driven Development) through
+OpenSpec. Treat `TECHNICAL_SPECIFICATION.md`, `docs/specs/`, and
+`openspec/changes/` as the product and architecture source of truth. Use the
+multi-agent contracts in `agents/` before making product, API, UI, mobile,
+backend, test, deployment, security, or infrastructure changes.
 
 ## Project Snapshot
 
@@ -14,16 +15,28 @@ changes.
 - Backend: Node.js, Express, PostgreSQL, JWT auth, Helmet, CORS, rate limits.
 - Mobile: Expo/React Native with shared TypeScript API client.
 - Shared contracts: `shared/src/types` and `shared/src/api`.
-- Main specs: `TECHNICAL_SPECIFICATION.md`, `MULTI_AGENT_SYSTEM.md`, `agents/`.
+- Main specs: `TECHNICAL_SPECIFICATION.md`, `docs/specs/`,
+  `openspec/changes/`, `MULTI_AGENT_SYSTEM.md`, `agents/`.
 
 ## Default Workflow
 
 1. Read the relevant specification section before implementation.
-2. For unclear or broad requests, route through the agent flow:
+2. For any non-trivial change, create or update an OpenSpec change under
+   `openspec/changes/<change-name>/` with proposal, design/spec, and tasks.
+3. Route work through the agent flow:
    `specification-agent -> product-owner-agent -> architect-agent -> team-lead-agent -> executor -> reviewers -> qa`.
-3. Keep changes scoped to the target layer and update contracts across web/mobile/backend when payloads change.
-4. Add or update tests when behavior changes.
-5. Report residual risk and missing tests in the final response.
+4. Keep changes scoped to the OpenSpec tasks and update task checkboxes as each
+   task is completed.
+5. Update contracts across web/mobile/backend when payloads change.
+6. Add or update tests when behavior changes.
+7. Report the OpenSpec change name, residual risk, and missing tests in the
+   final response.
+
+## Required SDD Skill
+
+Use `$sdd-openspec-multiagent` for every project change. If the skill is not
+available in the active runtime, follow `.codex/skills/sdd-openspec-multiagent/SKILL.md`
+manually and mention the limitation.
 
 ## Required Review Skills
 
@@ -71,6 +84,8 @@ Use available skills when the task matches their scope. If a skill is not instal
 the current session, continue with the best local fallback and mention the limitation.
 
 - `build-graph`: build/update the code review knowledge graph before reviews.
+- `sdd-openspec-multiagent`: required SDD/OpenSpec plus multi-agent workflow for
+  every project change.
 - `review-delta`: review local diffs with blast-radius context.
 - `review-pr`: review a PR or branch diff.
 - `browser:control-in-app-browser`, `playwright`, `playwright-interactive`: browser/UI verification.

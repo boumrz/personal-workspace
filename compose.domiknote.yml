@@ -1,0 +1,108 @@
+name: finance-assistant
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile.web
+      args:
+        VITE_TELEGRAM_BOT_USERNAME: ${VITE_TELEGRAM_BOT_USERNAME:-}
+        VITE_VK_ID_APP_ID: ${VITE_VK_ID_APP_ID:-}
+        VITE_API_URL: ${VITE_API_URL:-}
+    image: finance-assistant-web:${APP_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - finance_internal
+      - domiknote_proxy
+    labels:
+      com.domiknote.service: "finance-web"
+
+  api:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile.api
+    image: finance-assistant-api:${APP_VERSION:-latest}
+    restart: unless-stopped
+    env_file:
+      - ${DOMIKNOTE_ENV_FILE:-deployment/env/domiknote.env}
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      RECEIPT_QR_PYTHON: python3
+      GPT4FREE_BASE_URL: ${GPT4FREE_BASE_URL:-http://g4f:1337/v1}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - finance_internal
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:3001/api/health >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  migrate:
+    image: finance-assistant-api:${APP_VERSION:-latest}
+    profiles:
+      - migrate
+    env_file:
+      - ${DOMIKNOTE_ENV_FILE:-deployment/env/domiknote.env}
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      RECEIPT_QR_PYTHON: python3
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - finance_internal
+    command: ["npm", "run", "migrate"]
+    restart: "no"
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-finance_assistant}
+      POSTGRES_USER: ${POSTGRES_USER:-finance_assistant}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deployment/env/domiknote.env}
+    volumes:
+      - finance_postgres_data:/var/lib/postgresql/data
+    networks:
+      - finance_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-finance_assistant} -d ${POSTGRES_DB:-finance_assistant}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  g4f:
+    image: hlohaus789/g4f:latest
+    profiles:
+      - g4f
+    restart: unless-stopped
+    networks:
+      - finance_internal
+    healthcheck:
+      test: ["CMD-SHELL", "python - <<'PY'\nimport urllib.request\nurllib.request.urlopen('http://127.0.0.1:1337/v1/models', timeout=5).read()\nPY"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+networks:
+  finance_internal:
+    driver: bridge
+  domiknote_proxy:
+    external: true
+    name: ${DOMIKNOTE_PROXY_NETWORK:-domiknote_proxy}
+
+volumes:
+  finance_postgres_data:

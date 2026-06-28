@@ -4,6 +4,8 @@ server/node_modules/
 
 # Environment variables
 .env
+deployment/env/*.env
+!deployment/env/*.env.example
 .env.local
 .env.production
 server/.env

@@ -87,3 +87,4 @@ MIT
 
 - Secrets inventory and setup: `docs/GITHUB_SECRETS.md`
 - Backend compatibility/rollback guide: `docs/DEPLOYMENT_COMPATIBILITY.md`
+- Docker deployment for `domiknote.ru`: `docs/DEPLOY_DOCKER.md`

@@ -14,6 +14,8 @@ intent to verified implementation.
 
 ```text
 User request
+  -> SDD/OpenSpec triage
+  -> OpenSpec change proposal/design/spec/tasks
   -> orchestrator-agent
   -> specification-agent
   -> product-owner-agent
@@ -24,6 +26,7 @@ User request
   -> reviewer-agent / security-devops-agent / test-reviewer-agent / ux-critic-agent
   -> qa-agent
   -> product-owner-agent acceptance
+  -> OpenSpec sync/archive when complete
 ```
 
 Executor agents are selected by ownership:
@@ -63,6 +66,8 @@ Executor agents are selected by ownership:
 
 Every non-trivial feature should produce or update:
 
+- an OpenSpec change under `openspec/changes/<change-name>/` with proposal,
+  design/spec, and tasks;
 - a spec note in `TECHNICAL_SPECIFICATION.md` or `docs/specs/`;
 - task envelope using `agents/common/shared-contract.md`;
 - acceptance criteria;
@@ -78,6 +83,8 @@ Every non-trivial feature should produce or update:
 - UI changes must route through `design-agent` or `ux-critic-agent` when the interaction changes.
 - Test gaps must route to `autotest-agent` or be explicitly accepted by `qa-agent`.
 - Linear is the preferred task state source when the connector is available; otherwise use local task envelopes.
+- Executor work must not start until the OpenSpec change has implementation
+  tasks and acceptance criteria.
 
 ## 6. Decision Rights
 
@@ -93,6 +100,7 @@ Every non-trivial feature should produce or update:
 A task is complete only when:
 
 - acceptance criteria are checked;
+- OpenSpec tasks are checked off or explicitly deferred;
 - implementation matches the current specification;
 - tests or manual verification are recorded;
 - risks and missing tests are listed;
