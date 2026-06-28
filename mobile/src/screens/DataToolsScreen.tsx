@@ -13,7 +13,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth, useTheme } from "../context";
 import { API_BASE_URL } from "../constants/config";
-import { openReceiptImportFlow } from "../services/dataTools";
+import {
+  openReceiptImportFlow,
+  selectReceiptImportAsset,
+  uploadReceiptImportAsset,
+  type ReceiptImportSelection,
+} from "../services/dataTools";
 
 type Props = {
   navigation: any;
@@ -23,6 +28,8 @@ export default function DataToolsScreen({ navigation }: Props) {
   const { token } = useAuth();
   const { theme } = useTheme();
   const [busy, setBusy] = useState<"receiptGallery" | "receiptCamera" | null>(null);
+  const [receiptError, setReceiptError] = useState<string | null>(null);
+  const [lastReceiptSelection, setLastReceiptSelection] = useState<ReceiptImportSelection | null>(null);
 
   const ensureToken = () => {
     if (!token) {
@@ -32,9 +39,41 @@ export default function DataToolsScreen({ navigation }: Props) {
     return token;
   };
 
+  const runAndroidReceiptUpload = async (selection: ReceiptImportSelection, authToken: string) => {
+    setBusy(selection.source === "camera" ? "receiptCamera" : "receiptGallery");
+    setReceiptError(null);
+    try {
+      const preview = await uploadReceiptImportAsset(API_BASE_URL, authToken, selection);
+      navigation.navigate("DataImportReview", {
+        preview,
+      });
+    } catch (error: any) {
+      setReceiptError(error?.message ?? "Попробуйте еще раз.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const handleReceipt = async (source: "gallery" | "camera") => {
     const authToken = ensureToken();
     if (!authToken) return;
+    setReceiptError(null);
+
+    if (Platform.OS === "android") {
+      setBusy(source === "camera" ? "receiptCamera" : "receiptGallery");
+      try {
+        const selection = await selectReceiptImportAsset(source);
+        if (!selection) return;
+        setLastReceiptSelection(selection);
+        await runAndroidReceiptUpload(selection, authToken);
+      } catch (error: any) {
+        setReceiptError(error?.message ?? "Попробуйте еще раз.");
+      } finally {
+        setBusy(null);
+      }
+      return;
+    }
+
     setBusy(source === "camera" ? "receiptCamera" : "receiptGallery");
     try {
       const preview = await openReceiptImportFlow(API_BASE_URL, authToken, source);
@@ -42,16 +81,11 @@ export default function DataToolsScreen({ navigation }: Props) {
         navigation.navigate("DataImportReview", {
           preview,
         });
-      } else if (Platform.OS !== "web" && Platform.OS !== "android") {
-        Alert.alert(
-          "Фото чека",
-          source === "camera"
-            ? "Сделайте снимок в браузере, после загрузки вы вернетесь в приложение."
-            : "Выберите фото в браузере, после загрузки вы вернетесь в приложение."
-        );
       }
     } catch (error: any) {
-      Alert.alert("Не удалось обработать чек", error?.message ?? "Попробуйте еще раз.");
+      const message = error?.message ?? "Попробуйте еще раз.";
+      setReceiptError(message);
+      Alert.alert("Не удалось обработать чек", message);
     } finally {
       setBusy(null);
     }
@@ -112,6 +146,32 @@ export default function DataToolsScreen({ navigation }: Props) {
             )}
           </TouchableOpacity>
         </View>
+        {receiptError ? (
+          <View style={styles.errorCard}>
+            <Ionicons name="alert-circle-outline" size={20} color={theme.expense} />
+            <View style={styles.errorContent}>
+              <Text style={styles.errorTitle}>Не удалось обработать чек</Text>
+              <Text style={styles.errorText}>{receiptError}</Text>
+              {lastReceiptSelection ? (
+                <TouchableOpacity
+                  style={styles.retryButton}
+                  onPress={() => {
+                    const authToken = ensureToken();
+                    if (!authToken || !lastReceiptSelection) return;
+                    void runAndroidReceiptUpload(lastReceiptSelection, authToken);
+                  }}
+                  disabled={busy !== null}
+                >
+                  {busy !== null ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.retryButtonText}>Повторить распознавание</Text>
+                  )}
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.noteCard}>
@@ -221,6 +281,44 @@ function useMemoStyles(theme: any) {
         secondaryButtonText: {
           color: theme.textPrimary,
           fontSize: 15,
+          fontWeight: "700",
+        },
+        errorCard: {
+          flexDirection: "row",
+          alignItems: "flex-start",
+          gap: 10,
+          marginTop: 12,
+          padding: 12,
+          borderRadius: theme.radiusLg,
+          borderWidth: 1,
+          borderColor: theme.expense,
+          backgroundColor: "rgba(239, 68, 68, 0.10)",
+        },
+        errorContent: {
+          flex: 1,
+          gap: 6,
+        },
+        errorTitle: {
+          color: theme.expense,
+          fontSize: 14,
+          fontWeight: "700",
+        },
+        errorText: {
+          color: theme.textPrimary,
+          fontSize: 13,
+          lineHeight: 18,
+        },
+        retryButton: {
+          minHeight: theme.btnHeight,
+          borderRadius: theme.radiusMd,
+          backgroundColor: theme.accent,
+          justifyContent: "center",
+          alignItems: "center",
+          marginTop: 4,
+        },
+        retryButtonText: {
+          color: "#fff",
+          fontSize: 14,
           fontWeight: "700",
         },
         noteCard: {

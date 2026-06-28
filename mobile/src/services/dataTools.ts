@@ -4,7 +4,13 @@ import * as WebBrowser from "expo-web-browser";
 import { Buffer } from "buffer";
 import type { TransactionImportPreview } from "@finance-assistant/shared";
 import { APP_DEEP_LINK_SCHEME, DATA_TOOL_ENDPOINTS } from "../constants/config";
-import { createReceiptImportFlow, type ReceiptImportSource } from "./receiptImport";
+import {
+  createReceiptImportFlow,
+  type ReceiptImportSelection,
+  type ReceiptImportSource,
+} from "./receiptImport";
+
+export type { ReceiptImportSelection, ReceiptImportSource };
 
 type OpenNativeToolArgs = {
   title: string;
@@ -212,6 +218,8 @@ function buildUploadPageHtml({
         statusEl.textContent = "Отправляем файл на сервер...";
         const formData = new FormData();
         formData.append(fieldName, file);
+        formData.append("locale", "ru-RU");
+        formData.append("timezone", Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Moscow");
         const response = await fetch(apiBaseUrl + endpoint, {
           method: "POST",
           headers: {
@@ -282,7 +290,9 @@ export async function openReceiptImportFlow(apiBaseUrl: string, token: string, s
             return;
           }
           const formData = new FormData();
-          formData.append("image", file);
+          formData.append("file", file);
+          formData.append("locale", "ru-RU");
+          formData.append("timezone", Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Moscow");
           const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}${DATA_TOOL_ENDPOINTS.parseReceipt}`, {
             method: "POST",
             headers: { Authorization: `Bearer ${token}` },
@@ -310,6 +320,34 @@ export async function openReceiptImportFlow(apiBaseUrl: string, token: string, s
   return flow.openReceiptImportFlow(apiBaseUrl, token, source);
 }
 
+export async function selectReceiptImportAsset(source: ReceiptImportSource = "gallery") {
+  if (Platform.OS !== "android") {
+    return null;
+  }
+
+  const flow = createReceiptImportFlow({
+    platformOS: Platform.OS,
+    imagePicker: ImagePicker,
+    openBrowserBridge: async (args) => openReceiptBrowserBridge(args),
+  });
+
+  return flow.selectReceiptImage(source);
+}
+
+export async function uploadReceiptImportAsset(
+  apiBaseUrl: string,
+  token: string,
+  selection: ReceiptImportSelection
+) {
+  const flow = createReceiptImportFlow({
+    platformOS: Platform.OS,
+    imagePicker: ImagePicker,
+    openBrowserBridge: async (args) => openReceiptBrowserBridge(args),
+  });
+
+  return flow.uploadReceiptImage(apiBaseUrl, token, selection);
+}
+
 async function openReceiptBrowserBridge({
   apiBaseUrl,
   token,
@@ -325,7 +363,7 @@ async function openReceiptBrowserBridge({
       endpoint: DATA_TOOL_ENDPOINTS.parseReceipt,
       accept: "image/*",
       capture: source === "camera" ? "environment" : undefined,
-      fieldName: "image",
+      fieldName: "file",
       title: "Фото чека",
       apiBaseUrl,
       token,

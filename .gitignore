@@ -23,6 +23,7 @@ build/
 output/
 test-results/
 playwright-report/
+.codex-run/
 
 # IDE
 .vscode/

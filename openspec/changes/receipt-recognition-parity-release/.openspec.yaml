@@ -1,0 +1,10 @@
+schema: spec-driven
+status: active
+created: 2026-06-28
+owners:
+  - specification-agent
+  - backend-agent
+  - mobile-agent
+  - autotest-agent
+  - qa-agent
+summary: Lock receipt QR/OCR implementation facts, verify Android parity, and bump Android release version.

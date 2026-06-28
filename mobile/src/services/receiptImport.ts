@@ -13,10 +13,15 @@ type PermissionResult = {
   status?: string;
 };
 
-type ReceiptImageAsset = {
+export type ReceiptImageAsset = {
   uri?: string | null;
   fileName?: string | null;
   mimeType?: string | null;
+};
+
+export type ReceiptImportSelection = {
+  asset: ReceiptImageAsset;
+  source: ReceiptImportSource;
 };
 
 type ImagePickerResult = {
@@ -180,6 +185,14 @@ function appendReceiptFormData({
   formData.append("timezone", timezone || "Europe/Moscow");
 }
 
+function normalizeNetworkError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || "");
+  if (/network request failed|failed to fetch|networkerror|fetch/i.test(message)) {
+    return new Error("Не удалось подключиться к серверу. Проверьте интернет или адрес API и попробуйте снова.");
+  }
+  return error instanceof Error ? error : new Error(message || "Не удалось отправить фото чека.");
+}
+
 export function createReceiptImportFlow({
   platformOS,
   imagePicker,
@@ -188,7 +201,71 @@ export function createReceiptImportFlow({
   getTimezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Moscow",
   openBrowserBridge,
 }: ReceiptImportFlowDependencies) {
+  async function selectReceiptImage(source: ReceiptImportSource = "gallery"): Promise<ReceiptImportSelection | null> {
+    if (platformOS !== "android") {
+      await openBrowserBridge?.({ apiBaseUrl: "", token: "", source });
+      return null;
+    }
+
+    if (!imagePicker) {
+      throw new Error("Выбор фото недоступен на этом устройстве.");
+    }
+
+    const result =
+      source === "camera"
+        ? await openCameraPicker(imagePicker)
+        : await imagePicker.launchImageLibraryAsync({
+            mediaTypes: ["images"],
+            quality: 1,
+            allowsEditing: false,
+          });
+
+    if (result.canceled || !result.assets?.length) {
+      return null;
+    }
+
+    return {
+      asset: result.assets[0],
+      source,
+    };
+  }
+
+  async function uploadReceiptImage(
+    apiBaseUrl: string,
+    token: string,
+    selection: ReceiptImportSelection
+  ): Promise<TransactionImportPreview> {
+    const formData = createFormData();
+    appendReceiptFormData({
+      formData,
+      asset: selection.asset,
+      source: selection.source,
+      timezone: getTimezone(),
+    });
+
+    let response: Response;
+    try {
+      response = await fetchImpl(`${trimTrailingSlash(apiBaseUrl)}${RECEIPT_PARSE_ENDPOINT}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData as BodyInit,
+      });
+    } catch (error) {
+      throw normalizeNetworkError(error);
+    }
+
+    if (!response.ok) {
+      throw new Error(await readReceiptError(response));
+    }
+
+    return normalizeReceiptPreview((await response.json()) as ReceiptParseResponse);
+  }
+
   return {
+    selectReceiptImage,
+    uploadReceiptImage,
     async openReceiptImportFlow(
       apiBaseUrl: string,
       token: string,

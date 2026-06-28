@@ -190,6 +190,48 @@ test("surfaces server receipt parse error text on Android", async () => {
   );
 });
 
+test("normalizes Android network failures for receipt upload", async () => {
+  const { service } = createAndroidHarness({
+    fetchImpl: async () => {
+      throw new TypeError("Network request failed");
+    },
+  });
+
+  const selection = await service.selectReceiptImage("gallery");
+  assert.ok(selection);
+  await assert.rejects(
+    () => service.uploadReceiptImage("http://10.0.2.2:3001/api", "token-123", selection),
+    /Не удалось подключиться к серверу/
+  );
+});
+
+test("can retry Android receipt upload without reopening the picker", async () => {
+  let fetchAttempt = 0;
+  const { service, fetchCalls, pickerCalls } = createAndroidHarness({
+    fetchImpl: async (url, init) => {
+      fetchCalls.push({ url: String(url), init: init ?? {} });
+      fetchAttempt += 1;
+      if (fetchAttempt === 1) {
+        return createJsonResponse({ error: "OCR не смог извлечь фискальные реквизиты." }, false) as Response;
+      }
+      return createJsonResponse(receiptPreviewResponse()) as Response;
+    },
+  });
+
+  const selection = await service.selectReceiptImage("gallery");
+  assert.ok(selection);
+  await assert.rejects(
+    () => service.uploadReceiptImage("http://10.0.2.2:3001/api", "token-123", selection),
+    /OCR не смог/
+  );
+
+  const preview = await service.uploadReceiptImage("http://10.0.2.2:3001/api", "token-123", selection);
+
+  assert.deepEqual(pickerCalls, ["gallery"]);
+  assert.equal(fetchCalls.length, 2);
+  assert.equal(preview.drafts[0]?.amount, 300);
+});
+
 test("keeps browser bridge fallback for unsupported native platforms", async () => {
   const bridgeCalls: string[] = [];
   const { service, fetchCalls, pickerCalls } = createAndroidHarness({
