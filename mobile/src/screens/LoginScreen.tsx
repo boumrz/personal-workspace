@@ -10,7 +10,6 @@ import {
   Platform,
   ScrollView,
   Alert,
-  NativeModules,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth, useTheme } from "../context";
@@ -20,9 +19,6 @@ import { getVkIdAccessToken } from "../services/vkIdAuth";
 const SESSION_EXPIRED_KEY = "sessionExpired";
 
 type Tab = "login" | "register";
-const VkIdNative = NativeModules.VkIdModule as
-  | { login: () => Promise<string> }
-  | undefined;
 
 export default function LoginScreen() {
   const { login, register, loginWithVkId } = useAuth();
@@ -70,7 +66,6 @@ export default function LoginScreen() {
       setVkLoading(true);
       const accessToken = await getVkIdAccessToken({
         appId: VK_ID_APP_ID,
-        nativeLogin: VkIdNative?.login,
       });
       await loginWithVkId(accessToken, VK_ID_APP_ID);
     } catch (e: any) {

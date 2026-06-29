@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, Switch, AppState, AppStateStatus, Modal, TextInput, NativeModules } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, Switch, AppState, AppStateStatus, Modal, TextInput } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -10,10 +10,6 @@ import { ConfirmModal, ErrorView } from "../components";
 import { VK_ID_APP_ID } from "../constants/config";
 import { getVkIdAccessToken } from "../services/vkIdAuth";
 import type { Profile, Goal } from "@finance-assistant/shared";
-
-const VkIdNative = NativeModules.VkIdModule as
-  | { login: () => Promise<string> }
-  | undefined;
 
 export default function ProfileScreen({ navigation }: any) {
   const { api, logout } = useAuth();
@@ -106,7 +102,6 @@ export default function ProfileScreen({ navigation }: any) {
       setLinkVkLoading(true);
       const accessToken = await getVkIdAccessToken({
         appId: VK_ID_APP_ID,
-        nativeLogin: VkIdNative?.login,
       });
       await api.linkVkId({ access_token: accessToken, app_id: VK_ID_APP_ID });
       Alert.alert("Успешно", "VK привязан");

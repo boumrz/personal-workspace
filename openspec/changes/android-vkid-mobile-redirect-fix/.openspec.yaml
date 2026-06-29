@@ -1,0 +1,9 @@
+schema: spec-driven
+status: active
+created: 2026-06-29
+owners:
+  - specification-agent
+  - mobile-agent
+  - autotest-agent
+  - qa-agent
+summary: Stabilize Android VK ID login by forcing VK mobile redirect URI for browser auth fallback.

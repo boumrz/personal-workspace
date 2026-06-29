@@ -21,6 +21,16 @@ test("uses native VK ID token when native flow succeeds", async () => {
   assert.equal(token, "native-token");
 });
 
+test("uses browser VK ID directly when native login is not provided", async () => {
+  const token = await getVkIdAccessTokenCore({
+    appId: "54468830",
+    nativeTimeoutMs: 50,
+    browserLogin: async (appId) => `browser-token-${appId}`,
+  });
+
+  assert.equal(token, "browser-token-54468830");
+});
+
 test("falls back to browser VK ID when native flow returns code-only error", async () => {
   const events: string[] = [];
   const token = await getVkIdAccessTokenCore({
