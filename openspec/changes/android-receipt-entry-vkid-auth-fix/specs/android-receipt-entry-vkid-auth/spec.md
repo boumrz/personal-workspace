@@ -35,3 +35,13 @@ return an access token.
 - **THEN** the app stops loading
 - **AND** shows a readable cancellation message
 - **AND** does not silently start another authorization loop
+
+#### Scenario: Android browser auth session gets stuck
+
+- **GIVEN** Android VK ID browser authorization has been started
+- **WHEN** the provider returns to the app too late, the custom tab remains open,
+  or the next attempt reports that authorization is already in progress
+- **THEN** the app treats the stale in-progress state as recoverable provider
+  state, closes the current auth session when the local timeout/error path runs,
+  and allows the user to start VK ID authorization again without reinstalling or
+  force-stopping the app

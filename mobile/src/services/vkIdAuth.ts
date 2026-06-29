@@ -5,8 +5,9 @@ import {
   buildVkRedirectUri,
   getVkIdAccessTokenCore,
   isVkCertificatePinningError,
-  withTimeout,
+  runAuthSessionWithCleanup,
   type NativeVkLogin,
+  type AuthSessionCleanupReason,
 } from "./vkIdAuthCore";
 WebBrowser.maybeCompleteAuthSession();
 
@@ -47,6 +48,17 @@ function readUrlParam(url: string, key: string): string | null {
 
 function getVkRedirectUri(): string {
   return buildVkRedirectUri(VK_ID_REDIRECT_SCHEME);
+}
+
+async function dismissVkAuthSession(reason: AuthSessionCleanupReason): Promise<void> {
+  try {
+    WebBrowser.dismissAuthSession();
+  } catch (error) {
+    console.info("[vkid] auth session cleanup skipped", {
+      reason,
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 async function exchangeVkCodeForToken({
@@ -112,11 +124,12 @@ async function loginWithVkIdBrowser(appId: string): Promise<string> {
   const authUrl = await request.makeAuthUrlAsync({
     authorizationEndpoint: VK_AUTHORIZATION_ENDPOINT,
   });
-  const result = await withTimeout(
-    WebBrowser.openAuthSessionAsync(authUrl, redirectUri),
-    VK_AUTH_SESSION_TIMEOUT_MS,
-    `VK ID не вернул управление в приложение. Проверьте redirect URI ${redirectUri} в настройках VK ID.`,
-  );
+  const result = await runAuthSessionWithCleanup({
+    openSession: () => WebBrowser.openAuthSessionAsync(authUrl, redirectUri),
+    cleanupSession: dismissVkAuthSession,
+    timeoutMs: VK_AUTH_SESSION_TIMEOUT_MS,
+    timeoutMessage: `VK ID не вернул управление в приложение. Проверьте redirect URI ${redirectUri} в настройках VK ID.`,
+  });
 
   if (result.type !== "success") {
     throw new Error(

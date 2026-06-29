@@ -1,5 +1,9 @@
 export type NativeVkLogin = (() => Promise<string>) | undefined;
 export type BrowserVkLogin = (appId: string) => Promise<string>;
+export type AuthSessionCleanupReason = "before_start" | "after_failure";
+export type AuthSessionCleanup = (
+  reason: AuthSessionCleanupReason,
+) => void | Promise<void>;
 
 type Logger = (event: string, payload?: Record<string, unknown>) => void;
 
@@ -64,8 +68,40 @@ export function isRecoverableNativeVkError(error: unknown): boolean {
   const text = `${getErrorCode(error)} ${getErrorMessage(error)}`;
   return (
     isVkCertificatePinningError(error) ||
-    /timeout|timed out|did not return control|VKID_AUTH_CODE_UNEXPECTED|VKID_AUTH_FAILED|VKID_EXCEPTION|VKID_NO_ACTIVITY|VKID_NO_LIFECYCLE|VKID_EMPTY_TOKEN|token exchange/i.test(text)
+    /timeout|timed out|did not return control|already in progress|already open|only one can be open|auth session is in an invalid state|VKID_AUTH_CODE_UNEXPECTED|VKID_AUTH_FAILED|VKID_EXCEPTION|VKID_NO_ACTIVITY|VKID_NO_LIFECYCLE|VKID_EMPTY_TOKEN|token exchange/i.test(text)
   );
+}
+
+async function cleanupAuthSession(
+  cleanupSession: AuthSessionCleanup | undefined,
+  reason: AuthSessionCleanupReason,
+): Promise<void> {
+  try {
+    await cleanupSession?.(reason);
+  } catch {
+    // Cleanup is best-effort: failing to dismiss a stale browser must not block a new login attempt.
+  }
+}
+
+export async function runAuthSessionWithCleanup<T>({
+  openSession,
+  timeoutMs,
+  timeoutMessage,
+  cleanupSession,
+}: {
+  openSession: () => Promise<T>;
+  timeoutMs: number;
+  timeoutMessage: string;
+  cleanupSession?: AuthSessionCleanup;
+}): Promise<T> {
+  await cleanupAuthSession(cleanupSession, "before_start");
+
+  try {
+    return await withTimeout(openSession(), timeoutMs, timeoutMessage);
+  } catch (error) {
+    await cleanupAuthSession(cleanupSession, "after_failure");
+    throw error;
+  }
 }
 
 export async function getVkIdAccessTokenCore({
