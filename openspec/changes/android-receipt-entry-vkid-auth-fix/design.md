@@ -42,6 +42,13 @@ browser open failure and classify `authorization is already in progress` /
 `WebBrowser is already open` as stale recoverable state, so the next user tap
 starts from a clean auth session instead of surfacing a dead-end modal.
 
+For Android browser PKCE, use the VK mobile redirect URI
+`vk<client_id>://vk.ru/blank.html` instead of the generic app scheme
+`financeassistant://vkid`. The APK already declares `vk54468830://vk.ru` as a
+deep-link intent filter, while the generic app scheme can leave Chrome Custom
+Tabs on a provider loading-error screen if VK redirects to a URI that the
+installed package or VK app settings do not accept consistently.
+
 ### User Feedback
 
 The login button must never spin forever. VK ID auth already has JS timeouts;

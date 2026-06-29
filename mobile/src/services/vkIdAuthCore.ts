@@ -20,6 +20,11 @@ export function buildVkRedirectUri(scheme: string) {
   return `${normalized || "financeassistant"}://vkid`;
 }
 
+export function buildVkMobileRedirectUri(appId: string) {
+  const normalized = String(appId || "").trim();
+  return `vk${normalized}://vk.ru/blank.html`;
+}
+
 export function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   const timeout = new Promise<never>((_, reject) => {

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   buildVkRedirectUri,
+  buildVkMobileRedirectUri,
   getVkIdAccessTokenCore,
   runAuthSessionWithCleanup,
   isVkUserCancellationError,
@@ -84,6 +85,10 @@ test("does not restart VK ID when user cancels native authorization", async () =
 test("builds browser fallback redirect on the app-owned scheme", () => {
   assert.equal(buildVkRedirectUri("financeassistant"), "financeassistant://vkid");
   assert.equal(isVkUserCancellationError(Object.assign(new Error("User cancelled"), { code: "VKID_AUTH_FAILED" })), true);
+});
+
+test("builds VK mobile browser redirect on the app client scheme", () => {
+  assert.equal(buildVkMobileRedirectUri("54468830"), "vk54468830://vk.ru/blank.html");
 });
 
 test("cleans up a stale browser VK ID auth session before starting and after timeout", async () => {

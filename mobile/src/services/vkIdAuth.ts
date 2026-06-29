@@ -1,8 +1,7 @@
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
-import { VK_ID_REDIRECT_SCHEME } from "../constants/config";
 import {
-  buildVkRedirectUri,
+  buildVkMobileRedirectUri,
   getVkIdAccessTokenCore,
   isVkCertificatePinningError,
   runAuthSessionWithCleanup,
@@ -46,8 +45,8 @@ function readUrlParam(url: string, key: string): string | null {
   return params.get(key);
 }
 
-function getVkRedirectUri(): string {
-  return buildVkRedirectUri(VK_ID_REDIRECT_SCHEME);
+function getVkRedirectUri(appId: string): string {
+  return buildVkMobileRedirectUri(appId);
 }
 
 async function dismissVkAuthSession(reason: AuthSessionCleanupReason): Promise<void> {
@@ -111,7 +110,7 @@ async function exchangeVkCodeForToken({
 }
 
 async function loginWithVkIdBrowser(appId: string): Promise<string> {
-  const redirectUri = getVkRedirectUri();
+  const redirectUri = getVkRedirectUri(appId);
   const request = new AuthSession.AuthRequest({
     clientId: appId,
     redirectUri,

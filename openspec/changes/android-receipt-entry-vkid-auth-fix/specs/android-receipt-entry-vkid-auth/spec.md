@@ -45,3 +45,12 @@ return an access token.
   state, closes the current auth session when the local timeout/error path runs,
   and allows the user to start VK ID authorization again without reinstalling or
   force-stopping the app
+
+#### Scenario: Android VK ID redirects back to the installed APK
+
+- **GIVEN** Android starts the browser PKCE VK ID flow
+- **WHEN** the app builds the VK authorization URL
+- **THEN** the redirect URI uses the VK mobile scheme
+  `vk<client_id>://vk.ru/blank.html`
+- **AND** the same redirect URI is used for the code-to-token exchange
+- **AND** Android can route the provider callback back to the installed APK
